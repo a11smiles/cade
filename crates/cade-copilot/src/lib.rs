@@ -18,7 +18,7 @@
 use async_trait::async_trait;
 use cade_policy::{Action, Decision, Policy};
 use github_copilot_sdk::handler::{PermissionHandler, PermissionResult};
-use github_copilot_sdk::{PermissionRequestData, PermissionRequestKind, ProviderConfig, RequestId, SessionId};
+use github_copilot_sdk::{AzureProviderOptions, PermissionRequestData, PermissionRequestKind, ProviderConfig, RequestId, SessionId};
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, RwLock};
 
@@ -85,11 +85,18 @@ impl ModelSource {
                     .with_model_provider("openai")
                     .with_model_id(model.clone()),
             )),
-            ModelSource::AzureOpenAi { deployment, endpoint, .. } => Some(with_key(
+            ModelSource::AzureOpenAi {
+                deployment,
+                endpoint,
+                api_version,
+            } => Some(with_key(
                 ProviderConfig::new(endpoint.clone())
                     .with_provider_type("azure")
                     .with_model_provider("azure_openai")
-                    .with_model_id(deployment.clone()),
+                    .with_model_id(deployment.clone())
+                    .with_azure(AzureProviderOptions {
+                        api_version: Some(api_version.clone()),
+                    }),
             )),
             ModelSource::OpenAiCompatible { model, base_url } => Some(with_key(
                 ProviderConfig::new(base_url.clone())
@@ -158,7 +165,11 @@ pub fn decide(policy: &Policy, data: &PermissionRequestData) -> Decision {
     match data.kind {
         Some(PermissionRequestKind::Shell) => policy.decide(&Action::RunShell(&s)),
         Some(PermissionRequestKind::Url) => policy.decide(&Action::AgentNetwork),
-        Some(PermissionRequestKind::Mcp) => policy.decide(&Action::UseMcpServer(&s)),
+        // The allowlist names servers; a tool name must never stand in for one.
+        Some(PermissionRequestKind::Mcp) => match find_str(&data.extra, "serverName") {
+            Some(server) => policy.decide(&Action::UseMcpServer(&server)),
+            None => Decision::Deny { rule: "tools.mcp".into() },
+        },
         // File access is limited to the project folder by the session's cwd; reads are allowed.
         Some(PermissionRequestKind::Read) => Decision::Allow,
         _ => Decision::Ask,
@@ -168,17 +179,14 @@ pub fn decide(policy: &Policy, data: &PermissionRequestData) -> Decision {
 #[async_trait]
 impl<P: PromptUser> PermissionHandler for PolicyPermissions<P> {
     async fn handle(&self, _session: SessionId, _request: RequestId, data: PermissionRequestData) -> PermissionResult {
-        if data.managed_approval_required == Some(true) {
-            let ok = self.prompt.ask(Prompt::Ask { summary: summary(&data) }).await;
-            return if ok {
-                PermissionResult::approve_once()
-            } else {
-                PermissionResult::reject(Some("Declined by the user".to_string()))
-            };
-        }
         let decision = match self.policy.read() {
             Ok(p) => decide(&p, &data),
             Err(_) => Decision::Ask,
+        };
+        // Policy always comes first: managed approval can add a prompt, never lift a deny.
+        let decision = match decision {
+            Decision::Allow if data.managed_approval_required == Some(true) => Decision::Ask,
+            d => d,
         };
         match decision {
             Decision::Allow => PermissionResult::approve_once(),
@@ -253,9 +261,11 @@ impl TokenMeter {
     }
     /// "186K", "4.2M".
     pub fn short(n: u64) -> String {
+        let thousands = (n as f64 / 1e3).round() as u64;
         match n {
-            n if n >= 1_000_000 => format!("{:.1}M", n as f64 / 1e6),
-            n if n >= 1_000 => format!("{}K", (n as f64 / 1e3).round() as u64),
+            // Choose the unit after rounding, so 999,500 reads "1.0M", not "1000K".
+            n if n >= 1_000_000 || thousands >= 1_000 => format!("{:.1}M", n as f64 / 1e6),
+            n if n >= 1_000 => format!("{thousands}K"),
             n => n.to_string(),
         }
     }
@@ -471,6 +481,19 @@ mod tests {
     }
 
     #[test]
+    fn provider_config_azure_source_passes_api_version() {
+        let c = azure().provider_config(None).unwrap();
+        assert_eq!(c.azure.and_then(|a| a.api_version).as_deref(), Some("2026-06-01"));
+    }
+
+    #[test]
+    fn provider_config_non_azure_sources_set_no_azure_options() {
+        for source in [anthropic(), compatible()] {
+            assert!(source.provider_config(None).unwrap().azure.is_none(), "{source:?}");
+        }
+    }
+
+    #[test]
     fn provider_config_openai_compatible_source_uses_openai_wire_without_provider_name() {
         let c = compatible().provider_config(None).unwrap();
         assert_eq!(c.base_url, "http://localhost:11434/v1");
@@ -544,6 +567,28 @@ mod tests {
         let other = raw(serde_json::json!({"kind": "mcp", "permissionRequest": {"serverName": "github"}}));
         assert_eq!(decide(&p, &ok), Decision::Allow);
         assert_eq!(decide(&p, &other), Decision::Deny { rule: "tools.mcp".into() });
+    }
+
+    #[test]
+    fn decide_mcp_request_tool_named_like_allowed_server_denies() {
+        let p = Policy::from_yaml("version: 1\ntools: { mcp: [azure-docs] }\n").unwrap();
+        let d = raw(serde_json::json!({"kind": "mcp", "serverName": "evil", "toolName": "azure-docs"}));
+        assert_eq!(decide(&p, &d), Decision::Deny { rule: "tools.mcp".into() });
+    }
+
+    #[test]
+    fn decide_mcp_request_allowed_server_with_other_tool_name_allows() {
+        let p = Policy::from_yaml("version: 1\ntools: { mcp: [azure-docs] }\n").unwrap();
+        let d = raw(serde_json::json!({"kind": "mcp", "serverName": "azure-docs", "toolName": "search"}));
+        assert_eq!(decide(&p, &d), Decision::Allow);
+    }
+
+    #[test]
+    fn decide_mcp_request_without_server_name_denies() {
+        let listed = Policy::from_yaml("version: 1\ntools: { mcp: [azure-docs] }\n").unwrap();
+        let d = raw(serde_json::json!({"kind": "mcp", "toolName": "azure-docs"}));
+        assert_eq!(decide(&listed, &d), Decision::Deny { rule: "tools.mcp".into() });
+        assert_eq!(decide(&Policy::default(), &d), Decision::Deny { rule: "tools.mcp".into() });
     }
 
     #[test]
@@ -688,6 +733,37 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn handle_managed_approval_required_policy_deny_rejects_without_prompting() {
+        let user = FakeUser::new(true);
+        let h = handler("version: 1\ntools: { shell: deny }\n", &user);
+        let r = run(
+            &h,
+            serde_json::json!({"kind": "shell", "command": "rm -rf build", "managedApprovalRequired": true}),
+        )
+        .await;
+        assert_eq!(r, "reject: Blocked by organization policy (tools.shell = deny)");
+        assert_eq!(user.asked(), vec![]);
+    }
+
+    #[tokio::test]
+    async fn handle_managed_approval_required_policy_ask_prompts_once() {
+        let user = FakeUser::new(true);
+        let h = handler("version: 1\n", &user);
+        let r = run(
+            &h,
+            serde_json::json!({"kind": "shell", "command": "npm test", "managedApprovalRequired": true}),
+        )
+        .await;
+        assert_eq!(r, "approve");
+        assert_eq!(
+            user.asked(),
+            vec![Prompt::Ask {
+                summary: "npm test".into()
+            }]
+        );
+    }
+
+    #[tokio::test]
     async fn handle_poisoned_policy_lock_falls_back_to_asking() {
         let user = FakeUser::new(false);
         let h = handler("version: 1\ntools: { shell: allow }\n", &user);
@@ -788,5 +864,12 @@ mod tests {
         assert_eq!(TokenMeter::short(1_500), "2K");
         assert_eq!(TokenMeter::short(1_000_000), "1.0M");
         assert_eq!(TokenMeter::short(10_000_000), "10.0M");
+    }
+
+    #[test]
+    fn short_just_under_a_million_formats_as_millions() {
+        assert_eq!(TokenMeter::short(999_499), "999K");
+        assert_eq!(TokenMeter::short(999_500), "1.0M");
+        assert_eq!(TokenMeter::short(999_999), "1.0M");
     }
 }
