@@ -73,4 +73,14 @@ describe('App', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Close' }));
     expect(screen.queryByRole('dialog')).toBeNull();
   });
+
+  it('App_FeedbackDialogEscaped_ClosesAndReturnsFocusToSendFeedback', async () => {
+    render(<App />);
+    await userEvent.click(screen.getByRole('button', { name: 'Send feedback' }));
+
+    await userEvent.keyboard('{Escape}');
+
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Send feedback' })).toHaveFocus();
+  });
 });

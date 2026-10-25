@@ -37,10 +37,15 @@ export function Start({ theme, onTheme, onFeedback }: { theme: Theme; onTheme: (
         </div>
         <div className="start-grid">
           {TYPES.map((t) => (
-            <button key={t.kind} className="start-card">
-              <TypeTag kind={t.kind} />
-              <span className="start-blurb">{t.blurb}</span>
-              <span className="start-formats">{t.formats}</span>
+            <button
+              key={t.kind}
+              className="start-card"
+              aria-labelledby={`start-${t.kind}-tag`}
+              aria-describedby={`start-${t.kind}-blurb start-${t.kind}-formats`}
+            >
+              <TypeTag kind={t.kind} id={`start-${t.kind}-tag`} />
+              <span id={`start-${t.kind}-blurb`} className="start-blurb">{t.blurb}</span>
+              <span id={`start-${t.kind}-formats`} className="start-formats">{t.formats}</span>
             </button>
           ))}
         </div>

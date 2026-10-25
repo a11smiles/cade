@@ -211,6 +211,75 @@ describe('FeedbackDialog', () => {
     expect(onClose).toHaveBeenCalledOnce();
   });
 
+  it('FeedbackDialog_LogsOption_IsDisabledAndSaysItIsUnavailable', () => {
+    render(<FeedbackDialog onClose={vi.fn()} />);
+
+    const logs = screen.getByRole('checkbox', { name: /Recent logs, scrubbed/ });
+    expect(logs).toBeDisabled();
+    expect(logs).not.toBeChecked();
+    expect(logs).toHaveAccessibleDescription('Not available yet');
+  });
+
+  it('FeedbackDialog_Opened_MovesFocusIntoTheDialog', () => {
+    render(<FeedbackDialog onClose={vi.fn()} />);
+
+    expect(screen.getByRole('dialog')).toContainElement(document.activeElement as HTMLElement);
+    expect(screen.getByRole('button', { name: 'Close' })).toHaveFocus();
+  });
+
+  it('FeedbackDialog_TabFromLastControl_WrapsToFirst', async () => {
+    render(<FeedbackDialog onClose={vi.fn()} />);
+    screen.getByRole('button', { name: 'Cancel' }).focus();
+
+    await userEvent.tab();
+
+    expect(screen.getByRole('button', { name: 'Close' })).toHaveFocus();
+  });
+
+  it('FeedbackDialog_ShiftTabFromFirstControl_WrapsToLast', async () => {
+    render(<FeedbackDialog onClose={vi.fn()} />);
+    screen.getByRole('button', { name: 'Close' }).focus();
+
+    await userEvent.tab({ shift: true });
+
+    expect(screen.getByRole('button', { name: 'Cancel' })).toHaveFocus();
+  });
+
+  it('FeedbackDialog_TabThroughEveryControl_NeverLeavesTheDialog', async () => {
+    render(
+      <>
+        <button type="button">Behind the dialog</button>
+        <FeedbackDialog onClose={vi.fn()} />
+      </>,
+    );
+
+    for (let i = 0; i < 20; i++) {
+      await userEvent.tab();
+      expect(screen.getByRole('dialog')).toContainElement(document.activeElement as HTMLElement);
+    }
+  });
+
+  it('FeedbackDialog_EscapePressed_CallsOnClose', async () => {
+    const onClose = vi.fn();
+    render(<FeedbackDialog onClose={onClose} />);
+
+    await userEvent.keyboard('{Escape}');
+
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it('FeedbackDialog_Unmounted_ReturnsFocusToTheOpener', () => {
+    render(<button type="button">Send feedback</button>);
+    const opener = screen.getByRole('button', { name: 'Send feedback' });
+    opener.focus();
+
+    const dialog = render(<FeedbackDialog onClose={vi.fn()} />);
+    expect(opener).not.toHaveFocus();
+    dialog.unmount();
+
+    expect(opener).toHaveFocus();
+  });
+
   it('FeedbackDialog_OutsideTauri_CannotSendAndSaysWhere', async () => {
     ipc.inTauri = false;
     render(<FeedbackDialog onClose={vi.fn()} />);
