@@ -26,6 +26,16 @@ test.describe('Start screen', () => {
     await expect(card).toHaveAccessibleDescription('Azure services with real configs, drawn with Azure’s own icons. Bicep · Terraform · PR');
   });
 
+  test('Start_Loaded_UsesTheAppIconAsFavicon', async ({ page }) => {
+    await page.goto('/');
+
+    const href = await page.locator('link[rel="icon"]').getAttribute('href');
+    const icon = await page.request.get(href ?? '');
+
+    expect(icon.ok()).toBe(true);
+    expect(icon.headers()['content-type']).toBe('image/png');
+  });
+
   test('Start_AnyWindowSize_HasNoHorizontalOverflow', async ({ page }) => {
     await page.goto('/');
 
