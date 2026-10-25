@@ -25,9 +25,13 @@ truth; their `**Source:**` links point at that history.
 - Epic prefixes: FOUND, DS, CORE, CANVAS, COPILOT, APP, IMAGE, DECK, DOC,
   MOTION, DIAGRAM, ARCH, DATA, SYS, GH, POLICY, IMPORT, HIST, ONB, FEED, QA, REL.
 - Refer to issues by `#number` and backlog id together (`#5` / `CORE-002`).
+- Bugs (defects in code that exists) take a plain outcome title with no id
+  prefix, for example `Shell policy allows commands chained after a
+  preapproved prefix`, and no `cade-backlog-id` comment. They're tracked by
+  issue number only.
 - Issues filed from the forms or the app (`[Bug]`, `[Feature]`, comments) keep
-  their title until triage turns them into a backlog item; then the business
-  analyst gives them an id.
+  their title until triage. A feature request that's accepted becomes a
+  backlog item, and the business analyst gives it an id.
 
 ## Labels and milestones
 
@@ -67,7 +71,8 @@ order and then by issue number.
 ## New issues
 
 1. Search open and closed issues first. If a match exists, add to it instead.
-2. Give it the next free `[EPIC-NNN]` id and an imperative title.
+2. Give a backlog item the next free `[EPIC-NNN]` id and an imperative title.
+   Give a bug a plain outcome title (see "Ids and titles").
 3. Write the body in the imported format: the id comment; `**Backlog ID:**`,
    `**Epic:**` and `**Priority:**` lines; an optional `**Design:**` line
    linking `design/exports/vNNNN-…/<Screen>.dc.html`; a `**Delivery:**` line
