@@ -3,17 +3,19 @@
 
 use cade_iac::{Design, Resource, Target, generate};
 
+const NET: &str = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-claims-net/providers/Microsoft.Network/virtualNetworks/vnet-claims/subnets";
+
 fn claims() -> Design {
     Design {
         location: "eastus2".into(),
-        resource_group: "rg".into(),
+        resource_group: "rg-claims-prod-eus2".into(),
         resources: vec![
             Resource::AppService {
                 name: "app-claims-prod".into(),
                 plan_sku: "P1v3".into(),
                 public_access: false,
                 system_identity: true,
-                subnet: Some("vnet::appSubnet.id".into()),
+                subnet: Some(format!("{NET}/snet-app")),
                 settings: vec![("DB_NAME".into(), "claims".into())],
             },
             Resource::SqlServer {
@@ -23,7 +25,7 @@ fn claims() -> Design {
             },
             Resource::KeyVault {
                 name: "kv-claims".into(),
-                private_endpoint_subnet: Some("snet-data".into()),
+                private_endpoint_subnet: Some(format!("{NET}/snet-data")),
             },
             Resource::Storage {
                 name: "stclaimsphotos".into(),
