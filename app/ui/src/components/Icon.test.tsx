@@ -42,8 +42,17 @@ describe('Mark', () => {
   it('Mark_Rendered_IsDecorativeAt26px', () => {
     const { container } = render(<Mark />);
 
-    const svg = container.querySelector('svg');
-    expect(svg).toHaveAttribute('aria-hidden', 'true');
-    expect(svg).toHaveAttribute('width', '26');
+    const img = container.querySelector('img');
+    expect(img).toHaveAttribute('alt', '');
+    expect(img).toHaveAttribute('aria-hidden', 'true');
+    expect(img).toHaveAttribute('width', '26');
+    expect(img).toHaveAttribute('height', '26');
+  });
+
+  it('Mark_Rendered_ShowsTheSparkleAppIcon', () => {
+    const { container } = render(<Mark size={32} />);
+
+    expect(container.querySelector('img')?.getAttribute('src')).toMatch(/cade-mark\.png$/);
+    expect(container.querySelector('svg')).toBeNull();
   });
 });
