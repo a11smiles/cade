@@ -71,5 +71,5 @@ Keep this file under 500 words; put role details in
 
 Trunk-based `main` with stacked PRs: one branch per planned task,
 `issue-NN-<task>`, created from the task it depends on (first from `main`);
-no sibling task branches. No agent co-author attribution. PR titles:
-`[EPIC-NNN] imperative summary`. Check UI changes in dark and light themes.
+no sibling task branches. No agent attribution. PR titles: imperative,
+`[EPIC-NNN]`-prefixed except bug fixes. Check UI in both themes.
