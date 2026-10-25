@@ -85,7 +85,8 @@ impl SystemGraph {
     /// Everything downstream of `start`, in breadth-first order.
     pub fn impact(&self, start: &Item) -> Vec<Item> {
         let mut out = vec![];
-        let mut seen = BTreeSet::new();
+        // The start item is seen up front so a cycle back to it doesn't list it as its own impact.
+        let mut seen = BTreeSet::from([start.clone()]);
         let mut q = VecDeque::from([start.clone()]);
         while let Some(cur) = q.pop_front() {
             for b in self.bindings.iter().filter(|b| b.from == cur) {
@@ -294,6 +295,15 @@ mod tests {
         g.bind(b.clone(), c.clone(), "");
         g.bind(c.clone(), b.clone(), "");
         assert_eq!(g.impact(&a), vec![b, c]);
+    }
+
+    #[test]
+    fn impact_cycle_back_to_start_excludes_start() {
+        let mut g = SystemGraph::default();
+        let (a, b) = (item(Layer::Data, "a"), item(Layer::App, "b"));
+        g.bind(a.clone(), b.clone(), "");
+        g.bind(b.clone(), a.clone(), "");
+        assert_eq!(g.impact(&a), vec![b]);
     }
 
     #[test]
