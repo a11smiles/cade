@@ -46,26 +46,68 @@ fn collect(e: &Element, out: &mut Vec<String>) {
     }
 }
 
+/// A JavaScript double-quoted string literal for `s`.
+fn js_string(s: &str) -> String {
+    let mut out = String::from("\"");
+    for c in s.chars() {
+        match c {
+            '\\' => out.push_str("\\\\"),
+            '"' => out.push_str("\\\""),
+            '\n' => out.push_str("\\n"),
+            '\r' => out.push_str("\\r"),
+            '\t' => out.push_str("\\t"),
+            '\u{2028}' | '\u{2029}' => out.push_str(&format!("\\u{:04x}", c as u32)),
+            c if c.is_control() => out.push_str(&format!("\\u{:04x}", c as u32)),
+            c => out.push(c),
+        }
+    }
+    out.push('"');
+    out
+}
+
+/// True when `s` can sit inside JSX quotes or as JSX text without any
+/// character being read as markup, an entity or an expression.
+fn jsx_safe(s: &str) -> bool {
+    !s.chars()
+        .any(|c| matches!(c, '"' | '\\' | '{' | '}' | '<' | '>' | '&') || c.is_control())
+}
+
+/// A `{…}` prop value passes through as an expression only when it's a
+/// number, boolean or null literal; anything else is design data, not code.
+fn literal_expression(v: &str) -> Option<&str> {
+    let inner = v.strip_prefix('{')?.strip_suffix('}')?.trim();
+    let literal = matches!(inner, "true" | "false" | "null") || (!inner.is_empty() && inner.parse::<f64>().is_ok_and(f64::is_finite));
+    literal.then_some(v)
+}
+
+fn prop(k: &str, v: &str) -> String {
+    if let Some(expr) = literal_expression(v) {
+        format!(" {k}={expr}")
+    } else if jsx_safe(v) {
+        format!(" {k}=\"{v}\"")
+    } else {
+        format!(" {k}={{{}}}", js_string(v))
+    }
+}
+
+fn text(t: &str) -> String {
+    if jsx_safe(t) {
+        t.to_string()
+    } else {
+        format!("{{{}}}", js_string(t))
+    }
+}
+
 fn render(e: &Element, depth: usize, out: &mut String) {
     let pad = "  ".repeat(depth);
-    let props: String = e
-        .props
-        .iter()
-        .map(|(k, v)| {
-            if v.starts_with('{') {
-                format!(" {k}={v}")
-            } else {
-                format!(" {k}=\"{v}\"")
-            }
-        })
-        .collect();
+    let props: String = e.props.iter().map(|(k, v)| prop(k, v)).collect();
     if e.children.is_empty() && e.text.is_none() {
         out.push_str(&format!("{pad}<{}{props} />\n", e.component));
         return;
     }
     out.push_str(&format!("{pad}<{}{props}>\n", e.component));
     if let Some(t) = &e.text {
-        out.push_str(&format!("{pad}  {t}\n"));
+        out.push_str(&format!("{pad}  {}\n", text(t)));
     }
     for c in &e.children {
         render(c, depth + 1, out);
@@ -167,6 +209,62 @@ mod tests {
             .child(Element::new("Form.Row").child(Element::new("TextField")))
             .child(Element::new("Form.Row").child(Element::new("TextField")));
         assert!(screen("S", "@contoso/ds", &tree).starts_with("import { Form, TextField } from '@contoso/ds';\n"));
+    }
+
+    #[test]
+    fn screen_prop_with_quote_is_emitted_as_escaped_string_expression() {
+        let tsx = screen("S", "@contoso/ds", &Element::new("Button").prop("title", "Say \"hi\""));
+        assert!(tsx.contains("    <Button title={\"Say \\\"hi\\\"\"} />\n"), "{tsx}");
+    }
+
+    #[test]
+    fn screen_text_with_braces_and_angle_is_emitted_as_string_expression() {
+        let tsx = screen("S", "@contoso/ds", &Element::new("Button").text("a < b {x}"));
+        assert!(tsx.contains("    <Button>\n      {\"a < b {x}\"}\n    </Button>\n"), "{tsx}");
+    }
+
+    #[test]
+    fn screen_prop_with_backslash_and_newline_escapes_them() {
+        let tsx = screen("S", "@contoso/ds", &Element::new("Field").prop("hint", "C:\\path\nnext"));
+        assert!(tsx.contains("    <Field hint={\"C:\\\\path\\nnext\"} />\n"), "{tsx}");
+    }
+
+    #[test]
+    fn screen_prop_brace_value_that_is_not_a_literal_is_emitted_as_string() {
+        let tsx = screen(
+            "S",
+            "@contoso/ds",
+            &Element::new("Button").prop("label", "{alert(document.cookie)}"),
+        );
+        assert!(tsx.contains("    <Button label={\"{alert(document.cookie)}\"} />\n"), "{tsx}");
+    }
+
+    #[test]
+    fn screen_prop_and_text_with_ampersand_are_emitted_as_string_expressions() {
+        let tsx = screen(
+            "S",
+            "@contoso/ds",
+            &Element::new("Tag").prop("title", "Tom &amp; Jerry").text("R&D"),
+        );
+        assert!(
+            tsx.contains("    <Tag title={\"Tom &amp; Jerry\"}>\n      {\"R&D\"}\n    </Tag>\n"),
+            "{tsx}"
+        );
+    }
+
+    #[test]
+    fn screen_literal_brace_values_stay_expressions() {
+        let tree = Element::new("Stepper")
+            .prop("step", "{1}")
+            .prop("ratio", "{-0.5}")
+            .prop("open", "{true}")
+            .prop("busy", "{false}")
+            .prop("value", "{null}");
+        let tsx = screen("S", "@contoso/ds", &tree);
+        assert!(
+            tsx.contains("    <Stepper step={1} ratio={-0.5} open={true} busy={false} value={null} />\n"),
+            "{tsx}"
+        );
     }
 
     #[test]
