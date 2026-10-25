@@ -1,0 +1,26 @@
+---
+applyTo: "app/ui/**/*.ts,app/ui/**/*.tsx,app/ui/**/*.mts,app/ui/**/*.cts,scripts/**/*.mjs"
+---
+
+- Follow the red-green-refactor steps in `AGENTS.md`.
+- Every function, hook and component has a single responsibility. Split any that do more than one thing.
+- Don't duplicate code. Reuse or extract shared logic instead of copying it.
+- Components render, hooks hold state, and `src/ipc.ts` is the one way to reach Rust. Components never call `invoke` directly or hold business rules.
+- The webview never calls `fetch`, opens sockets or reaches the network. GitHub, Copilot and file access all go through Rust IPC commands.
+- Business rules, policy decisions, document edits and token metering live in Rust. The UI displays what Rust returns; it never recomputes it.
+- Vary shared components through props or `children`, not new boolean flags.
+- Wrappers of native elements forward `ref`, native props and keyboard behavior.
+- Props contain only the fields a component uses, never whole domain objects.
+- Tokens, IPC types, validation, and number and date formatting each have one definition. Search before writing. Never hand-write types that duplicate a Rust IPC contract; use the generated bindings (FOUND-004) once they exist.
+- TypeScript is `strict`; no `any`, no non-null `!` assertions, no `@ts-ignore`. Use `unknown` and narrow.
+- Client-side types use optional properties or `undefined`, not `null`. IPC types keep Rust's shape; `ipc.ts` converts `null` at the boundary.
+- Every surface handles running outside Tauri (`inTauri === false`, `pnpm --dir app/ui dev`) without crashing.
+- Tests use Vitest, Testing Library and `@testing-library/user-event` in jsdom (`pnpm --dir app/ui test`). Put each test beside its unit as `<Unit>.test.tsx`, import `describe`/`it`/`expect`/`vi` from `vitest` (no globals), and drive interactions with `userEvent`, not `fireEvent`. Example: `src/components/Button.test.tsx`.
+- Tests query by role, label and text and mock only the IPC boundary (`vi.mock('../ipc')`). No snapshot-only assertions. Adding a test dependency is an architect decision.
+- Name tests `{UnitUnderTest}_{WhatIsBeingTested}_{ExpectedResultOrAction}`, the same convention as Rust:
+  - The whole name is the `it`/`test` title; `describe` blocks only group.
+  - Always all three parts, never two. `UnitUnderTest` matches the function, hook or component exactly.
+  - A unit test covers exactly one unit. A test that exercises several is an integration test; split such unit tests and fix their harnesses.
+  - No tracking tags (issue or backlog ids) in titles.
+- Copy follows "Content fundamentals" in `design/system/README.md`: sentence case, concrete verbs, no "OK"/"Something went wrong", and every failure says where the user's work went. Use only UI text given in the issue, the design export or existing code. Where text is missing, use a `TODO(copy)` placeholder and list it in your result.
+- Sparkle means Copilot and shield means an organization rule; never use either icon for anything else.

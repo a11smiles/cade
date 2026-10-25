@@ -1,0 +1,19 @@
+name: agent-instructions
+
+on:
+  pull_request:
+    paths: ["AGENTS.md", ".github/copilot-instructions.md"]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: AGENTS.md stays under 500 words
+        run: |
+          words=$(wc -w < AGENTS.md)
+          echo "AGENTS.md: $words words"
+          test "$words" -le 500
+      - name: copilot-instructions.md is only a pointer to AGENTS.md
+        run: |
+          test "$(cat .github/copilot-instructions.md)" = 'Follow [`AGENTS.md`](../AGENTS.md).'

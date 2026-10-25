@@ -22,11 +22,6 @@ jobs:
         run: cargo clippy --workspace --exclude cade-app --all-targets -- -D warnings
       - name: Test
         run: cargo test --workspace --exclude cade-app
-  backlog:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: python3 scripts/backlog_check.py
   app:
     name: App (${{ matrix.os }})
     needs: crates
@@ -46,5 +41,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libsecret-1-dev
       - name: UI
         run: pnpm --dir app/ui install --frozen-lockfile=false && pnpm --dir app/ui build
+      - name: UI tests
+        run: pnpm --dir app/ui test
       - name: App
         run: cargo build -p cade-app
