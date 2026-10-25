@@ -1,0 +1,27 @@
+---
+applyTo: "crates/**/*.rs,app/src-tauri/**/*.rs,**/Cargo.toml,Cargo.lock,rust-toolchain.toml,rustfmt.toml,app/src-tauri/tauri.conf.json,app/src-tauri/capabilities/**"
+---
+
+- Follow the red-green-refactor steps in `AGENTS.md`.
+- Every module, type and function has a single responsibility. Split any that do more than one thing. Never mix document logic, persistence, rendering, IPC and provider calls.
+- Don't duplicate code. Reuse or extract shared logic instead of copying it. Document types belong in `cade-core`, Loro access in `cade-crdt`, policy decisions in `cade-policy`, git in `cade-git`, GitHub API calls in `cade-github`, model access in `cade-copilot`. Search (`git grep`) before writing.
+- Keep the dependency direction: `cade-core` depends on no other CADE crate; library crates never depend on `cade-app`; `app/src-tauri` only binds IPC commands, holds app state and calls the crates. No business rules in Tauri commands.
+- Add a crate dependency only through `[workspace.dependencies]` in the root `Cargo.toml`, and reference it with `.workspace = true`. Never bump `github-copilot-sdk` off its exact pin without an ADR.
+- Toolchain is pinned in `rust-toolchain.toml`, edition 2024. Code passes `cargo fmt` (`max_width = 140`) and `cargo clippy --all-targets -- -D warnings`. Never add `#[allow(...)]` to silence a lint without a comment that says why, and never at crate level without architect approval.
+- Library crates return typed errors (`thiserror`), one error enum per crate, with messages a user can act on. `anyhow` only in binaries, tests and build scripts. No `unwrap()`/`expect()` in library code paths that can fail at runtime; `expect` is allowed for proven invariants with a message saying why it holds.
+- No `unsafe` without an architect-approved reason and a `// SAFETY:` comment. Platform code (`cfg(target_os = ...)`) sits behind one function or trait per concern, and every platform gets an implementation or a compile error, never a silent no-op.
+- Add a variant (output kind, model provider, importer, exporter, DDL dialect, IaC target) as a new implementation of an existing trait, not a new `match` arm scattered across crates. Traits contain only the members their consumers call. Never `unimplemented!()`/`todo!()` in a trait impl that ships.
+- Business logic takes its dependencies (clock, keychain, network client, file system, model source) as traits or parameters, so tests use fakes. No hidden globals; no `static mut`.
+- Async: `tokio` only. Never block inside async code (`std::fs`, `std::thread::sleep`, heavy CPU) without `spawn_blocking`. Long work can be canceled and reports progress.
+- Serialized formats (`.cade`, JSON mirror, `policy.yml`, IPC payloads) are contracts. Changing one needs the architect, a version bump where the format has one (`FORMAT_VERSION`) and a migration test from the previous version.
+- IPC: Tauri commands take and return typed, `serde`-serializable structs; the TypeScript side never hand-writes types that duplicate them. Add a command to `capabilities/` only with the narrowest permission it needs. The webview never gets network, shell or file-system permissions.
+- Every network call is one an issue names, goes through `cade-github` or `cade-copilot`, and is checked by `cade-policy` first. No telemetry.
+- Never log or `Debug`-print tokens, BYOK keys, prompts, file contents or user content. Secret types implement `Debug` with redaction.
+- Public items have `///` doc comments that say what and why, in the style of `crates/cade-core/src/lib.rs`. Each crate's `lib.rs` opens with a `//!` summary.
+- Unit tests live in a `#[cfg(test)] mod tests` beside the code and have no I/O: fake clock, in-memory fakes, temp dirs only through `tempfile`. Cross-crate, file-system, git and IPC behavior get integration tests in `crates/<crate>/tests/`. GPU tests that need an adapter are marked and run separately; they are never `#[ignore]`d to make a run pass.
+- Name tests `{function_under_test}_{what_is_being_tested}_{expected_result}`, for example `project_open_corrupt_snapshot_returns_format_error`:
+  - Always all three parts, never two.
+  - `function_under_test` matches the function or method name exactly (`snake_case`).
+  - A unit test covers exactly one function. A test that exercises several is an integration test; split such unit tests and fix their harnesses.
+  - No tracking tags (issue or backlog ids) in names.
+- Comments in code may cite a backlog id (`CORE-011`) for context, as the existing crates do.
