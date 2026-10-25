@@ -164,4 +164,130 @@ mod tests {
         );
         assert_eq!(r[1].y, 16.0 + 46.0 + 8.0);
     }
+
+    fn frame(direction: Direction, gap: f32, padding: f32) -> AutoLayout {
+        AutoLayout { direction, gap, padding }
+    }
+
+    fn fixed(w: f32, h: f32) -> Child {
+        Child {
+            width: Sizing::Fixed(w),
+            height: Sizing::Fixed(h),
+        }
+    }
+
+    #[test]
+    fn layout_no_children_returns_empty() {
+        assert_eq!(layout(&frame(Direction::Row, 8.0, 16.0), 300.0, 200.0, &[]).unwrap(), vec![]);
+    }
+
+    #[test]
+    fn layout_row_places_fixed_children_after_padding_and_gap() {
+        let r = layout(
+            &frame(Direction::Row, 10.0, 20.0),
+            400.0,
+            100.0,
+            &[fixed(50.0, 30.0), fixed(60.0, 40.0)],
+        )
+        .unwrap();
+        assert_eq!(
+            r,
+            vec![
+                Rect {
+                    x: 20.0,
+                    y: 20.0,
+                    w: 50.0,
+                    h: 30.0
+                },
+                Rect {
+                    x: 80.0,
+                    y: 20.0,
+                    w: 60.0,
+                    h: 40.0
+                },
+            ]
+        );
+    }
+
+    #[test]
+    fn layout_row_fill_width_takes_remaining_main_axis_space() {
+        let fill = Child {
+            width: Sizing::Fill,
+            height: Sizing::Fixed(30.0),
+        };
+        let r = layout(&frame(Direction::Row, 10.0, 10.0), 300.0, 100.0, &[fixed(50.0, 30.0), fill]).unwrap();
+        assert_eq!(
+            r[1],
+            Rect {
+                x: 70.0,
+                y: 10.0,
+                w: 220.0,
+                h: 30.0
+            }
+        );
+    }
+
+    #[test]
+    fn layout_two_fill_children_split_free_space_equally() {
+        let fill = Child {
+            width: Sizing::Fill,
+            height: Sizing::Fixed(20.0),
+        };
+        let r = layout(&frame(Direction::Row, 0.0, 0.0), 200.0, 50.0, &[fill, fill]).unwrap();
+        assert_eq!((r[0].w, r[1].x, r[1].w), (100.0, 100.0, 100.0));
+    }
+
+    #[test]
+    fn layout_row_fill_height_stretches_across_cross_axis() {
+        let tall = Child {
+            width: Sizing::Fixed(40.0),
+            height: Sizing::Fill,
+        };
+        let r = layout(&frame(Direction::Row, 0.0, 12.0), 300.0, 100.0, &[tall]).unwrap();
+        assert_eq!(
+            r[0],
+            Rect {
+                x: 12.0,
+                y: 12.0,
+                w: 40.0,
+                h: 76.0
+            }
+        );
+    }
+
+    #[test]
+    fn layout_column_fill_height_takes_remaining_main_axis_space() {
+        let fill = Child {
+            width: Sizing::Fixed(80.0),
+            height: Sizing::Fill,
+        };
+        let r = layout(&frame(Direction::Column, 4.0, 8.0), 200.0, 200.0, &[fixed(80.0, 40.0), fill]).unwrap();
+        assert_eq!(
+            r[1],
+            Rect {
+                x: 8.0,
+                y: 52.0,
+                w: 80.0,
+                h: 140.0
+            }
+        );
+    }
+
+    #[test]
+    fn layout_hug_child_without_content_collapses_to_zero() {
+        let hug = Child {
+            width: Sizing::Hug,
+            height: Sizing::Hug,
+        };
+        let r = layout(&frame(Direction::Column, 0.0, 5.0), 100.0, 100.0, &[hug]).unwrap();
+        assert_eq!(
+            r[0],
+            Rect {
+                x: 5.0,
+                y: 5.0,
+                w: 0.0,
+                h: 0.0
+            }
+        );
+    }
 }

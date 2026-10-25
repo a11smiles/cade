@@ -17,6 +17,7 @@ applyTo: "app/ui/**/*.ts,app/ui/**/*.tsx,app/ui/**/*.mts,app/ui/**/*.cts,scripts
 - Every surface handles running outside Tauri (`inTauri === false`, `pnpm --dir app/ui dev`) without crashing.
 - Tests use Vitest, Testing Library and `@testing-library/user-event` in jsdom (`pnpm --dir app/ui test`). Put each test beside its unit as `<Unit>.test.tsx`, import `describe`/`it`/`expect`/`vi` from `vitest` (no globals), and drive interactions with `userEvent`, not `fireEvent`. Example: `src/components/Button.test.tsx`.
 - Tests query by role, label and text and mock only the IPC boundary (`vi.mock('../ipc')`). No snapshot-only assertions. Adding a test dependency is an architect decision.
+- End-to-end specs live in `app/ui/e2e/` and run with Playwright (`pnpm --dir app/ui test:e2e`) in Chromium at the default (1440 × 900) and minimum (1100 × 700) window sizes. Run a flow both outside Tauri and with `mockTauri(page)` from `e2e/tauri.ts`; extend that mock when you add an IPC command, keeping its responses shaped like the Rust command's. Compare colors against `design/system/tokens.json` through `e2e/tokens.ts`, never hard-coded values. `pnpm --dir app/ui typecheck` covers the e2e code.
 - Name tests `{UnitUnderTest}_{WhatIsBeingTested}_{ExpectedResultOrAction}`, the same convention as Rust:
   - The whole name is the `it`/`test` title; `describe` blocks only group.
   - Always all three parts, never two. `UnitUnderTest` matches the function, hook or component exactly.

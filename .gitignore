@@ -10,3 +10,5 @@ assets/icons/azure/**/*.svg
 assets/icons/azure/**/*.png
 *.tsbuildinfo
 __pycache__/
+app/ui/test-results/
+app/ui/playwright-report/

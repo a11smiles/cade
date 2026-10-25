@@ -65,9 +65,9 @@ Keep this file under 500 words; put role details in
 - `cargo fmt --all --check`
 - `cargo clippy --workspace --exclude cade-app --all-targets -- -D warnings`
 - `cargo test --workspace --exclude cade-app`
-- `pnpm --dir app/ui install`; `pnpm --dir app/ui build`;
-  `pnpm --dir app/ui test` (Vitest). Use pnpm, never npm/yarn.
-- `cargo run -p cade-app` (needs the platform webview).
+- `pnpm --dir app/ui install|build|typecheck|test` (Vitest);
+  `pnpm --dir app/ui test:e2e` (Playwright). Use pnpm, never npm/yarn.
+- `cargo test -p cade-app` (IPC); `cargo run -p cade-app`.
 
 Trunk-based `main` with stacked PRs: one branch per planned task,
 `issue-NN-<task>`, created from the task it depends on (first from `main`);

@@ -16,8 +16,9 @@ Use `domain-rule-testing` and `design-fidelity`.
 - Run the full gate yourself on the commit under review: `cargo fmt --all
   --check`, `cargo clippy --workspace --exclude cade-app --all-targets -- -D
   warnings`, `cargo test --workspace --exclude cade-app`, and `pnpm --dir
-  app/ui build`, `pnpm --dir app/ui test` and `cargo build -p cade-app`
-  when `app/` changed. Work
+  app/ui build`, `pnpm --dir app/ui typecheck`, `pnpm --dir app/ui test`,
+  `pnpm --dir app/ui test:e2e`, `cargo build -p cade-app` and `cargo test -p
+  cade-app` when `app/` changed. Work
   from a scratch copy outside the repository at a named commit, with its own
   `CARGO_TARGET_DIR`.
 - Use developer evidence to target verification, not as a substitute for your

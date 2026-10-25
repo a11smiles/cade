@@ -18,8 +18,10 @@ never npm or yarn.
   went, and unsaved or staged changes survive navigation.
 - Agree with the designer, through the architect, on who owns which components
   and styles before working in parallel.
-- Before handoff, run `pnpm --dir app/ui build` and `pnpm --dir app/ui test`
-  (the whole suite, no file or `-t` filter) and report both results. List
+- Before handoff, run `pnpm --dir app/ui build`, `pnpm --dir app/ui typecheck`,
+  `pnpm --dir app/ui test` and `pnpm --dir app/ui test:e2e` (whole suites, no
+  file, `-t` or `--grep` filter) and report each result. Add or update an e2e
+  spec for every user flow you change. List
   every new exported type, component, constant and hook with the `git grep`
   you ran for an existing equivalent and its hit, and report the hit count of
   `git grep --untracked -niE

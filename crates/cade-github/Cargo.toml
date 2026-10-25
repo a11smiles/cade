@@ -15,3 +15,8 @@ tokio.workspace = true
 serde.workspace = true
 thiserror.workspace = true
 url.workspace = true
+
+[dev-dependencies]
+wiremock.workspace = true
+serde_json.workspace = true
+octocrab.workspace = true

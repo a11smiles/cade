@@ -16,6 +16,8 @@ cargo test
 pnpm --dir app/ui install
 pnpm --dir app/ui build
 pnpm --dir app/ui test
+pnpm --dir app/ui exec playwright install chromium   # once, for end-to-end tests
+pnpm --dir app/ui test:e2e
 
 # Desktop app (needs the platform webview: WebView2 on Windows, WKWebView on macOS,
 # webkit2gtk-4.1 on Linux)

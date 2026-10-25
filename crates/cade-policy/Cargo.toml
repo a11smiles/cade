@@ -12,3 +12,6 @@ repository.workspace = true
 serde.workspace = true
 serde_yaml_ng.workspace = true
 thiserror.workspace = true
+
+[dev-dependencies]
+serde_yaml_ng.workspace = true

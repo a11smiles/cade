@@ -353,4 +353,226 @@ telemetry: off
     fn rejects_unknown_keys() {
         assert!(Policy::from_yaml("version: 1\nmodles: {}\n").is_err());
     }
+
+    fn policy(yaml: &str) -> Policy {
+        Policy::from_yaml(yaml).unwrap()
+    }
+
+    fn deny(rule: &str) -> Decision {
+        Decision::Deny { rule: rule.to_string() }
+    }
+
+    #[test]
+    fn default_values_match_documented_defaults() {
+        let p = Policy::default();
+        assert_eq!(p.version, 0);
+        assert_eq!(p.models, Models { allow: vec![], byok: true });
+        assert_eq!(
+            p.tools,
+            Tools {
+                shell: ToolMode::Ask,
+                preapproved: vec![],
+                network: Switch::On,
+                mcp: None
+            }
+        );
+        assert_eq!(
+            p.outputs,
+            Outputs {
+                design_systems: vec![],
+                ship_via: ShipVia::PullRequest,
+                iac_lint: Requirement::Optional,
+                pii_classification: Requirement::Optional,
+                strip_visio_macros: true
+            }
+        );
+        assert_eq!(p.budgets.monthly_tokens, None);
+        assert_eq!(p.telemetry, Switch::Off);
+    }
+
+    #[test]
+    fn from_yaml_version_only_returns_defaults_with_that_version() {
+        assert_eq!(
+            policy("version: 3\n"),
+            Policy {
+                version: 3,
+                ..Policy::default()
+            }
+        );
+    }
+
+    #[test]
+    fn from_yaml_partial_section_keeps_other_field_defaults() {
+        let p = policy("version: 1\ntools: { network: off }\noutputs: { iac_lint: required }\n");
+        assert_eq!(p.tools.network, Switch::Off);
+        assert_eq!(p.tools.shell, ToolMode::Ask);
+        assert_eq!(p.tools.mcp, None);
+        assert_eq!(p.outputs.iac_lint, Requirement::Required);
+        assert_eq!(p.outputs.ship_via, ShipVia::PullRequest);
+        assert!(p.outputs.strip_visio_macros);
+    }
+
+    #[test]
+    fn from_yaml_telemetry_on_parses_switch() {
+        assert_eq!(policy("version: 1\ntelemetry: on\n").telemetry, Switch::On);
+    }
+
+    #[test]
+    fn from_yaml_missing_version_returns_parse_error() {
+        assert!(matches!(Policy::from_yaml("telemetry: off\n"), Err(PolicyError::Parse(_))));
+    }
+
+    #[test]
+    fn from_yaml_unknown_nested_key_returns_parse_error() {
+        let err = Policy::from_yaml("version: 1\ntools: { shel: deny }\n").unwrap_err();
+        assert!(err.to_string().starts_with("policy.yml is not valid: "), "{err}");
+        assert!(err.to_string().contains("shel"), "{err}");
+    }
+
+    #[test]
+    fn from_yaml_invalid_enum_value_returns_parse_error() {
+        assert!(matches!(
+            Policy::from_yaml("version: 1\ntools: { shell: sometimes }\n"),
+            Err(PolicyError::Parse(_))
+        ));
+        assert!(matches!(
+            Policy::from_yaml("version: 1\noutputs: { ship_via: email }\n"),
+            Err(PolicyError::Parse(_))
+        ));
+    }
+
+    #[test]
+    fn from_yaml_malformed_yaml_returns_parse_error() {
+        assert!(matches!(Policy::from_yaml("version: [1\n"), Err(PolicyError::Parse(_))));
+        assert!(matches!(Policy::from_yaml(""), Err(PolicyError::Parse(_))));
+    }
+
+    #[test]
+    fn decide_use_model_empty_allowlist_allows_any_model() {
+        assert_eq!(Policy::default().decide(&Action::UseModel("anything")), Decision::Allow);
+    }
+
+    #[test]
+    fn decide_use_model_listed_model_in_other_case_allows() {
+        let p = policy("version: 1\nmodels: { allow: [Opus-5.5] }\n");
+        assert_eq!(p.decide(&Action::UseModel("opus-5.5")), Decision::Allow);
+    }
+
+    #[test]
+    fn decide_use_model_unlisted_model_denies_with_models_allow_rule() {
+        let p = policy("version: 1\nmodels: { allow: [opus-5.5] }\n");
+        assert_eq!(p.decide(&Action::UseModel("opus-5")), deny("models.allow"));
+    }
+
+    #[test]
+    fn decide_use_byok_disabled_denies_with_byok_rule() {
+        let p = policy("version: 1\nmodels: { byok: false }\n");
+        assert_eq!(p.decide(&Action::UseByok), deny("models.byok = false"));
+    }
+
+    #[test]
+    fn decide_run_shell_each_mode_maps_to_its_decision() {
+        let allow = policy("version: 1\ntools: { shell: allow }\n");
+        let ask = policy("version: 1\ntools: { shell: ask }\n");
+        let denied = policy("version: 1\ntools: { shell: deny }\n");
+        assert_eq!(allow.decide(&Action::RunShell("ls")), Decision::Allow);
+        assert_eq!(ask.decide(&Action::RunShell("ls")), Decision::Ask);
+        assert_eq!(denied.decide(&Action::RunShell("ls")), deny("tools.shell = deny"));
+    }
+
+    #[test]
+    fn decide_run_shell_preapproved_command_allows_even_when_shell_denied() {
+        let p = policy("version: 1\ntools: { shell: deny, preapproved: [bicep] }\n");
+        assert_eq!(p.decide(&Action::RunShell("bicep")), Decision::Allow);
+        assert_eq!(p.decide(&Action::RunShell("bicep build main.bicep")), Decision::Allow);
+    }
+
+    #[test]
+    fn decide_run_shell_surrounding_whitespace_is_trimmed_before_matching() {
+        let p = policy("version: 1\ntools: { shell: deny, preapproved: [bicep] }\n");
+        assert_eq!(p.decide(&Action::RunShell("  bicep build  ")), Decision::Allow);
+    }
+
+    #[test]
+    fn decide_run_shell_prefix_without_word_boundary_falls_back_to_shell_mode() {
+        let p = policy("version: 1\ntools: { shell: deny, preapproved: [bicep] }\n");
+        assert_eq!(p.decide(&Action::RunShell("bicepx build")), deny("tools.shell = deny"));
+        assert_eq!(p.decide(&Action::RunShell("sudo bicep")), deny("tools.shell = deny"));
+    }
+
+    #[test]
+    fn decide_use_mcp_server_no_allowlist_allows_any_server() {
+        assert_eq!(Policy::default().decide(&Action::UseMcpServer("random")), Decision::Allow);
+    }
+
+    #[test]
+    fn decide_use_mcp_server_allowlist_allows_listed_and_denies_others() {
+        let p = policy("version: 1\ntools: { mcp: [azure-docs] }\n");
+        assert_eq!(p.decide(&Action::UseMcpServer("azure-docs")), Decision::Allow);
+        assert_eq!(p.decide(&Action::UseMcpServer("Azure-Docs")), deny("tools.mcp"));
+        assert_eq!(p.decide(&Action::UseMcpServer("random")), deny("tools.mcp"));
+    }
+
+    #[test]
+    fn decide_use_mcp_server_empty_allowlist_denies_every_server() {
+        let p = policy("version: 1\ntools: { mcp: [] }\n");
+        assert_eq!(p.decide(&Action::UseMcpServer("azure-docs")), deny("tools.mcp"));
+    }
+
+    #[test]
+    fn decide_use_design_system_empty_allowlist_allows_any_system() {
+        assert_eq!(Policy::default().decide(&Action::UseDesignSystem("fabrikam-ds@1")), Decision::Allow);
+    }
+
+    #[test]
+    fn decide_use_design_system_listed_major_allows_exact_and_minor_versions() {
+        let p = policy("version: 1\noutputs: { design_systems: [contoso-ds@4] }\n");
+        assert_eq!(p.decide(&Action::UseDesignSystem("contoso-ds@4")), Decision::Allow);
+        assert_eq!(p.decide(&Action::UseDesignSystem("contoso-ds@4.2")), Decision::Allow);
+    }
+
+    #[test]
+    fn decide_use_design_system_other_version_denies_with_design_systems_rule() {
+        let p = policy("version: 1\noutputs: { design_systems: [contoso-ds@4] }\n");
+        assert_eq!(p.decide(&Action::UseDesignSystem("contoso-ds@5")), deny("outputs.design_systems"));
+        assert_eq!(p.decide(&Action::UseDesignSystem("contoso-ds@40")), deny("outputs.design_systems"));
+    }
+
+    #[test]
+    fn decide_ship_by_push_each_ship_via_maps_to_its_decision() {
+        let push = policy("version: 1\noutputs: { ship_via: push }\n");
+        assert_eq!(push.decide(&Action::ShipByPush), Decision::Allow);
+        assert_eq!(
+            Policy::default().decide(&Action::ShipByPush),
+            deny("outputs.ship_via = pull_request")
+        );
+    }
+
+    #[test]
+    fn decide_send_telemetry_each_switch_maps_to_its_decision() {
+        assert_eq!(
+            policy("version: 1\ntelemetry: on\n").decide(&Action::SendTelemetry),
+            Decision::Allow
+        );
+        assert_eq!(Policy::default().decide(&Action::SendTelemetry), deny("telemetry = off"));
+    }
+
+    #[test]
+    fn decide_spend_tokens_no_budget_allows_any_amount() {
+        let a = Action::SpendTokens {
+            used: u64::MAX / 2,
+            next: u64::MAX / 2,
+        };
+        assert_eq!(Policy::default().decide(&a), Decision::Allow);
+    }
+
+    #[test]
+    fn decide_spend_tokens_exactly_at_budget_allows_and_one_over_denies() {
+        let p = policy("version: 1\nbudgets: { monthly_tokens: 1000 }\n");
+        assert_eq!(p.decide(&Action::SpendTokens { used: 900, next: 100 }), Decision::Allow);
+        assert_eq!(
+            p.decide(&Action::SpendTokens { used: 900, next: 101 }),
+            deny("budgets.monthly_tokens")
+        );
+    }
 }
