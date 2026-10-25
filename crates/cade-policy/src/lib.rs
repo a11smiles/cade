@@ -222,7 +222,7 @@ impl Policy {
             }
             Action::RunShell(cmd) => {
                 let cmd = cmd.trim();
-                if self.tools.preapproved.iter().any(|p| cmd == p || cmd.starts_with(&format!("{p} "))) {
+                if !has_shell_operator(cmd) && self.tools.preapproved.iter().any(|p| cmd == p || cmd.starts_with(&format!("{p} "))) {
                     return Decision::Allow;
                 }
                 match self.tools.shell {
@@ -262,11 +262,17 @@ impl Policy {
                 Switch::Off => deny("telemetry = off"),
             },
             Action::SpendTokens { used, next } => match self.budgets.monthly_tokens {
-                Some(budget) if used + next > budget => deny("budgets.monthly_tokens"),
+                Some(budget) if used.saturating_add(*next) > budget => deny("budgets.monthly_tokens"),
                 _ => Decision::Allow,
             },
         }
     }
+}
+
+/// True when `cmd` could run more than one command or redirect I/O, so a
+/// preapproved prefix can't vouch for the rest of it.
+fn has_shell_operator(cmd: &str) -> bool {
+    cmd.contains(['&', '|', ';', '`', '<', '>', '\n', '\r']) || cmd.contains("$(")
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -501,6 +507,38 @@ telemetry: off
     }
 
     #[test]
+    fn decide_run_shell_operator_after_preapproved_prefix_falls_back_to_shell_mode() {
+        let p = policy("version: 1\ntools: { shell: deny, preapproved: [\"terraform plan\"] }\n");
+        for cmd in [
+            "terraform plan && rm -rf ~",
+            "terraform plan || rm -rf ~",
+            "terraform plan; rm -rf ~",
+            "terraform plan | sh",
+            "terraform plan & rm -rf ~",
+            "terraform plan `rm -rf ~`",
+            "terraform plan $(rm -rf ~)",
+            "terraform plan > ~/.bashrc",
+            "terraform plan < /etc/passwd",
+            "terraform plan\nrm -rf ~",
+        ] {
+            assert_eq!(p.decide(&Action::RunShell(cmd)), deny("tools.shell = deny"), "{cmd:?}");
+        }
+    }
+
+    #[test]
+    fn decide_run_shell_preapproved_command_with_plain_arguments_still_allows() {
+        let p = policy("version: 1\ntools: { shell: deny, preapproved: [\"terraform plan\"] }\n");
+        assert_eq!(p.decide(&Action::RunShell("terraform plan")), Decision::Allow);
+        assert_eq!(p.decide(&Action::RunShell("terraform plan -out x")), Decision::Allow);
+    }
+
+    #[test]
+    fn decide_run_shell_operator_in_ask_mode_asks_instead_of_allowing() {
+        let p = policy("version: 1\ntools: { shell: ask, preapproved: [bicep] }\n");
+        assert_eq!(p.decide(&Action::RunShell("bicep build; curl evil.example")), Decision::Ask);
+    }
+
+    #[test]
     fn decide_use_mcp_server_no_allowlist_allows_any_server() {
         assert_eq!(Policy::default().decide(&Action::UseMcpServer("random")), Decision::Allow);
     }
@@ -572,6 +610,22 @@ telemetry: off
         assert_eq!(p.decide(&Action::SpendTokens { used: 900, next: 100 }), Decision::Allow);
         assert_eq!(
             p.decide(&Action::SpendTokens { used: 900, next: 101 }),
+            deny("budgets.monthly_tokens")
+        );
+    }
+
+    #[test]
+    fn decide_spend_tokens_overflowing_sum_denies() {
+        let p = policy("version: 1\nbudgets: { monthly_tokens: 1000 }\n");
+        assert_eq!(
+            p.decide(&Action::SpendTokens { used: u64::MAX, next: 1 }),
+            deny("budgets.monthly_tokens")
+        );
+        assert_eq!(
+            p.decide(&Action::SpendTokens {
+                used: u64::MAX,
+                next: u64::MAX
+            }),
             deny("budgets.monthly_tokens")
         );
     }
