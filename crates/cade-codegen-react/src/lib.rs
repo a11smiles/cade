@@ -101,4 +101,78 @@ mod tests {
         assert!(tsx.contains("<Stepper.Page step={1} title=\"What happened?\">"));
         assert!(tsx.contains("<DateField label=\"Date of incident\" />"));
     }
+
+    #[test]
+    fn element_new_builders_set_props_text_and_children_in_order() {
+        let e = Element::new("Card")
+            .prop("tone", "info")
+            .prop("count", "{3}")
+            .text("Hello")
+            .child(Element::new("Badge"))
+            .child(Element::new("Button"));
+        assert_eq!(
+            e,
+            Element {
+                component: "Card".into(),
+                props: vec![("tone".into(), "info".into()), ("count".into(), "{3}".into())],
+                children: vec![Element::new("Badge"), Element::new("Button")],
+                text: Some("Hello".into()),
+            }
+        );
+    }
+
+    #[test]
+    fn screen_nested_tree_emits_exact_tsx() {
+        let tree = Element::new("Stepper.Page")
+            .prop("step", "{1}")
+            .prop("title", "What happened?")
+            .child(Element::new("DateField").prop("label", "Date of incident"))
+            .child(Element::new("Button").prop("variant", "primary").text("Continue"));
+        assert_eq!(
+            screen("IncidentStep", "@contoso/ds", &tree),
+            "import { Button, DateField, Stepper } from '@contoso/ds';\n\
+             \n\
+             export function IncidentStep() {\n\
+             \x20 return (\n\
+             \x20   <Stepper.Page step={1} title=\"What happened?\">\n\
+             \x20     <DateField label=\"Date of incident\" />\n\
+             \x20     <Button variant=\"primary\">\n\
+             \x20       Continue\n\
+             \x20     </Button>\n\
+             \x20   </Stepper.Page>\n\
+             \x20 );\n\
+             }\n"
+        );
+    }
+
+    #[test]
+    fn screen_single_empty_element_emits_self_closing_tag() {
+        assert_eq!(
+            screen("Empty", "@contoso/ds", &Element::new("Spacer")),
+            "import { Spacer } from '@contoso/ds';\n\nexport function Empty() {\n  return (\n    <Spacer />\n  );\n}\n"
+        );
+    }
+
+    #[test]
+    fn screen_lowercase_html_elements_are_not_imported() {
+        let tree = Element::new("div")
+            .child(Element::new("Button").text("Go"))
+            .child(Element::new("span"));
+        assert!(screen("S", "@contoso/ds", &tree).starts_with("import { Button } from '@contoso/ds';\n"));
+    }
+
+    #[test]
+    fn screen_repeated_and_dotted_components_import_each_root_once() {
+        let tree = Element::new("Form")
+            .child(Element::new("Form.Row").child(Element::new("TextField")))
+            .child(Element::new("Form.Row").child(Element::new("TextField")));
+        assert!(screen("S", "@contoso/ds", &tree).starts_with("import { Form, TextField } from '@contoso/ds';\n"));
+    }
+
+    #[test]
+    fn screen_text_and_children_puts_text_before_children() {
+        let tree = Element::new("Callout").text("Heads up").child(Element::new("Link").text("Details"));
+        let tsx = screen("S", "@contoso/ds", &tree);
+        assert!(tsx.contains("    <Callout>\n      Heads up\n      <Link>\n        Details\n      </Link>\n    </Callout>\n"));
+    }
 }

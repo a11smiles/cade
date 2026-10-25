@@ -164,8 +164,8 @@ Owner: application architect.
      - `cargo test --workspace --exclude cade-app`, the whole workspace,
        never a hand-picked `-p` list: a change to `cade-core` breaks every
        crate that uses it;
-     - `pnpm --dir app/ui build`, `pnpm --dir app/ui test` and `cargo build
-       -p cade-app` for any level
+     - `pnpm --dir app/ui build`, `typecheck`, `test` and `test:e2e`, plus
+       `cargo build -p cade-app` and `cargo test -p cade-app`, for any level
        that touches `app/` or a crate `cade-app` depends on.
 
      Save each result as a log named `<level>-<sha>` that lists the test

@@ -22,7 +22,9 @@ CADE is a local, cross-platform design workbench driven by GitHub Copilot. It's 
 cargo test                        # all crates; no webview needed
 pnpm --dir app/ui install
 pnpm --dir app/ui build           # regenerates tokens.css, type-checks, bundles
-pnpm --dir app/ui test            # UI tests (Vitest + Testing Library, jsdom)
+pnpm --dir app/ui test            # UI unit tests (Vitest + Testing Library, jsdom)
+pnpm --dir app/ui test:e2e        # UI end-to-end (Playwright, Chromium; mock Tauri IPC)
+cargo test -p cade-app            # Tauri IPC commands (needs the platform webview)
 cargo run -p cade-app             # desktop app (needs the platform webview)
 ```
 

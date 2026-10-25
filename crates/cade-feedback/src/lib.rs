@@ -239,4 +239,192 @@ mod tests {
         assert_eq!(FeedbackKind::FeatureRequest.template(), "feature_request.yml");
         assert_eq!(FeedbackKind::Comment.labels(), &["feedback"]);
     }
+
+    fn comment(title: &str, text: &str) -> Feedback {
+        Feedback {
+            kind: FeedbackKind::Comment,
+            title: title.into(),
+            answers: vec![Answer {
+                heading: "Your comment".into(),
+                text: text.into(),
+            }],
+            environment: Environment::default(),
+            screenshot_url: None,
+        }
+    }
+
+    #[test]
+    fn labels_bug_and_feature_request_match_issue_forms() {
+        assert_eq!(FeedbackKind::Bug.labels(), &["bug", "needs-triage"]);
+        assert_eq!(FeedbackKind::FeatureRequest.labels(), &["enhancement"]);
+    }
+
+    #[test]
+    fn template_bug_and_comment_name_their_forms() {
+        assert_eq!(FeedbackKind::Bug.template(), "bug.yml");
+        assert_eq!(FeedbackKind::Comment.template(), "comment.yml");
+    }
+
+    #[test]
+    fn title_prefix_each_kind_matches_its_form_title() {
+        assert_eq!(FeedbackKind::Bug.title_prefix(), "[Bug] ");
+        assert_eq!(FeedbackKind::FeatureRequest.title_prefix(), "[Feature] ");
+        assert_eq!(FeedbackKind::Comment.title_prefix(), "[Comment] ");
+    }
+
+    #[test]
+    fn to_issue_comment_without_environment_lays_out_exact_body() {
+        let i = comment("  Love the canvas  ", "  Fast on 10k layers.  ").to_issue().unwrap();
+        assert_eq!(
+            i,
+            IssueDraft {
+                title: "[Comment] Love the canvas".into(),
+                body: "### Your comment\n\nFast on 10k layers.\n\n<sub>Sent from CADE (Help › Send feedback).</sub>\n".into(),
+                labels: vec!["feedback".into()],
+            }
+        );
+    }
+
+    #[test]
+    fn to_issue_feature_request_uses_feature_prefix_and_enhancement_label() {
+        let mut f = comment("Export to Lottie", "Needed for motion");
+        f.kind = FeedbackKind::FeatureRequest;
+        let i = f.to_issue().unwrap();
+        assert_eq!(i.title, "[Feature] Export to Lottie");
+        assert_eq!(i.labels, vec!["enhancement"]);
+    }
+
+    #[test]
+    fn to_issue_whitespace_only_first_answer_returns_missing_answer_with_heading() {
+        assert_eq!(
+            comment("Title", " \n\t ").to_issue(),
+            Err(FeedbackError::MissingAnswer("Your comment".into()))
+        );
+    }
+
+    #[test]
+    fn to_issue_title_at_256_characters_with_prefix_is_accepted() {
+        let prefix = FeedbackKind::Comment.title_prefix().chars().count();
+        let title = "é".repeat(256 - prefix);
+        assert_eq!(comment(&title, "x").to_issue().unwrap().title.chars().count(), 256);
+    }
+
+    #[test]
+    fn to_issue_title_over_256_characters_with_prefix_returns_title_too_long() {
+        let prefix = FeedbackKind::Comment.title_prefix().chars().count();
+        let title = "é".repeat(257 - prefix);
+        assert_eq!(comment(&title, "x").to_issue(), Err(FeedbackError::TitleTooLong));
+    }
+
+    #[test]
+    fn to_issue_title_is_redacted() {
+        let i = comment("Crash for ann@contoso.com", "x").to_issue().unwrap();
+        assert_eq!(i.title, "[Comment] Crash for <email>");
+    }
+
+    #[test]
+    fn to_issue_screenshot_url_adds_screenshot_section() {
+        let mut f = comment("t", "x");
+        f.screenshot_url = Some("https://github.com/user-attachments/assets/abc".into());
+        let body = f.to_issue().unwrap().body;
+        assert!(
+            body.contains("\n\n### Screenshot\n\n![screenshot](https://github.com/user-attachments/assets/abc)\n\n<sub>"),
+            "{body}"
+        );
+    }
+
+    #[test]
+    fn to_issue_every_environment_item_opted_out_omits_environment_section() {
+        let mut f = bug();
+        f.environment = Environment::default();
+        assert!(!f.to_issue().unwrap().body.contains("Environment"));
+    }
+
+    #[test]
+    fn to_issue_all_environment_items_listed_in_order_and_redacted() {
+        let mut f = comment("t", "x");
+        f.environment = Environment {
+            app_version: Some("0.1.0".into()),
+            os: Some("Linux at /home/ann/x".into()),
+            gpu: Some("Apple M4".into()),
+            policy_version: Some("12".into()),
+            logs: None,
+        };
+        let body = f.to_issue().unwrap().body;
+        assert!(
+            body.contains(
+                "<details><summary>Environment</summary>\n\n\
+                 - **CADE version:** 0.1.0\n\
+                 - **Operating system:** Linux at /home/<user>/x\n\
+                 - **GPU and renderer:** Apple M4\n\
+                 - **Policy version:** 12\n\
+                 \n</details>\n\n"
+            ),
+            "{body}"
+        );
+    }
+
+    #[test]
+    fn to_issue_logs_only_adds_redacted_code_block_in_environment() {
+        let mut f = comment("t", "x");
+        f.environment.logs = Some("auth ok ghp_abcdefghijklmnopqrstuvwxyz0123".into());
+        let body = f.to_issue().unwrap().body;
+        assert!(
+            body.contains("<details><summary>Environment</summary>\n\n\n```text\nauth ok <redacted-secret>\n```\n\n</details>"),
+            "{body}"
+        );
+        assert!(!body.contains("ghp_"));
+    }
+
+    #[test]
+    fn redact_each_github_token_prefix_is_redacted() {
+        for p in ["ghp_", "gho_", "ghu_", "ghs_", "ghr_"] {
+            let t = format!("{p}{}", "A1b2C3d4E5f6G7h8I9j0K1");
+            assert_eq!(redact(&format!("token {t} end")), "token <redacted-secret> end", "{p}");
+        }
+    }
+
+    #[test]
+    fn redact_fine_grained_pat_is_redacted() {
+        let pat = "github_pat_11ABCDEFG0123456789_abcdefghijklmnopqrstuvwxyz";
+        assert_eq!(redact(pat), "<redacted-secret>");
+    }
+
+    #[test]
+    fn redact_model_provider_and_cloud_keys_are_redacted() {
+        assert_eq!(redact("key=sk-ant-api03-AbCdEfGhIjKlMnOpQrStUv"), "key=<redacted-secret>");
+        assert_eq!(redact("OPENAI sk-proj-0123456789abcdefghij"), "OPENAI <redacted-secret>");
+        assert_eq!(redact("xoxb-1234567890-abcdef"), "<redacted-secret>");
+        assert_eq!(redact("AKIAABCDEFGHIJKLMNOP"), "<redacted-secret>");
+    }
+
+    #[test]
+    fn redact_short_token_lookalike_is_left_alone() {
+        assert_eq!(redact("ghp_short and sk-tiny"), "ghp_short and sk-tiny");
+    }
+
+    #[test]
+    fn redact_linux_and_lowercase_windows_home_paths_keep_rest_of_path() {
+        assert_eq!(redact("/home/ann/designs/a.cade"), "/home/<user>/designs/a.cade");
+        assert_eq!(redact(r"c:\users\Ann\Desktop"), r"c:\users\<user>\Desktop");
+    }
+
+    #[test]
+    fn redact_lowercase_bearer_header_is_redacted() {
+        assert_eq!(redact("authorization: bearer eyJ.abc.def"), "authorization: bearer <redacted>");
+    }
+
+    #[test]
+    fn redact_every_occurrence_is_replaced() {
+        assert_eq!(
+            redact("a@b.co, c@d.org and /Users/x/1 /Users/y/2"),
+            "<email>, <email> and /Users/<user>/1 /Users/<user>/2"
+        );
+    }
+
+    #[test]
+    fn redact_plain_text_is_unchanged() {
+        let s = "Step 3: open the Layers panel at 1440 × 900.";
+        assert_eq!(redact(s), s);
+    }
 }

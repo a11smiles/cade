@@ -32,3 +32,6 @@ cade-copilot.workspace = true
 cade-ddl.workspace = true
 cade-iac.workspace = true
 cade-system.workspace = true
+
+[dev-dependencies]
+tauri = { version = "2.12", features = ["test"] }

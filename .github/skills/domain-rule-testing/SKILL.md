@@ -40,8 +40,9 @@ Test approved backlog rules. Don't write a test that expects behavior listed in
 6. Before handoff, developers run the affected suites unfiltered: `cargo test
    --workspace --exclude cade-app`, never a `-p` list or a test-name filter,
    because a change in one crate breaks the crates that use it. UI changes
-   also run `pnpm --dir app/ui build` and the whole `pnpm --dir app/ui test`
-   suite, never a file or `-t` filter.
+   also run `pnpm --dir app/ui build`, `typecheck`, and the whole `test` and
+   `test:e2e` suites, never a file, `-t` or `--grep` filter. Changes in
+   `app/src-tauri` also run `cargo test -p cade-app`.
    - A refactor that adds a guard or any other new behavior needs its own
      test that fails first.
    - Run each new test and save its failing output to a log before the

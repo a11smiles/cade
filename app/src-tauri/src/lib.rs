@@ -70,15 +70,21 @@ async fn submit_feedback(feedback: Feedback) -> Result<String, CommandError> {
     Ok(url)
 }
 
+/// State and IPC commands for any runtime, so tests drive the same set the app registers.
+fn with_commands<R: tauri::Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R> {
+    builder.manage(AppState::default()).invoke_handler(tauri::generate_handler![
+        current_policy,
+        check_shell,
+        preview_feedback,
+        submit_feedback
+    ])
+}
+
 pub fn run() {
-    tauri::Builder::default()
-        .manage(AppState::default())
-        .invoke_handler(tauri::generate_handler![
-            current_policy,
-            check_shell,
-            preview_feedback,
-            submit_feedback
-        ])
+    with_commands(tauri::Builder::default())
         .run(tauri::generate_context!())
         .expect("error while running CADE");
 }
+
+#[cfg(test)]
+mod tests;

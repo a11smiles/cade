@@ -205,6 +205,30 @@ mod tests {
     }
 
     #[test]
+    fn web_base_each_host_maps_to_its_sign_in_root() {
+        assert_eq!(Host::Dotcom.web_base(), "https://github.com");
+        assert_eq!(Host::GheCom("contoso".into()).web_base(), "https://contoso.ghe.com");
+        assert_eq!(
+            Host::Server(Url::parse("https://github.contoso.com/").unwrap()).web_base(),
+            "https://github.contoso.com"
+        );
+    }
+
+    #[test]
+    fn api_base_server_under_a_path_keeps_the_path_without_double_slash() {
+        let host = Host::Server(Url::parse("https://tools.contoso.com/github/").unwrap());
+        assert_eq!(host.api_base(), "https://tools.contoso.com/github/api/v3");
+        assert_eq!(host.web_base(), "https://tools.contoso.com/github");
+    }
+
+    #[test]
+    fn scopes_feedback_scope_is_requested_separately_from_base_scopes() {
+        assert_eq!(BASE_SCOPES, ["read:user", "read:org", "repo"]);
+        assert_eq!(FEEDBACK_SCOPES, ["public_repo"]);
+        assert!(!BASE_SCOPES.contains(&"public_repo"));
+    }
+
+    #[test]
     fn feedback_goes_to_the_cade_repo() {
         assert_eq!(FEEDBACK_REPO.1, "cade");
     }

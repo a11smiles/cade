@@ -163,4 +163,178 @@ mod tests {
         let layers: Vec<Layer> = plan.iter().map(|(l, _)| *l).collect();
         assert_eq!(layers, vec![Layer::Architecture, Layer::Data, Layer::App]);
     }
+
+    fn item(layer: Layer, key: &str) -> Item {
+        Item::new(layer, key)
+    }
+
+    #[test]
+    fn item_new_copies_layer_and_key_returns_item() {
+        assert_eq!(
+            Item::new(Layer::App, "StatusBadge"),
+            Item {
+                layer: Layer::App,
+                key: "StatusBadge".to_string()
+            }
+        );
+    }
+
+    #[test]
+    fn status_target_missing_and_pending_returns_missing() {
+        let mut g = SystemGraph::default();
+        let from = item(Layer::App, "PHOTO_CONTAINER");
+        g.add_item(from.clone());
+        g.mark_pending(from.clone());
+        let b = Binding {
+            from,
+            to: item(Layer::Architecture, "setting:PHOTO_CONTAINER"),
+            description: String::new(),
+        };
+        assert_eq!(g.status(&b), Status::Missing);
+    }
+
+    #[test]
+    fn status_source_pending_returns_pending() {
+        let mut g = SystemGraph::default();
+        let (from, to) = (item(Layer::Data, "migration 0007"), item(Layer::Architecture, "sql-claims-stg"));
+        g.add_item(from.clone());
+        g.add_item(to.clone());
+        g.mark_pending(from.clone());
+        let b = Binding {
+            from,
+            to,
+            description: String::new(),
+        };
+        assert_eq!(g.status(&b), Status::Pending);
+    }
+
+    #[test]
+    fn status_target_pending_returns_pending() {
+        let mut g = SystemGraph::default();
+        let (from, to) = (item(Layer::Data, "Claim.status"), item(Layer::Data, "migration 0007"));
+        g.add_item(to.clone());
+        g.mark_pending(to.clone());
+        let b = Binding {
+            from,
+            to,
+            description: String::new(),
+        };
+        assert_eq!(g.status(&b), Status::Pending);
+    }
+
+    #[test]
+    fn status_source_not_registered_target_present_returns_in_sync() {
+        let mut g = SystemGraph::default();
+        let to = item(Layer::App, "StatusBadge");
+        g.add_item(to.clone());
+        let b = Binding {
+            from: item(Layer::Data, "Claim.status"),
+            to,
+            description: String::new(),
+        };
+        assert_eq!(g.status(&b), Status::InSync);
+    }
+
+    #[test]
+    fn bindings_several_bound_keeps_insertion_order_and_descriptions() {
+        let mut g = SystemGraph::default();
+        g.bind(item(Layer::Data, "b"), item(Layer::App, "y"), "second added first");
+        g.bind(item(Layer::Data, "a"), item(Layer::App, "x"), "first added second");
+        let got: Vec<(&str, &str)> = g.bindings().map(|(b, _)| (b.from.key.as_str(), b.description.as_str())).collect();
+        assert_eq!(got, vec![("b", "second added first"), ("a", "first added second")]);
+    }
+
+    #[test]
+    fn bindings_empty_graph_returns_nothing() {
+        assert_eq!(SystemGraph::default().bindings().count(), 0);
+    }
+
+    #[test]
+    fn impact_unknown_item_returns_empty() {
+        let g = claims();
+        assert!(g.impact(&item(Layer::App, "Nowhere")).is_empty());
+    }
+
+    #[test]
+    fn impact_chain_returns_breadth_first_order() {
+        let mut g = SystemGraph::default();
+        let (a, b, c, d) = (
+            item(Layer::Data, "a"),
+            item(Layer::Data, "b"),
+            item(Layer::App, "c"),
+            item(Layer::Architecture, "d"),
+        );
+        g.bind(a.clone(), b.clone(), "");
+        g.bind(b.clone(), d.clone(), "");
+        g.bind(a.clone(), c.clone(), "");
+        assert_eq!(g.impact(&a), vec![b, c, d]);
+    }
+
+    #[test]
+    fn impact_diamond_lists_shared_target_once() {
+        let mut g = SystemGraph::default();
+        let (a, b, c, d) = (
+            item(Layer::Data, "a"),
+            item(Layer::App, "b"),
+            item(Layer::App, "c"),
+            item(Layer::Architecture, "d"),
+        );
+        g.bind(a.clone(), b.clone(), "");
+        g.bind(a.clone(), c.clone(), "");
+        g.bind(b, d.clone(), "");
+        g.bind(c, d.clone(), "");
+        assert_eq!(g.impact(&a).iter().filter(|i| **i == d).count(), 1);
+    }
+
+    #[test]
+    fn impact_cycle_terminates_with_each_item_once() {
+        let mut g = SystemGraph::default();
+        let (a, b, c) = (item(Layer::Data, "a"), item(Layer::App, "b"), item(Layer::Architecture, "c"));
+        g.bind(a.clone(), b.clone(), "");
+        g.bind(b.clone(), c.clone(), "");
+        g.bind(c.clone(), b.clone(), "");
+        assert_eq!(g.impact(&a), vec![b, c]);
+    }
+
+    #[test]
+    fn impact_does_not_follow_bindings_backwards() {
+        let g = claims();
+        assert!(g.impact(&item(Layer::App, "StatusBadge")).is_empty());
+    }
+
+    #[test]
+    fn deploy_order_no_changes_returns_empty_plan() {
+        assert!(claims().deploy_order(&[]).is_empty());
+    }
+
+    #[test]
+    fn deploy_order_unbound_change_returns_only_its_layer() {
+        let g = SystemGraph::default();
+        let x = item(Layer::App, "Standalone");
+        assert_eq!(g.deploy_order(std::slice::from_ref(&x)), vec![(Layer::App, vec![x])]);
+    }
+
+    #[test]
+    fn deploy_order_claims_change_groups_items_sorted_within_layers() {
+        let plan = claims().deploy_order(&[item(Layer::Data, "Claim.status")]);
+        assert_eq!(
+            plan,
+            vec![
+                (Layer::Architecture, vec![item(Layer::Architecture, "sql-claims-stg")]),
+                (
+                    Layer::Data,
+                    vec![item(Layer::Data, "Claim.status"), item(Layer::Data, "migration 0007")]
+                ),
+                (Layer::App, vec![item(Layer::App, "StatusBadge")]),
+            ]
+        );
+    }
+
+    #[test]
+    fn deploy_order_overlapping_changes_lists_each_item_once() {
+        let g = claims();
+        let plan = g.deploy_order(&[item(Layer::Data, "Claim.status"), item(Layer::Data, "migration 0007")]);
+        let total: usize = plan.iter().map(|(_, v)| v.len()).sum();
+        assert_eq!(total, 4);
+    }
 }

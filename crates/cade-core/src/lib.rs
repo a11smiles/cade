@@ -310,4 +310,173 @@ mod tests {
             assert!(!k.tag().is_empty());
         }
     }
+
+    #[test]
+    fn tag_each_output_kind_returns_its_ui_label() {
+        let tags: Vec<&str> = OutputKind::ALL.iter().map(|k| k.tag()).collect();
+        assert_eq!(
+            tags,
+            [
+                "APP",
+                "IMAGE",
+                "DECK",
+                "DOCUMENT",
+                "MOTION",
+                "DIAGRAM",
+                "ARCHITECTURE",
+                "DATA MODEL"
+            ]
+        );
+    }
+
+    #[test]
+    fn output_kind_serialize_multi_word_kind_uses_kebab_case() {
+        assert_eq!(serde_json::to_string(&OutputKind::DataModel).unwrap(), "\"data-model\"");
+        assert_eq!(
+            serde_json::from_str::<OutputKind>("\"architecture\"").unwrap(),
+            OutputKind::Architecture
+        );
+    }
+
+    #[test]
+    fn node_id_new_each_call_returns_distinct_v7_id() {
+        let (a, b) = (NodeId::new(), NodeId::new());
+        assert_ne!(a, b);
+        assert_eq!(a.0.get_version_num(), 7);
+    }
+
+    #[test]
+    fn node_id_default_returns_v7_id() {
+        assert_eq!(NodeId::default().0.get_version_num(), 7);
+    }
+
+    #[test]
+    fn node_id_fmt_display_matches_hyphenated_uuid() {
+        let id = NodeId(Uuid::parse_str("0192f3a4-5b6c-7d8e-9f01-23456789abcd").unwrap());
+        assert_eq!(id.to_string(), "0192f3a4-5b6c-7d8e-9f01-23456789abcd");
+    }
+
+    #[test]
+    fn node_id_serialize_transparent_writes_bare_uuid_string() {
+        let id = NodeId(Uuid::parse_str("0192f3a4-5b6c-7d8e-9f01-23456789abcd").unwrap());
+        assert_eq!(serde_json::to_string(&id).unwrap(), "\"0192f3a4-5b6c-7d8e-9f01-23456789abcd\"");
+    }
+
+    #[test]
+    fn from_hex_short_form_repeats_each_digit() {
+        assert_eq!(
+            Rgba::from_hex("#1a3").unwrap(),
+            Rgba {
+                r: 0x11,
+                g: 0xaa,
+                b: 0x33,
+                a: 255
+            }
+        );
+    }
+
+    #[test]
+    fn from_hex_eight_digits_reads_each_channel() {
+        assert_eq!(
+            Rgba::from_hex("#0A141E28").unwrap(),
+            Rgba {
+                r: 10,
+                g: 20,
+                b: 30,
+                a: 40
+            }
+        );
+    }
+
+    #[test]
+    fn from_hex_unsupported_length_returns_bad_color() {
+        for s in ["#", "#12", "#1234", "#12345", "#1234567", "#123456789"] {
+            assert!(matches!(Rgba::from_hex(s), Err(CoreError::BadColor(v)) if v == s), "{s}");
+        }
+    }
+
+    #[test]
+    fn from_hex_non_hex_digit_returns_bad_color() {
+        assert!(matches!(Rgba::from_hex("#gg0000"), Err(CoreError::BadColor(v)) if v == "#gg0000"));
+        assert!(matches!(Rgba::from_hex("#00z"), Err(CoreError::BadColor(_))));
+    }
+
+    #[test]
+    fn to_hex_opaque_color_omits_alpha() {
+        assert_eq!(Rgba { r: 1, g: 2, b: 3, a: 255 }.to_hex(), "#010203");
+    }
+
+    #[test]
+    fn to_hex_translucent_color_appends_alpha() {
+        assert_eq!(Rgba { r: 255, g: 0, b: 16, a: 0 }.to_hex(), "#ff001000");
+    }
+
+    #[test]
+    fn bound_serialize_value_and_token_use_kind_tag() {
+        let v: Bound<f32> = Bound::Value { value: 4.0 };
+        assert_eq!(
+            serde_json::to_value(&v).unwrap(),
+            serde_json::json!({ "kind": "value", "value": 4.0 })
+        );
+        let t: Bound<f32> = Bound::Token {
+            token: TokenRef {
+                system: "contoso-ds".into(),
+                name: "radius.md".into(),
+            },
+        };
+        assert_eq!(
+            serde_json::to_value(&t).unwrap(),
+            serde_json::json!({ "kind": "token", "token": { "system": "contoso-ds", "name": "radius.md" } })
+        );
+    }
+
+    #[test]
+    fn node_kind_serialize_variants_use_kebab_case_type_tag() {
+        let azure = NodeKind::AzureResource {
+            resource_type: "Microsoft.Web/sites".into(),
+            api_version: "2023-12-01".into(),
+        };
+        assert_eq!(
+            serde_json::to_value(&azure).unwrap(),
+            serde_json::json!({ "type": "azure-resource", "resource_type": "Microsoft.Web/sites", "api_version": "2023-12-01" })
+        );
+        assert_eq!(
+            serde_json::to_value(NodeKind::Frame).unwrap(),
+            serde_json::json!({ "type": "frame" })
+        );
+        let back: NodeKind = serde_json::from_value(serde_json::json!({ "type": "rect", "corner_radius": null })).unwrap();
+        assert_eq!(back, NodeKind::Rect { corner_radius: None });
+    }
+
+    #[test]
+    fn node_new_sets_documented_defaults() {
+        let n = Node::new("Card", NodeKind::Frame);
+        assert_eq!(n.name, "Card");
+        assert_eq!(n.kind, NodeKind::Frame);
+        assert_eq!((n.x, n.y, n.width, n.height), (0.0, 0.0, 100.0, 100.0));
+        assert_eq!(n.fill, None);
+        assert!(n.visible);
+        assert!(!n.locked);
+        assert_eq!(n.id.0.get_version_num(), 7);
+    }
+
+    #[test]
+    fn project_manifest_new_uses_current_format_and_empty_lists() {
+        let m = ProjectManifest::new(OutputKind::Deck, "Q3 review");
+        assert_eq!(
+            m,
+            ProjectManifest {
+                format_version: FORMAT_VERSION,
+                kind: OutputKind::Deck,
+                title: "Q3 review".into(),
+                design_systems: vec![],
+                links: vec![],
+            }
+        );
+    }
+
+    #[test]
+    fn core_error_fmt_bad_color_names_the_input() {
+        assert_eq!(CoreError::BadColor("#12".into()).to_string(), "not a color: #12");
+    }
 }
