@@ -6,6 +6,7 @@ import { FORMS, type Feedback, type FeedbackKind, type IssueDraft } from './type
 import './feedback.css';
 
 const KINDS: FeedbackKind[] = ['bug', 'feature-request', 'comment'];
+const blankAnswers = (kind: FeedbackKind) => FORMS[kind].questions.map(() => '');
 const FOCUSABLE = 'button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])';
 
 /** Modal focus: move focus in on open, keep Tab inside, close on Escape, and give focus back to the opener. */
@@ -58,14 +59,20 @@ function useModalFocus(onClose: () => void) {
 export function FeedbackDialog({ onClose }: { onClose: () => void }) {
   const [kind, setKind] = useState<FeedbackKind>('bug');
   const [title, setTitle] = useState('');
-  const [answers, setAnswers] = useState<string[]>([]);
+  // One blank answer per question from the first render, so text typed before any effect runs is kept.
+  const [answers, setAnswers] = useState<string[]>(() => blankAnswers('bug'));
   const [env, setEnv] = useState({ version: true, os: true, gpu: true, policy: true });
   const [preview, setPreview] = useState<IssueDraft | null>(null);
   const [status, setStatus] = useState<{ kind: 'idle' | 'sending' | 'sent' | 'error'; text?: string }>({ kind: 'idle' });
   const dialogRef = useModalFocus(onClose);
 
   const form = FORMS[kind];
-  useEffect(() => setAnswers(form.questions.map(() => '')), [kind]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function chooseKind(next: FeedbackKind) {
+    if (next === kind) return;
+    setKind(next);
+    setAnswers(blankAnswers(next));
+  }
 
   const feedback: Feedback = useMemo(
     () => ({
@@ -83,10 +90,20 @@ export function FeedbackDialog({ onClose }: { onClose: () => void }) {
     [kind, title, answers, env, form],
   );
 
+  // Key the preview on content, not identity: React can re-run a pending `setAnswers` updater while
+  // it rebases updates, which returns an equal but new array. Keyed on identity, each re-run started
+  // another IPC call whose response re-rendered again, an endless loop.
+  const feedbackKey = JSON.stringify(feedback);
   useEffect(() => {
     if (!inTauri) return;
-    call<IssueDraft>('preview_feedback', { feedback }).then(setPreview).catch(() => setPreview(null));
-  }, [feedback]);
+    let latest = true;
+    call<IssueDraft>('preview_feedback', { feedback: JSON.parse(feedbackKey) as Feedback })
+      .then((draft) => latest && setPreview(draft))
+      .catch(() => latest && setPreview(null));
+    return () => {
+      latest = false;
+    };
+  }, [feedbackKey]);
 
   const canSend = title.trim() !== '' && form.questions.every((q, i) => !q.required || (answers[i] ?? '').trim() !== '');
 
@@ -123,7 +140,7 @@ export function FeedbackDialog({ onClose }: { onClose: () => void }) {
               <div className="fb-form">
                 <div className="fb-kinds" role="radiogroup" aria-label="Feedback type">
                   {KINDS.map((k) => (
-                    <button key={k} role="radio" aria-checked={k === kind} className="fb-kind" onClick={() => setKind(k)}>
+                    <button key={k} role="radio" aria-checked={k === kind} className="fb-kind" onClick={() => chooseKind(k)}>
                       <span className="t-title">{FORMS[k].name}</span>
                       <span className="fb-muted">{FORMS[k].hint}</span>
                     </button>

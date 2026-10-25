@@ -84,6 +84,18 @@ test.describe('Feedback outside the desktop app', () => {
 });
 
 test.describe('Feedback in the desktop app (mock IPC)', () => {
+  test('Feedback_TypedRightAfterOpening_KeepsEveryAnswer', async ({ page }) => {
+    await mockTauri(page);
+    for (let i = 0; i < 15; i++) {
+      const dialog = await openFeedback(page);
+      await fillBug(page);
+
+      await expect(dialog.getByRole('textbox', { name: /What happened\?/ })).toHaveValue('It froze.', { timeout: 1000 });
+      await expect(dialog.getByRole('textbox', { name: /Steps to reproduce/ })).toHaveValue('Open a big file.', { timeout: 1000 });
+      await expect(dialog.getByRole('button', { name: 'Submit bug' })).toBeEnabled({ timeout: 1000 });
+    }
+  });
+
   test('Feedback_FormEdited_PreviewShowsWhatGitHubWillReceive', async ({ page }) => {
     await mockTauri(page);
     const dialog = await openFeedback(page);
