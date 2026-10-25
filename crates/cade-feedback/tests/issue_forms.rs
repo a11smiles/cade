@@ -22,6 +22,21 @@ fn feedback_kind_labels_and_title_match_each_issue_form() {
 }
 
 #[test]
+fn feedback_kind_required_headings_match_each_issue_form() {
+    for kind in KINDS {
+        let form = repo_file(&format!(".github/ISSUE_TEMPLATE/{}", kind.template()));
+        let required: Vec<&str> = form["body"]
+            .as_sequence()
+            .unwrap()
+            .iter()
+            .filter(|item| item["validations"]["required"].as_bool() == Some(true))
+            .map(|item| item["attributes"]["label"].as_str().unwrap())
+            .collect();
+        assert_eq!(required, kind.required_headings(), "{kind:?}");
+    }
+}
+
+#[test]
 fn feedback_kind_labels_are_all_defined_in_labels_yml() {
     let defined: Vec<String> = repo_file(".github/labels.yml")
         .as_sequence()
