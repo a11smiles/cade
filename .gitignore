@@ -1,0 +1,10 @@
+/target
+node_modules/
+app/ui/dist/
+app/ui/src/theme/tokens.css
+app/src-tauri/gen/
+.DS_Store
+*.log
+# Microsoft's Azure icon pack is downloaded by each user (see assets/icons/azure/README.md).
+assets/icons/azure/**/*.svg
+assets/icons/azure/**/*.png

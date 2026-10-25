@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>CADE send feedback (light)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#5543C9}a:hover{color:#3F31A8}
+button{font-family:inherit;cursor:pointer}
+input,textarea{font-family:inherit}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; box-sizing: border-box; position: relative; background: #F6F7F9; color: #171A21; font-family: Geist, system-ui, sans-serif; font-size: 13px; overflow: hidden">
+
+  <!-- Dimmed workspace behind the dialog -->
+  <div aria-hidden="true" style="position: absolute; inset: 0; display: flex; flex-direction: column; opacity: 0.35">
+    <div style="height: 52px; background: #FFFFFF; border-bottom: 1px solid #E3E6EC"></div>
+    <div style="flex: 1; display: flex">
+      <div style="width: 52px; background: #FFFFFF; border-right: 1px solid #E3E6EC"></div>
+      <div style="width: 248px; background: #FBFBFC; border-right: 1px solid #E3E6EC"></div>
+      <div style="flex: 1; background-color: #EDEFF3; background-image: radial-gradient(#CDD2DA 1px, transparent 1px); background-size: 20px 20px"></div>
+      <div style="width: 368px; background: #FBFBFC; border-left: 1px solid #E3E6EC"></div>
+    </div>
+  </div>
+  <div aria-hidden="true" style="position: absolute; inset: 0; background: rgba(5, 6, 9, 0.55)"></div>
+
+  <!-- Dialog -->
+  <section role="dialog" aria-modal="true" aria-labelledby="fbtitle" style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 1040px; height: 760px; display: flex; flex-direction: column; border-radius: 16px; background: #FBFBFC; border: 1px solid #D5D9E1; box-shadow: 0 24px 64px rgba(20,24,33,0.14); overflow: hidden">
+
+    <header style="display: flex; align-items: center; gap: 12px; padding: 16px 20px; border-bottom: 1px solid #E3E6EC">
+      <h1 id="fbtitle" style="margin: 0; font-size: 16px; font-weight: 600">Send feedback</h1>
+      <span style="font-size: 12px; color: #5C6373">Help › Send feedback · creates a GitHub issue</span>
+      <div style="flex: 1"></div>
+      <span style="display: inline-flex; align-items: center; gap: 8px; height: 30px; padding: 0 10px 0 4px; border-radius: 999px; background: #E9ECF1; font-size: 12px">
+        <span style="width: 22px; height: 22px; border-radius: 50%; background: #3FB68B; color: #08251A; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center">JD</span>
+        Posting as <span style="font-family: 'Geist Mono', monospace">@jdavis</span>
+      </span>
+      <button aria-label="Close" style="width: 32px; height: 32px; border-radius: 8px; border: 1px solid #E3E6EC; background: transparent; color: #4B5262; display: flex; align-items: center; justify-content: center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+    </header>
+
+    <sc-if value="{{ notSent }}" hint-placeholder-val="{{ true }}">
+      <div style="flex: 1; display: flex; min-height: 0">
+
+        <!-- Form -->
+        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 16px; padding: 20px 22px; overflow: hidden">
+          <div role="radiogroup" aria-label="Feedback type" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px">
+            <sc-for list="{{ kinds }}" as="k" hint-placeholder-count="3">
+              <button role="radio" aria-checked="{{ k.checked }}" onClick="{{ k.pick }}" style="display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: 12px; border: {{ k.border }}; background: {{ k.bg }}; color: #171A21; text-align: left">
+                <span style="display: flex; align-items: center; gap: 8px; font-weight: 600"><span style="padding: 1px 6px; border-radius: 4px; background: {{ k.labelBg }}; color: {{ k.labelFg }}; font-family: 'Geist Mono', monospace; font-size: 10px; font-weight: 500">{{ k.label }}</span>{{ k.name }}</span>
+                <span style="font-size: 11px; color: #5C6373; line-height: 1.4">{{ k.hint }}</span>
+              </button>
+            </sc-for>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="fbt" style="font-size: 12px; color: #4B5262">Title</label>
+            <input id="fbt" value="{{ cur.titleExample }}" style="height: 38px; padding: 0 12px; border-radius: 8px; border: 1px solid #D5D9E1; background: #F1F3F6; color: #171A21; font-size: 13px">
+          </div>
+
+          <sc-for list="{{ cur.fields }}" as="f" hint-placeholder-count="3">
+            <div style="display: flex; flex-direction: column; gap: 6px">
+              <label style="font-size: 12px; color: #4B5262">{{ f.label }} <span style="color: #5C6373">{{ f.req }}</span></label>
+              <div style="min-height: {{ f.h }}; padding: 10px 12px; border-radius: 8px; border: 1px solid #D5D9E1; background: #F1F3F6; color: {{ f.color }}; font-size: 13px; line-height: 1.5; white-space: pre-line; box-sizing: border-box">{{ f.value }}</div>
+            </div>
+          </sc-for>
+
+          <sc-if value="{{ cur.hasDupes }}" hint-placeholder-val="{{ false }}">
+            <div style="display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border-radius: 10px; background: #F5F3FF; border: 1px solid #DCD6FB">
+              <span style="font-size: 12px; font-weight: 600; color: #3F31A8">Similar open issues</span>
+              <span style="font-size: 12px; color: #2E333D">#88 · Contrast check times out on large frames <span style="color: #5C6373">· 4 reactions</span></span>
+              <span style="font-size: 11px; color: #5C6373">If one matches, add a reaction or comment there instead.</span>
+            </div>
+          </sc-if>
+
+          <div style="display: flex; align-items: center; gap: 10px">
+            <button onClick="{{ toggleShot }}" style="height: 32px; padding: 0 12px; border-radius: 8px; border: 1px solid #D5D9E1; background: transparent; color: #171A21; font-size: 12px">{{ shotLabel }}</button>
+            <span style="font-size: 11px; color: #5C6373">Screenshots are off by default. You see the image before it's attached.</span>
+          </div>
+        </div>
+
+        <!-- What gets sent -->
+        <aside aria-label="What will be sent" style="width: 380px; flex-shrink: 0; display: flex; flex-direction: column; gap: 12px; padding: 20px; border-left: 1px solid #E3E6EC; background: #FFFFFF">
+          <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5C6373">What GitHub will receive</span>
+          <div style="display: flex; flex-direction: column; gap: 6px; padding: 12px; border-radius: 10px; background: #F1F3F6; border: 1px solid #E3E6EC; font-size: 12px">
+            <div style="display: flex; justify-content: space-between"><span style="color: #5C6373">Repository</span><span style="font-family: 'Geist Mono', monospace">[owner]/cade</span></div>
+            <div style="display: flex; justify-content: space-between"><span style="color: #5C6373">Author</span><span style="font-family: 'Geist Mono', monospace">@jdavis</span></div>
+            <div style="display: flex; justify-content: space-between"><span style="color: #5C6373">Labels</span><span style="font-family: 'Geist Mono', monospace">{{ cur.labels }}</span></div>
+            <div style="display: flex; justify-content: space-between"><span style="color: #5C6373">Form</span><span style="font-family: 'Geist Mono', monospace">{{ cur.template }}</span></div>
+          </div>
+
+          <span style="font-size: 12px; font-weight: 600; color: #4B5262">Environment (attached to the issue)</span>
+          <div style="display: flex; flex-direction: column; border: 1px solid #E3E6EC; border-radius: 10px; overflow: hidden; font-size: 12px">
+            <sc-for list="{{ env }}" as="e" hint-placeholder-count="5">
+              <button onClick="{{ e.toggle }}" style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; border: 0; border-bottom: 1px solid #E3E6EC; background: transparent; color: #171A21; text-align: left">
+                <span style="width: 16px; height: 16px; border-radius: 4px; border: {{ e.box }}; background: {{ e.boxBg }}; box-sizing: border-box; flex-shrink: 0"></span>
+                <span style="flex: 1; color: {{ e.color }}">{{ e.label }}</span>
+                <span style="font-family: 'Geist Mono', monospace; color: #5C6373">{{ e.value }}</span>
+              </button>
+            </sc-for>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 6px; padding: 12px; border-radius: 10px; background: #E5F6EC; font-size: 12px; color: #1D7A4D; line-height: 1.45">
+            <span style="font-weight: 600">Never sent unless you attach it</span>
+            <span style="color: #4B5262">Your designs, prompts, Copilot threads, file paths and project names. Logs are scrubbed of paths and tokens.</span>
+          </div>
+          <div style="flex: 1"></div>
+          <span style="font-size: 11px; color: #5C6373; line-height: 1.45">The issue is public on [owner]/cade and is posted from your GitHub account. CADE asks for the <span style="font-family: 'Geist Mono', monospace">public_repo</span> scope the first time.</span>
+        </aside>
+      </div>
+
+      <footer style="display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-top: 1px solid #E3E6EC">
+        <span style="font-size: 12px; color: #5C6373">Offline? It's queued and sent when you reconnect.</span>
+        <div style="flex: 1"></div>
+        <button style="height: 36px; padding: 0 14px; border-radius: 9px; border: 1px solid #D5D9E1; background: transparent; color: #171A21; font-size: 13px">Preview on GitHub</button>
+        <button onClick="{{ send }}" style="height: 36px; padding: 0 16px; border-radius: 9px; border: 0; background: #6B57F0; color: #fff; font-size: 13px; font-weight: 600">{{ cur.cta }}</button>
+      </footer>
+    </sc-if>
+
+    <sc-if value="{{ sent }}" hint-placeholder-val="{{ false }}">
+      <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 40px">
+        <span style="width: 48px; height: 48px; border-radius: 50%; background: #1D7A4D; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg></span>
+        <span style="font-size: 20px; font-weight: 600">Issue #214 opened on [owner]/cade</span>
+        <span style="color: #4B5262">{{ cur.sentNote }}</span>
+        <div style="display: flex; gap: 10px">
+          <button style="height: 36px; padding: 0 14px; border-radius: 9px; border: 0; background: #6B57F0; color: #fff; font-size: 13px; font-weight: 600">Open on GitHub</button>
+          <button onClick="{{ reset }}" style="height: 36px; padding: 0 14px; border-radius: 9px; border: 1px solid #D5D9E1; background: transparent; color: #171A21; font-size: 13px">Send another</button>
+        </div>
+        <span style="font-size: 11px; color: #5C6373">You'll get GitHub notifications for replies, like any issue you open.</span>
+      </div>
+    </sc-if>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { kind: 'bug', sent: false, shot: false, env: { version: true, os: true, gpu: true, policy: true, logs: false } };
+  }
+  renderVals() {
+    const K = {
+      bug: { name: 'Bug', label: 'bug', hint: 'Something is broken or wrong.', labelBg: '#FDECEC', labelFg: '#B42323',
+        titleExample: 'Contrast check times out on frames with 40+ layers', labels: 'bug, needs-triage', template: 'bug.yml', cta: 'Submit bug',
+        hasDupes: true, sentNote: 'Labeled bug and needs-triage. Environment details are in a collapsed section.',
+        fields: [
+          { label: 'What happened?', req: 'required', h: '72px', value: 'Copilot’s render check stops after 60 seconds when Step 1 has error states on both frames.' },
+          { label: 'Steps to reproduce', req: 'required', h: '84px', value: '1. Open an App project with two frames\n2. Ask Copilot to add error states\n3. The run stops at step 3 of 5' },
+          { label: 'What did you expect?', req: 'optional', h: '44px', value: 'The check finishes, or offers a longer limit.' }
+        ] },
+      feature: { name: 'Feature request', label: 'enhancement', hint: 'Something CADE should do.', labelBg: '#ECE9FE', labelFg: '#3F31A8',
+        titleExample: 'Import Sketch files', labels: 'enhancement', template: 'feature_request.yml', cta: 'Submit request',
+        hasDupes: false, sentNote: 'Labeled enhancement. Others can add reactions to show they want it too.',
+        fields: [
+          { label: 'What problem would this solve?', req: 'required', h: '72px', value: 'Our brand team still has two years of work in Sketch.' },
+          { label: 'What would you like CADE to do?', req: 'required', h: '72px', value: 'Import .sketch files the same way Figma files come in, with symbols as components.' },
+          { label: 'Which output type?', req: 'optional', h: '40px', value: 'App, Image' }
+        ] },
+      comment: { name: 'Comment', label: 'feedback', hint: 'Anything else: praise, questions, ideas.', labelBg: '#E9ECF1', labelFg: '#4B5262',
+        titleExample: 'The staged changes view is great', labels: 'feedback', template: 'comment.yml', cta: 'Send comment',
+        hasDupes: false, sentNote: 'Labeled feedback. Comments are read and closed once acknowledged.',
+        fields: [
+          { label: 'Your comment', req: 'required', h: '140px', value: 'Being able to keep or drop one change at a time is the reason our security team said yes.' },
+          { label: 'Where in CADE?', req: 'optional', h: '40px', value: 'App › Copilot agent run' }
+        ] }
+    };
+    const order = ['bug', 'feature', 'comment'];
+    const c = K[this.state.kind];
+    const envDefs = [
+      ['version', 'CADE version', '0.9.0 (abc1234)'],
+      ['os', 'Operating system', 'macOS 26.1 arm64'],
+      ['gpu', 'GPU and renderer', 'Apple M3 · Metal'],
+      ['policy', 'Policy version', 'contoso v12'],
+      ['logs', 'Last 200 log lines, scrubbed', 'off']
+    ];
+    return {
+      kinds: order.map((k) => ({
+        ...K[k],
+        checked: String(k === this.state.kind),
+        bg: k === this.state.kind ? '#F5F3FF' : '#F1F3F6',
+        border: k === this.state.kind ? '1.5px solid #6B57F0' : '1px solid #E3E6EC',
+        pick: () => this.setState({ kind: k })
+      })),
+      cur: { ...c, fields: c.fields.map((f) => ({ ...f, color: '#171A21' })) },
+      env: envDefs.map(([k, label, value]) => {
+        const on = this.state.env[k];
+        return {
+          label, value: k === 'logs' ? (on ? 'attached' : 'off') : value,
+          box: on ? '5px solid #6B57F0' : '1.5px solid #8A91A0',
+          boxBg: on ? '#6B57F0' : 'transparent',
+          color: on ? '#171A21' : '#5C6373',
+          toggle: () => this.setState({ env: { ...this.state.env, [k]: !on } })
+        };
+      }),
+      shotLabel: this.state.shot ? 'Remove screenshot' : 'Attach screenshot',
+      toggleShot: () => this.setState({ shot: !this.state.shot }),
+      sent: this.state.sent,
+      notSent: !this.state.sent,
+      send: () => this.setState({ sent: true }),
+      reset: () => this.setState({ sent: false })
+    };
+  }
+}
+</script>
+</body>
+</html>

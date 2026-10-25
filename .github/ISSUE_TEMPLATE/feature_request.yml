@@ -1,0 +1,29 @@
+name: Feature request
+description: Something CADE should do.
+title: "[Feature] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like CADE to do?
+    validations:
+      required: true
+  - type: dropdown
+    id: output
+    attributes:
+      label: Which output type?
+      multiple: true
+      options: [App, Image, Deck, Document, Motion, Diagram, Architecture, Data model, Not specific]
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What do you do today instead?
+    validations:
+      required: false

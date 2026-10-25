@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ship to repo (light)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#5543C9}a:hover{color:#3F31A8}
+button{font-family:inherit}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; box-sizing: border-box; display: flex; flex-direction: column; background: #F6F7F9; color: #171A21; font-family: Geist, system-ui, sans-serif; font-size: 13px; overflow: hidden">
+
+  <header style="height: 52px; flex-shrink: 0; display: flex; align-items: center; gap: 14px; padding: 0 16px; border-bottom: 1px solid #E3E6EC; background: #FFFFFF">
+    <a href="Main.light.dc.html" aria-label="Back to canvas" style="width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #4B5262; border: 1px solid #E3E6EC"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg></a>
+    <div style="display: flex; flex-direction: column; line-height: 1.2">
+      <span style="font-weight: 600">Ship to repo</span>
+      <span style="color: #5C6373; font-size: 11px">Claims Portal · Intake flow, 4 frames + prototype</span>
+    </div>
+    <div style="flex: 1"></div>
+    <div style="display: flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: 999px; background: #FFF7E6; border: 1px solid #F2D9A0; color: #8A5A00; font-size: 11px; font-weight: 500">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"></path></svg>
+      Contoso policy · enforced
+    </div>
+  </header>
+
+  <div style="flex: 1; display: grid; grid-template-columns: 360px minmax(0, 1fr) 420px; min-height: 0">
+
+    <!-- Target -->
+    <section aria-label="Target" style="border-right: 1px solid #E3E6EC; background: #FBFBFC; padding: 20px; display: flex; flex-direction: column; gap: 18px">
+      <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5C6373">1 · Where it goes</span>
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <label for="repo" style="font-size: 12px; color: #4B5262">Repository</label>
+        <div id="repo" style="height: 38px; display: flex; align-items: center; gap: 8px; padding: 0 12px; border-radius: 8px; background: #F1F3F6; border: 1px solid #D5D9E1; font-family: 'Geist Mono', monospace; font-size: 12px">contoso/claims-portal<span style="margin-left: auto; color: #5C6373">▾</span></div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <label for="branch" style="font-size: 12px; color: #4B5262">New branch</label>
+        <div id="branch" style="height: 38px; display: flex; align-items: center; padding: 0 12px; border-radius: 8px; background: #F1F3F6; border: 1px solid #D5D9E1; font-family: 'Geist Mono', monospace; font-size: 12px">cade/intake-flow-step-1</div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <span style="font-size: 12px; color: #4B5262">Output</span>
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <div style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; border: 1px solid #C9C1F7; background: #F5F3FF"><span style="width: 14px; height: 14px; border-radius: 50%; border: 4px solid #6B57F0; box-sizing: border-box"></span><div style="display: flex; flex-direction: column"><span style="font-weight: 500">React + @contoso/ds</span><span style="font-size: 11px; color: #5C6373">Real components, not lookalikes</span></div></div>
+          <div style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; border: 1px solid #D5D9E1"><span style="width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid #8A91A0; box-sizing: border-box"></span><div style="display: flex; flex-direction: column"><span style="font-weight: 500">Design spec only</span><span style="font-size: 11px; color: #5C6373">Frames, tokens, redlines for engineers</span></div></div>
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <span style="font-size: 12px; color: #4B5262">Files</span>
+        <div style="padding: 10px 12px; border-radius: 8px; background: #FFFFFF; border: 1px solid #E3E6EC; font-family: 'Geist Mono', monospace; font-size: 11px; line-height: 1.75; color: #4B5262">
+          <div>src/intake/</div>
+          <div style="padding-left: 14px"><span style="color: #1D7A4D">+</span> IncidentStep.tsx</div>
+          <div style="padding-left: 14px"><span style="color: #1D7A4D">+</span> PhotosStep.tsx</div>
+          <div style="padding-left: 14px"><span style="color: #1D7A4D">+</span> IntakeFlow.tsx</div>
+          <div style="padding-left: 14px"><span style="color: #1D7A4D">+</span> validation.ts</div>
+          <div><span style="color: #1D7A4D">+</span> design/intake.cade</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Checks -->
+    <section aria-label="Pre-flight checks" style="padding: 20px 28px; display: flex; flex-direction: column; gap: 14px; background: #F6F7F9">
+      <div style="display: flex; align-items: baseline; gap: 10px">
+        <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5C6373">2 · Pre-flight</span>
+        <span style="color: #5C6373; font-size: 12px">Runs locally before anything leaves this machine</span>
+      </div>
+
+      <div style="display: flex; flex-direction: column; border: 1px solid #E3E6EC; border-radius: 12px; overflow: hidden; background: #FBFBFC">
+        <div style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1px solid #E3E6EC">
+          <span style="width: 22px; height: 22px; border-radius: 50%; background: #E5F6EC; display: flex; align-items: center; justify-content: center"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1D7A4D" stroke-width="2.8" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg></span>
+          <div style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">Design system only</span><span style="font-size: 12px; color: #5C6373">41 layers map to @contoso/ds components and tokens. No raw hex values.</span></div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1px solid #E3E6EC">
+          <span style="width: 22px; height: 22px; border-radius: 50%; background: #E5F6EC; display: flex; align-items: center; justify-content: center"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1D7A4D" stroke-width="2.8" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg></span>
+          <div style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">Approved packages</span><span style="font-size: 12px; color: #5C6373">3 dependencies, all on the org allowlist.</span></div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1px solid #E3E6EC">
+          <span style="width: 22px; height: 22px; border-radius: 50%; background: #E5F6EC; display: flex; align-items: center; justify-content: center"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1D7A4D" stroke-width="2.8" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg></span>
+          <div style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">Secret scanning</span><span style="font-size: 12px; color: #5C6373">No credentials or keys in generated code or design notes.</span></div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1px solid #E3E6EC">
+          <span style="width: 22px; height: 22px; border-radius: 50%; background: #E5F6EC; display: flex; align-items: center; justify-content: center"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1D7A4D" stroke-width="2.8" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg></span>
+          <div style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">Accessibility</span><span style="font-size: 12px; color: #5C6373">Contrast, labels and focus order pass WCAG 2.2 AA.</span></div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: #FFF9EC">
+          <span style="width: 22px; height: 22px; border-radius: 50%; background: #FBE6B5; display: flex; align-items: center; justify-content: center"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8A5A00" stroke-width="2.4" aria-hidden="true"><path d="M12 6v7M12 17v.5"></path></svg></span>
+          <div style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">Code scanning will run on the PR</span><span style="font-size: 12px; color: #6B5520">GHAS CodeQL runs in the repo, not here. The PR is blocked until it passes.</span></div>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; border-radius: 12px; border: 1px solid #E3E6EC; background: #FFFFFF">
+        <span style="font-weight: 500">What your admins can see</span>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 20px; font-size: 12px">
+          <div style="display: flex; gap: 8px; color: #4B5262"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1D7A4D" stroke-width="2.6" aria-hidden="true" style="flex-shrink: 0; margin-top: 2px"><path d="M5 12l5 5 9-10"></path></svg>That this app exists, and its repo</div>
+          <div style="display: flex; gap: 8px; color: #4B5262"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#B42323" stroke-width="2.4" aria-hidden="true" style="flex-shrink: 0; margin-top: 2px"><path d="M6 6l12 12M18 6L6 18"></path></svg>Your designs, drafts or prompts</div>
+          <div style="display: flex; gap: 8px; color: #4B5262"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1D7A4D" stroke-width="2.6" aria-hidden="true" style="flex-shrink: 0; margin-top: 2px"><path d="M5 12l5 5 9-10"></path></svg>Dependencies and scan status</div>
+          <div style="display: flex; gap: 8px; color: #4B5262"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#B42323" stroke-width="2.4" aria-hidden="true" style="flex-shrink: 0; margin-top: 2px"><path d="M6 6l12 12M18 6L6 18"></path></svg>Your Copilot conversations</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PR -->
+    <section aria-label="Pull request" style="border-left: 1px solid #E3E6EC; background: #FBFBFC; padding: 20px; display: flex; flex-direction: column; gap: 14px">
+      <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5C6373">3 · Pull request</span>
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <label for="prtitle" style="font-size: 12px; color: #4B5262">Title</label>
+        <input id="prtitle" value="Intake flow: Step 1 with validation and error states" style="height: 38px; padding: 0 12px; border-radius: 8px; background: #F1F3F6; border: 1px solid #D5D9E1; color: #171A21; font-family: inherit; font-size: 13px">
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <div style="display: flex; align-items: center; gap: 8px"><span style="font-size: 12px; color: #4B5262">Description</span><span style="font-size: 11px; color: #5543C9">Written by Copilot</span></div>
+        <div style="padding: 12px; border-radius: 8px; background: #F1F3F6; border: 1px solid #D5D9E1; line-height: 1.55; color: #2E333D; font-size: 12px; display: flex; flex-direction: column; gap: 8px">
+          <span>Adds Step 1 of the claim intake from docs/intake.md, built from @contoso/ds.</span>
+          <span>• Inline validation for date and description, with a form-level error summary<br>• Continue is disabled until the step is valid<br>• Mobile and desktop layouts from the same components</span>
+          <span style="color: #5C6373">Design source: design/intake.cade · open in CADE to review frames.</span>
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px">
+        <span style="font-size: 12px; color: #4B5262">Reviewers · from CODEOWNERS</span>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px">
+          <span style="display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px 0 4px; border-radius: 999px; background: #E9ECF1; font-size: 12px"><span style="width: 20px; height: 20px; border-radius: 50%; background: #F0B44C; color: #2A1E05; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center">MR</span>@claims-frontend</span>
+          <span style="display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px 0 4px; border-radius: 999px; background: #E9ECF1; font-size: 12px"><span style="width: 20px; height: 20px; border-radius: 50%; background: #3FB68B; color: #08251A; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center">DS</span>@design-system</span>
+        </div>
+      </div>
+      <div style="flex: 1"></div>
+      <div style="display: flex; flex-direction: column; gap: 8px">
+        <button style="height: 42px; border-radius: 10px; border: 0; background: #6B57F0; color: #fff; font-size: 14px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="6" cy="6" r="2.5"></circle><circle cx="6" cy="18" r="2.5"></circle><circle cx="18" cy="12" r="2.5"></circle><path d="M6 8.5v7M8.3 7.2l7.4 3.6"></path></svg>
+          Open pull request
+        </button>
+        <button style="height: 38px; border-radius: 10px; border: 1px solid #D5D9E1; background: transparent; color: #171A21; font-size: 13px">Save as draft PR</button>
+        <a href="Review.light.dc.html" style="height: 38px; border-radius: 10px; border: 1px solid #C9C1F7; background: #F1EFFE; color: #3F31A8; font-size: 13px; display: flex; align-items: center; justify-content: center; text-decoration: none">Share a review link</a>
+      </div>
+    </section>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

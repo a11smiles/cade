@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>CADE settings (light)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#5543C9}a:hover{color:#3F31A8}
+button{font-family:inherit}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; box-sizing: border-box; display: flex; flex-direction: column; background: #F6F7F9; color: #171A21; font-family: Geist, system-ui, sans-serif; font-size: 13px; overflow: hidden">
+
+  <header style="height: 52px; flex-shrink: 0; display: flex; align-items: center; gap: 14px; padding: 0 16px; border-bottom: 1px solid #E3E6EC; background: #FFFFFF">
+    <a href="Start.light.dc.html" aria-label="Home" style="display: flex"><svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><rect x="1" y="1" width="24" height="24" rx="7" fill="#6B57F0"></rect><path d="M8 18c2-1 3-4 5-7s4-3 5-2-1 3-3 5-5 3-7 4z" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"></path><circle cx="8" cy="18" r="1.6" fill="#F0B44C"></circle></svg></a>
+    <span style="font-weight: 600; font-size: 14px">Settings</span>
+    <div style="flex: 1"></div>
+    <label for="setsearch" style="position: absolute; left: -9999px">Search settings</label>
+    <input id="setsearch" placeholder="Search settings" style="width: 260px; height: 32px; padding: 0 10px; border-radius: 8px; border: 1px solid #D5D9E1; background: #F1F3F6; color: #171A21; font-family: inherit; font-size: 12px">
+  </header>
+
+  <div style="flex: 1; display: flex; min-height: 0">
+    <nav aria-label="Settings sections" style="width: 232px; flex-shrink: 0; display: flex; flex-direction: column; gap: 2px; padding: 16px 10px; border-right: 1px solid #E3E6EC; background: #FBFBFC">
+      <a href="Settings.light.dc.html" style="height: 34px; display: flex; align-items: center; padding: 0 12px; border-radius: 8px; color: #4B5262; text-decoration: none">General</a>
+      <a href="Settings.light.dc.html" style="height: 34px; display: flex; align-items: center; padding: 0 12px; border-radius: 8px; background: #E9ECF1; color: #171A21; font-weight: 500; text-decoration: none">Copilot &amp; models</a>
+      <a href="Settings.light.dc.html" style="height: 34px; display: flex; align-items: center; padding: 0 12px; border-radius: 8px; color: #4B5262; text-decoration: none">Agent permissions</a>
+      <a href="Settings.light.dc.html" style="height: 34px; display: flex; align-items: center; padding: 0 12px; border-radius: 8px; color: #4B5262; text-decoration: none">Design systems</a>
+      <a href="Settings.light.dc.html" style="height: 34px; display: flex; align-items: center; padding: 0 12px; border-radius: 8px; color: #4B5262; text-decoration: none">Appearance</a>
+      <a href="Settings.light.dc.html" style="height: 34px; display: flex; align-items: center; padding: 0 12px; border-radius: 8px; color: #4B5262; text-decoration: none">Keyboard shortcuts</a>
+      <a href="Settings.light.dc.html" style="height: 34px; display: flex; align-items: center; padding: 0 12px; border-radius: 8px; color: #4B5262; text-decoration: none">Cloud accounts</a>
+      <div style="flex: 1"></div>
+      <a href="Feedback.light.dc.html" style="height: 34px; display: flex; align-items: center; gap: 8px; padding: 0 12px; border-radius: 8px; color: #4B5262; text-decoration: none; font-size: 12px">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"></path></svg>
+        Send feedback
+      </a>
+      <a href="Admin.light.dc.html" style="height: 34px; display: flex; align-items: center; gap: 8px; padding: 0 12px; border-radius: 8px; color: #8A5A00; text-decoration: none; font-size: 12px">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"></path></svg>
+        Org policy (admin)
+      </a>
+    </nav>
+
+    <main style="flex: 1; min-width: 0; padding: 28px 40px; display: flex; flex-direction: column; gap: 22px; overflow: hidden">
+      <h1 style="margin: 0; font-size: 22px; font-weight: 600">Copilot &amp; models</h1>
+
+      <section aria-label="Provider" style="display: flex; flex-direction: column; gap: 10px">
+        <span style="font-size: 12px; font-weight: 600; color: #4B5262">Provider</span>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; max-width: 920px">
+          <div style="display: flex; gap: 12px; padding: 14px 16px; border-radius: 12px; border: 1.5px solid #6B57F0; background: #F5F3FF">
+            <span style="width: 16px; height: 16px; border-radius: 50%; border: 5px solid #6B57F0; box-sizing: border-box; flex-shrink: 0; margin-top: 2px"></span>
+            <div style="display: flex; flex-direction: column; gap: 4px">
+              <span style="font-weight: 600">GitHub Copilot</span>
+              <span style="font-size: 12px; color: #4B5262; line-height: 1.45">Uses your Copilot seat through the bundled agent runtime. Signed in as jdavis.</span>
+              <span style="font-size: 11px; color: #1D7A4D">Connected</span>
+            </div>
+          </div>
+          <div style="display: flex; gap: 12px; padding: 14px 16px; border-radius: 12px; border: 1px solid #E3E6EC; background: #FBFBFC">
+            <span style="width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid #8A91A0; box-sizing: border-box; flex-shrink: 0; margin-top: 2px"></span>
+            <div style="display: flex; flex-direction: column; gap: 4px">
+              <span style="font-weight: 600">Bring your own key</span>
+              <span style="font-size: 12px; color: #5C6373; line-height: 1.45">Anthropic, OpenAI, Azure OpenAI or any OpenAI-compatible endpoint. Keys are stored in your OS keychain.</span>
+              <span style="display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: #8A5A00"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"></rect><path d="M8 11V8a4 4 0 018 0v3"></path></svg>Turned off by Contoso policy</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section aria-label="Default models" style="display: flex; flex-direction: column; gap: 10px; max-width: 920px">
+        <span style="font-size: 12px; font-weight: 600; color: #4B5262">Default model by output type</span>
+        <div style="display: flex; flex-direction: column; border: 1px solid #E3E6EC; border-radius: 12px; overflow: hidden; background: #FBFBFC">
+          <div style="display: grid; grid-template-columns: 200px minmax(0, 1fr) 220px; gap: 12px; padding: 11px 16px; border-bottom: 1px solid #E3E6EC; align-items: center"><span>App, Image, Deck</span><span style="font-size: 12px; color: #5C6373">Fast iteration on visual edits</span><span style="padding: 4px 10px; border-radius: 6px; background: #F1F3F6; border: 1px solid #D5D9E1; font-size: 12px">Claude Sonnet 5.5 ▾</span></div>
+          <div style="display: grid; grid-template-columns: 200px minmax(0, 1fr) 220px; gap: 12px; padding: 11px 16px; border-bottom: 1px solid #E3E6EC; align-items: center"><span>Architecture, Data model</span><span style="font-size: 12px; color: #5C6373">Deeper reasoning for IaC and schema changes</span><span style="padding: 4px 10px; border-radius: 6px; background: #F1F3F6; border: 1px solid #D5D9E1; font-size: 12px">Claude Opus 5.5 ▾</span></div>
+          <div style="display: grid; grid-template-columns: 200px minmax(0, 1fr) 220px; gap: 12px; padding: 11px 16px; align-items: center"><span>Document, Diagram, Motion</span><span style="font-size: 12px; color: #5C6373">Uses the default</span><span style="padding: 4px 10px; border-radius: 6px; background: #F1F3F6; border: 1px solid #D5D9E1; font-size: 12px">Auto ▾</span></div>
+        </div>
+        <span style="font-size: 11px; color: #5C6373">Only models your organization allows are listed.</span>
+      </section>
+
+      <section aria-label="Usage" style="display: flex; flex-direction: column; gap: 10px; max-width: 920px">
+        <span style="font-size: 12px; font-weight: 600; color: #4B5262">Usage this month</span>
+        <div style="display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; border-radius: 12px; border: 1px solid #E3E6EC; background: #FBFBFC">
+          <div style="display: flex; align-items: baseline; gap: 10px"><span style="font-size: 22px; font-weight: 600; font-family: 'Geist Mono', monospace">4.2M</span><span style="color: #5C6373">of 10M tokens · monthly budget set by Contoso · resets Nov 1</span></div>
+          <div style="height: 6px; border-radius: 3px; background: #E3E6EC"><div style="width: 42%; height: 6px; border-radius: 3px; background: #6B57F0"></div></div>
+          <div style="display: flex; gap: 18px; font-size: 12px; color: #4B5262"><span>App 2.3M</span><span>Architecture 0.9M</span><span>Deck 0.5M</span><span>Image 0.3M</span><span>Other 0.2M</span></div>
+          <span style="font-size: 11px; color: #5C6373">Input, output and cached tokens are counted at each model's rate.</span>
+        </div>
+      </section>
+
+      <section aria-label="Appearance" style="display: flex; flex-direction: column; gap: 10px; max-width: 920px">
+        <span style="font-size: 12px; font-weight: 600; color: #4B5262">Theme</span>
+        <div role="group" aria-label="Theme" style="display: flex; gap: 10px">
+          <button style="width: 150px; display: flex; flex-direction: column; gap: 8px; padding: 10px; border-radius: 10px; border: 1px solid #E3E6EC; background: #FBFBFC; color: #171A21; font-size: 12px; text-align: left"><span style="height: 56px; border-radius: 6px; background: #0D0F13; border: 1px solid #33394A"></span>Dark</button>
+          <button style="width: 150px; display: flex; flex-direction: column; gap: 8px; padding: 10px; border-radius: 10px; border: 1.5px solid #6B57F0; background: #F5F3FF; color: #171A21; font-size: 12px; text-align: left"><span style="height: 56px; border-radius: 6px; background: #F6F7F9; border: 1px solid #D5D9E1"></span>Light</button>
+          <button style="width: 150px; display: flex; flex-direction: column; gap: 8px; padding: 10px; border-radius: 10px; border: 1px solid #E3E6EC; background: #FBFBFC; color: #171A21; font-size: 12px; text-align: left"><span style="height: 56px; border-radius: 6px; background: #0D0F13; border: 1px solid #33394A; position: relative; overflow: hidden"><span style="position: absolute; right: 0; top: 0; bottom: 0; width: 50%; background: #F6F7F9"></span></span>Match system</button>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>CADE first run (light)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#5543C9}a:hover{color:#3F31A8}
+button{font-family:inherit}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; box-sizing: border-box; display: flex; background: #F6F7F9; color: #171A21; font-family: Geist, system-ui, sans-serif; font-size: 13px; overflow: hidden">
+
+  <!-- Brand side -->
+  <section aria-label="About CADE" style="width: 560px; flex-shrink: 0; display: flex; flex-direction: column; justify-content: space-between; padding: 56px; background: #FFFFFF; border-right: 1px solid #E3E6EC; background-image: radial-gradient(#CDD2DA 1px, transparent 1px); background-size: 20px 20px">
+    <div style="display: flex; align-items: center; gap: 12px">
+      <svg width="36" height="36" viewBox="0 0 26 26" aria-hidden="true"><rect x="1" y="1" width="24" height="24" rx="7" fill="#6B57F0"></rect><path d="M8 18c2-1 3-4 5-7s4-3 5-2-1 3-3 5-5 3-7 4z" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"></path><circle cx="8" cy="18" r="1.6" fill="#F0B44C"></circle></svg>
+      <div style="display: flex; flex-direction: column; line-height: 1.15"><span style="font-weight: 700; font-size: 20px; letter-spacing: 0.04em">CADE</span><span style="color: #5C6373; font-size: 12px">Copilot ADE</span></div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 18px">
+      <h1 style="margin: 0; font-size: 40px; line-height: 1.1; font-weight: 600; letter-spacing: -0.015em">Design apps, decks, diagrams and infrastructure with Copilot, on your machine.</h1>
+      <p style="margin: 0; font-size: 15px; line-height: 1.55; color: #4B5262; max-width: 420px">Your files stay in local folders and your repos. CADE uses your Copilot seat and follows your organization's policy.</p>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px">
+      <span style="height: 44px; border-radius: 9px; background: #E5F6EC; color: #1D7A4D; font-size: 11px; font-weight: 600; display: flex; align-items: center; justify-content: center">APP</span>
+      <span style="height: 44px; border-radius: 9px; background: #ECE9FE; color: #3F31A8; font-size: 11px; font-weight: 600; display: flex; align-items: center; justify-content: center">IMAGE</span>
+      <span style="height: 44px; border-radius: 9px; background: #E6F0FB; color: #1F5FA8; font-size: 11px; font-weight: 600; display: flex; align-items: center; justify-content: center">ARCH</span>
+      <span style="height: 44px; border-radius: 9px; background: #E3F4F8; color: #0E6B80; font-size: 11px; font-weight: 600; display: flex; align-items: center; justify-content: center">DATA</span>
+    </div>
+  </section>
+
+  <!-- Setup -->
+  <main style="flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; padding: 48px">
+    <div style="width: 100%; max-width: 560px; display: flex; flex-direction: column; gap: 22px">
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <span style="font-size: 12px; color: #5C6373">Step 2 of 3</span>
+        <h2 style="margin: 0; font-size: 26px; font-weight: 600">Connecting to Copilot</h2>
+      </div>
+
+      <div style="display: flex; flex-direction: column; border: 1px solid #E3E6EC; border-radius: 14px; overflow: hidden; background: #FBFBFC">
+        <div style="display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-bottom: 1px solid #E3E6EC">
+          <span style="width: 26px; height: 26px; border-radius: 50%; background: #E5F6EC; display: flex; align-items: center; justify-content: center; flex-shrink: 0"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#1D7A4D" stroke-width="2.8" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg></span>
+          <div style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">Signed in with GitHub</span><span style="font-size: 12px; color: #5C6373">jdavis · Contoso Enterprise</span></div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-bottom: 1px solid #E3E6EC">
+          <span style="width: 26px; height: 26px; border-radius: 50%; background: #E5F6EC; display: flex; align-items: center; justify-content: center; flex-shrink: 0"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#1D7A4D" stroke-width="2.8" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg></span>
+          <div style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">Copilot agent runtime ready</span><span style="font-size: 12px; color: #5C6373">Bundled with CADE, so there's nothing else to install</span></div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-bottom: 1px solid #E3E6EC">
+          <span style="width: 26px; height: 26px; border-radius: 50%; background: #E5F6EC; display: flex; align-items: center; justify-content: center; flex-shrink: 0"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#1D7A4D" stroke-width="2.8" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg></span>
+          <div style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">Copilot Enterprise seat found</span><span style="font-size: 12px; color: #5C6373">Token usage counts toward your org's Copilot budget</span></div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 14px; padding: 14px 16px; background: #F5F3FF">
+          <span style="width: 26px; height: 26px; border-radius: 50%; border: 2.5px solid #6B57F0; border-right-color: transparent; box-sizing: border-box; flex-shrink: 0"></span>
+          <div style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">Loading Contoso policy</span><span style="font-size: 12px; color: #4B5262">Approved models, design systems, and tool permissions</span></div>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; border-radius: 12px; background: #FFF7E6; border: 1px solid #F2D9A0">
+        <span style="display: flex; align-items: center; gap: 8px; font-weight: 600; color: #8A5A00; font-size: 12px">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"></path></svg>
+          Set by your organization
+        </span>
+        <span style="font-size: 12px; color: #6B5520; line-height: 1.5">Telemetry is off. Shell commands ask first. Network access for the agent is off. You can see every rule in Settings.</span>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <label for="folder" style="font-size: 12px; color: #4B5262">Projects folder</label>
+        <div style="display: flex; gap: 8px">
+          <input id="folder" value="~/design" style="flex: 1; height: 40px; padding: 0 12px; border-radius: 9px; border: 1px solid #D5D9E1; background: #F1F3F6; color: #171A21; font-family: 'Geist Mono', monospace; font-size: 13px">
+          <button style="height: 40px; padding: 0 14px; border-radius: 9px; border: 1px solid #D5D9E1; background: transparent; color: #171A21; font-size: 13px">Choose…</button>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 12px">
+        <a href="Start.light.dc.html" style="height: 44px; padding: 0 22px; border-radius: 10px; background: #6B57F0; color: #fff; font-size: 14px; font-weight: 600; display: flex; align-items: center; text-decoration: none">Continue</a>
+        <a href="Settings.light.dc.html" style="font-size: 13px">Use my own API key instead</a>
+      </div>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

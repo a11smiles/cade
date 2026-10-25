@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>CADE app prototype mode (light)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#5543C9}a:hover{color:#3F31A8}
+button{font-family:inherit}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; box-sizing: border-box; display: flex; flex-direction: column; background: #F6F7F9; color: #171A21; font-family: Geist, system-ui, sans-serif; font-size: 13px; overflow: hidden">
+
+  <header style="height: 52px; flex-shrink: 0; display: flex; align-items: center; gap: 16px; padding: 0 16px; border-bottom: 1px solid #E3E6EC; background: #FFFFFF">
+    <div style="display: flex; align-items: center; gap: 12px">
+      <a href="Start.light.dc.html" aria-label="Home" style="display: flex"><svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><rect x="1" y="1" width="24" height="24" rx="7" fill="#6B57F0"></rect><path d="M8 18c2-1 3-4 5-7s4-3 5-2-1 3-3 5-5 3-7 4z" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"></path><circle cx="8" cy="18" r="1.6" fill="#F0B44C"></circle></svg></a>
+      <span style="padding: 3px 8px; border-radius: 6px; background: #E5F6EC; color: #1D7A4D; font-size: 11px; font-weight: 600; letter-spacing: 0.04em">APP</span>
+      <div style="display: flex; flex-direction: column; line-height: 1.15"><span style="font-weight: 600">Claims Portal</span><span style="color: #5C6373; font-size: 11px">Intake flow · ~/design/claims-portal</span></div>
+    </div>
+    <nav aria-label="Mode" style="display: flex; gap: 2px; padding: 3px; background: #F1F3F6; border: 1px solid #E3E6EC; border-radius: 10px; margin-left: 12px">
+      <a href="Main.light.dc.html" style="height: 30px; padding: 0 14px; border-radius: 7px; color: #5C6373; font-size: 12px; display: flex; align-items: center; text-decoration: none">Design</a>
+      <span style="height: 30px; padding: 0 14px; border-radius: 7px; background: #FFFFFF; color: #171A21; font-size: 12px; font-weight: 600; display: flex; align-items: center">Prototype</span>
+      <a href="Code.light.dc.html" style="height: 30px; padding: 0 14px; border-radius: 7px; color: #5C6373; font-size: 12px; display: flex; align-items: center; text-decoration: none">Code</a>
+    </nav>
+    <div style="flex: 1"></div>
+    <button style="height: 34px; padding: 0 12px; border-radius: 8px; border: 1px solid #E3E6EC; background: #F1F3F6; color: #171A21; font-size: 12px; display: flex; align-items: center; gap: 6px">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2"></rect><path d="M11 18h2"></path></svg>
+      Preview on phone
+    </button>
+    <button style="height: 34px; padding: 0 14px; border-radius: 8px; border: 0; background: #6B57F0; color: #fff; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 6px">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4l13 8-13 8z"></path></svg>
+      Play flow
+    </button>
+  </header>
+
+  <div style="flex: 1; display: flex; min-height: 0">
+
+    <!-- Flows -->
+    <aside aria-label="Flows" style="width: 248px; flex-shrink: 0; display: flex; flex-direction: column; border-right: 1px solid #E3E6EC; background: #FBFBFC">
+      <div style="padding: 14px 14px 6px; color: #5C6373; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase">Flows</div>
+      <div style="display: flex; flex-direction: column; padding: 0 8px; gap: 2px; font-size: 12px">
+        <div style="display: flex; align-items: center; gap: 8px; padding: 8px; border-radius: 7px; background: #E9ECF1"><svg width="12" height="12" viewBox="0 0 24 24" fill="#6B57F0" aria-hidden="true"><path d="M7 4l13 8-13 8z"></path></svg><div style="display: flex; flex-direction: column"><span style="font-weight: 500">Happy path</span><span style="font-size: 11px; color: #5C6373">4 screens · starts at Step 1</span></div></div>
+        <div style="display: flex; align-items: center; gap: 8px; padding: 8px; border-radius: 7px; color: #4B5262"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4l13 8-13 8z"></path></svg><div style="display: flex; flex-direction: column"><span>Missing info</span><span style="font-size: 11px; color: #5C6373">Error states on Step 1</span></div></div>
+        <div style="display: flex; align-items: center; gap: 8px; padding: 8px; border-radius: 7px; color: #5543C9"><span style="width: 12px; height: 12px; border-radius: 3px; border: 1.5px dashed #6B57F0; box-sizing: border-box"></span><div style="display: flex; flex-direction: column"><span>Save &amp; exit</span><span style="font-size: 11px">Suggested by Copilot</span></div></div>
+      </div>
+      <div style="padding: 18px 14px 6px; color: #5C6373; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase">Prototype data</div>
+      <div style="display: flex; flex-direction: column; gap: 6px; padding: 0 14px; font-size: 12px; color: #4B5262">
+        <div style="display: flex; justify-content: space-between"><span>Source</span><span style="color: #0E6B80">Claims data model</span></div>
+        <div style="display: flex; justify-content: space-between"><span>Sample rows</span><span style="font-family: 'Geist Mono', monospace">12 claims</span></div>
+        <div style="display: flex; justify-content: space-between"><span>Validation</span><span>From model rules</span></div>
+      </div>
+      <div style="flex: 1"></div>
+      <div style="margin: 10px; padding: 12px; border-radius: 10px; background: #F1F3F6; border: 1px solid #E3E6EC; display: flex; gap: 12px; align-items: center">
+        <div style="width: 52px; height: 52px; border-radius: 6px; background: #FFFFFF; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2px; padding: 5px; box-sizing: border-box; flex-shrink: 0">
+          <span style="background: #12263A"></span><span style="background: #12263A"></span><span></span><span style="background: #12263A"></span>
+          <span></span><span style="background: #12263A"></span><span style="background: #12263A"></span><span></span>
+          <span style="background: #12263A"></span><span></span><span style="background: #12263A"></span><span style="background: #12263A"></span>
+          <span style="background: #12263A"></span><span style="background: #12263A"></span><span></span><span style="background: #12263A"></span>
+        </div>
+        <span style="font-size: 11px; color: #5C6373; line-height: 1.4">Scan on the same Wi-Fi. The preview runs from this machine, not the cloud.</span>
+      </div>
+    </aside>
+
+    <!-- Canvas -->
+    <main style="flex: 1; position: relative; min-width: 0; background-color: #EDEFF3; background-image: radial-gradient(#CDD2DA 1px, transparent 1px); background-size: 20px 20px; overflow: hidden">
+
+      <!-- Frames -->
+      <div style="position: absolute; left: 30px; top: 50px; display: flex; flex-direction: column; gap: 6px">
+        <span style="font-size: 11px; color: #5C6373"><span style="color: #6B57F0">▶</span> Step 1 · Incident</span>
+        <div style="width: 150px; height: 300px; border-radius: 6px; background: #FFFFFF; display: flex; flex-direction: column; gap: 6px; padding: 12px 10px; box-sizing: border-box">
+          <div style="height: 5px; width: 50%; background: #0F6E6E; border-radius: 1px"></div>
+          <div style="height: 3px; background: #E3E8EE"><div style="width: 25%; height: 3px; background: #0F6E6E"></div></div>
+          <div style="height: 9px; width: 80%; background: #12263A; border-radius: 2px; margin-top: 6px"></div>
+          <div style="height: 20px; border: 1px solid #C9D2DC; border-radius: 3px"></div>
+          <div style="height: 20px; border: 1px solid #C9D2DC; border-radius: 3px"></div>
+          <div style="height: 50px; border: 1px solid #C9D2DC; border-radius: 3px"></div>
+          <div style="flex: 1"></div>
+          <div style="height: 24px; background: #0F6E6E; border-radius: 4px; outline: 2px solid #6B57F0; outline-offset: 2px"></div>
+        </div>
+      </div>
+      <div style="position: absolute; left: 238px; top: 50px; display: flex; flex-direction: column; gap: 6px">
+        <span style="font-size: 11px; color: #5C6373">Step 2 · Photos</span>
+        <div style="width: 150px; height: 300px; border-radius: 6px; background: #FFFFFF; display: flex; flex-direction: column; gap: 6px; padding: 12px 10px; box-sizing: border-box">
+          <div style="height: 5px; width: 50%; background: #0F6E6E; border-radius: 1px"></div>
+          <div style="height: 3px; background: #E3E8EE"><div style="width: 50%; height: 3px; background: #0F6E6E"></div></div>
+          <div style="height: 9px; width: 70%; background: #12263A; border-radius: 2px; margin-top: 6px"></div>
+          <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px"><span style="height: 36px; background: #E3EEEE; border-radius: 3px"></span><span style="height: 36px; background: #E3EEEE; border-radius: 3px"></span><span style="height: 36px; border: 1px dashed #9AA6B2; border-radius: 3px"></span></div>
+          <div style="flex: 1"></div>
+          <div style="height: 24px; background: #0F6E6E; border-radius: 4px"></div>
+        </div>
+      </div>
+      <div style="position: absolute; left: 446px; top: 50px; display: flex; flex-direction: column; gap: 6px">
+        <span style="font-size: 11px; color: #5C6373">Step 3 · Parties</span>
+        <div style="width: 150px; height: 300px; border-radius: 6px; background: #FFFFFF; display: flex; flex-direction: column; gap: 6px; padding: 12px 10px; box-sizing: border-box">
+          <div style="height: 5px; width: 50%; background: #0F6E6E; border-radius: 1px"></div>
+          <div style="height: 3px; background: #E3E8EE"><div style="width: 75%; height: 3px; background: #0F6E6E"></div></div>
+          <div style="height: 9px; width: 60%; background: #12263A; border-radius: 2px; margin-top: 6px"></div>
+          <div style="height: 20px; border: 1px solid #C9D2DC; border-radius: 3px"></div>
+          <div style="height: 20px; border: 1px solid #C9D2DC; border-radius: 3px"></div>
+          <div style="flex: 1"></div>
+          <div style="height: 24px; background: #0F6E6E; border-radius: 4px"></div>
+        </div>
+      </div>
+      <div style="position: absolute; left: 654px; top: 50px; display: flex; flex-direction: column; gap: 6px">
+        <span style="font-size: 11px; color: #5C6373">Step 4 · Review</span>
+        <div style="width: 150px; height: 300px; border-radius: 6px; background: #FFFFFF; display: flex; flex-direction: column; gap: 6px; padding: 12px 10px; box-sizing: border-box">
+          <div style="height: 5px; width: 50%; background: #0F6E6E; border-radius: 1px"></div>
+          <div style="height: 3px; background: #0F6E6E"></div>
+          <div style="height: 9px; width: 70%; background: #12263A; border-radius: 2px; margin-top: 6px"></div>
+          <div style="height: 3px; background: #9AA6B2"></div><div style="height: 3px; width: 80%; background: #9AA6B2"></div><div style="height: 3px; width: 60%; background: #9AA6B2"></div>
+          <div style="flex: 1"></div>
+          <div style="height: 24px; background: #0F6E6E; border-radius: 4px"></div>
+        </div>
+      </div>
+
+      <!-- Flow arrows -->
+      <div style="position: absolute; left: 182px; top: 318px; width: 52px; display: flex; align-items: center"><div style="flex: 1; height: 2px; background: #6B57F0"></div><svg width="8" height="10" viewBox="0 0 8 10" aria-hidden="true"><path d="M0 0l8 5-8 5z" fill="#6B57F0"></path></svg></div>
+      <div style="position: absolute; left: 390px; top: 318px; width: 52px; display: flex; align-items: center"><div style="flex: 1; height: 2px; background: #8A91A0"></div><svg width="8" height="10" viewBox="0 0 8 10" aria-hidden="true"><path d="M0 0l8 5-8 5z" fill="#8A91A0"></path></svg></div>
+      <div style="position: absolute; left: 598px; top: 318px; width: 52px; display: flex; align-items: center"><div style="flex: 1; height: 2px; background: #8A91A0"></div><svg width="8" height="10" viewBox="0 0 8 10" aria-hidden="true"><path d="M0 0l8 5-8 5z" fill="#8A91A0"></path></svg></div>
+      <span style="position: absolute; left: 186px; top: 296px; padding: 1px 6px; border-radius: 4px; background: #6B57F0; color: #fff; font-size: 10px; font-weight: 600">Tap</span>
+
+      <!-- Error branch -->
+      <div style="position: absolute; left: 104px; top: 362px; width: 2px; height: 70px; border-left: 2px dashed #B42323; box-sizing: border-box"></div>
+      <div style="position: absolute; left: 30px; top: 436px; display: flex; flex-direction: column; gap: 4px">
+        <div style="width: 150px; height: 72px; border-radius: 6px; background: #FFFFFF; padding: 8px; box-sizing: border-box; display: flex; flex-direction: column; gap: 4px"><div style="height: 12px; background: #FDECEC; border-radius: 2px"></div><div style="height: 18px; border: 1.5px solid #B42323; border-radius: 3px"></div></div>
+        <span style="font-size: 11px; color: #5C6373">Step 1 · Error state</span>
+      </div>
+      <span style="position: absolute; left: 112px; top: 386px; font-size: 10px; color: #B42323">if invalid</span>
+
+      <!-- Interaction properties -->
+      <div role="toolbar" aria-label="Interaction properties" style="position: absolute; left: 24px; right: 24px; bottom: 20px; display: flex; align-items: center; flex-wrap: wrap; gap: 16px; padding: 10px 16px; border-radius: 14px; background: #F1F3F6; border: 1px solid #D5D9E1; box-shadow: 0 12px 32px rgba(20,24,33,0.10)">
+        <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 11px; color: #5C6373">Interaction</span><span style="font-weight: 600">Continue → Step 2</span></div>
+        <div style="width: 1px; height: 36px; background: #D5D9E1"></div>
+        <div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 11px; color: #5C6373">Trigger</span><span style="padding: 3px 8px; border-radius: 5px; background: #FFFFFF; font-size: 12px">Tap ▾</span></div>
+        <div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 11px; color: #5C6373">Condition</span><span style="padding: 3px 8px; border-radius: 5px; background: #FFFFFF; font-family: 'Geist Mono', monospace; font-size: 12px; color: #5543C9">step1.isValid</span></div>
+        <div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 11px; color: #5C6373">Else</span><span style="padding: 3px 8px; border-radius: 5px; background: #FFFFFF; font-size: 12px">Show error state</span></div>
+        <div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 11px; color: #5C6373">Transition</span><span style="padding: 3px 8px; border-radius: 5px; background: #FFFFFF; font-family: 'Geist Mono', monospace; font-size: 12px; color: #5543C9">motion.slide · 250ms</span></div>
+        <div style="flex: 1"></div>
+        <button style="height: 34px; padding: 0 12px; border-radius: 8px; border: 1px solid #C9C1F7; background: #F1EFFE; color: #3F31A8; font-size: 12px; font-weight: 500; display: flex; align-items: center; gap: 6px">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"></path></svg>
+          Ask Copilot about this
+        </button>
+      </div>
+    </main>
+
+    <!-- Copilot -->
+    <aside aria-label="Copilot" style="width: 352px; flex-shrink: 0; display: flex; flex-direction: column; border-left: 1px solid #E3E6EC; background: #FBFBFC">
+      <div style="height: 48px; display: flex; align-items: center; gap: 8px; padding: 0 14px; border-bottom: 1px solid #E3E6EC">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5543C9" stroke-width="1.8" aria-hidden="true"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"></path></svg>
+        <span style="font-weight: 600">Copilot</span>
+        <span style="color: #5C6373; font-size: 12px">· Intake flow thread</span>
+      </div>
+      <div style="flex: 1; overflow: hidden; display: flex; flex-direction: column; gap: 14px; padding: 16px 14px">
+        <div style="align-self: flex-end; max-width: 86%; padding: 10px 12px; border-radius: 12px 12px 4px 12px; background: #ECEEF2; line-height: 1.45">Wire up the happy path so I can demo it.</div>
+        <div style="display: flex; flex-direction: column; gap: 8px; line-height: 1.5; color: #2E333D">
+          <span>Connected all four steps. Continue only moves forward when the step is valid. Otherwise it shows the error state, using the same rules as the Claims data model.</span>
+          <span>The PRD also mentions Save &amp; exit. I sketched that flow, but haven't connected it yet.</span>
+        </div>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap">
+          <button style="height: 30px; padding: 0 10px; border-radius: 7px; border: 1px solid #C9C1F7; background: #F1EFFE; color: #171A21; font-size: 12px">Wire Save &amp; exit</button>
+          <button style="height: 30px; padding: 0 10px; border-radius: 7px; border: 1px solid #D5D9E1; background: transparent; color: #171A21; font-size: 12px">Record a walkthrough</button>
+        </div>
+      </div>
+      <div style="padding: 12px; border-top: 1px solid #E3E6EC">
+        <label for="protoask" style="position: absolute; left: -9999px">Message Copilot</label>
+        <div style="display: flex; align-items: center; gap: 8px; padding: 8px 10px 8px 12px; border-radius: 12px; background: #F1F3F6; border: 1px solid #D5D9E1">
+          <input id="protoask" placeholder="Describe how screens should connect" style="flex: 1; border: 0; outline: none; background: transparent; color: #171A21; font-family: inherit; font-size: 13px">
+          <button aria-label="Send" style="width: 30px; height: 30px; border-radius: 8px; border: 0; background: #6B57F0; color: #fff; display: flex; align-items: center; justify-content: center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"></path></svg></button>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

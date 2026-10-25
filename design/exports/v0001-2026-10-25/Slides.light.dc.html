@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>CADE deck workspace (light)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#5543C9}a:hover{color:#3F31A8}
+button{font-family:inherit}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; box-sizing: border-box; display: flex; flex-direction: column; background: #F6F7F9; color: #171A21; font-family: Geist, system-ui, sans-serif; font-size: 13px; overflow: hidden">
+
+  <header style="height: 52px; flex-shrink: 0; display: flex; align-items: center; gap: 14px; padding: 0 16px; border-bottom: 1px solid #E3E6EC; background: #FFFFFF">
+    <a href="Start.light.dc.html" aria-label="Home" style="display: flex"><svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><rect x="1" y="1" width="24" height="24" rx="7" fill="#6B57F0"></rect><path d="M8 18c2-1 3-4 5-7s4-3 5-2-1 3-3 5-5 3-7 4z" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"></path><circle cx="8" cy="18" r="1.6" fill="#F0B44C"></circle></svg></a>
+    <span style="padding: 3px 8px; border-radius: 6px; background: #FDF0D2; color: #8A5A00; font-size: 11px; font-weight: 600; letter-spacing: 0.04em">DECK</span>
+    <div style="display: flex; flex-direction: column; line-height: 1.15">
+      <span style="font-weight: 600">Claims Portal — exec review</span>
+      <span style="color: #5C6373; font-size: 11px">12 slides · master: Contoso Board</span>
+    </div>
+    <div style="flex: 1"></div>
+    <button style="height: 32px; padding: 0 10px; border-radius: 8px; border: 1px solid #E3E6EC; background: #F1F3F6; color: #4B5262; font-size: 12px">16:9 · Contoso Board ▾</button>
+    <button style="height: 34px; padding: 0 12px; border-radius: 8px; border: 1px solid #E3E6EC; background: #F1F3F6; color: #171A21; font-size: 12px; display: flex; align-items: center; gap: 6px">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4l13 8-13 8z"></path></svg>Present
+    </button>
+    <button style="height: 34px; padding: 0 14px; border-radius: 8px; border: 0; background: #6B57F0; color: #fff; font-size: 12px; font-weight: 600">Export ▾</button>
+  </header>
+
+  <div style="flex: 1; display: flex; min-height: 0">
+
+    <!-- Slide strip -->
+    <nav aria-label="Slides" style="width: 196px; flex-shrink: 0; display: flex; flex-direction: column; gap: 10px; padding: 14px; border-right: 1px solid #E3E6EC; background: #FBFBFC; overflow: hidden">
+      <div style="display: flex; gap: 8px; align-items: flex-start"><span style="width: 16px; color: #5C6373; font-size: 11px; text-align: right; padding-top: 2px">1</span><div style="flex: 1; aspect-ratio: 16 / 9; border-radius: 5px; background: #0F3B3B"></div></div>
+      <div style="display: flex; gap: 8px; align-items: flex-start"><span style="width: 16px; color: #5C6373; font-size: 11px; text-align: right; padding-top: 2px">2</span><div style="flex: 1; aspect-ratio: 16 / 9; border-radius: 5px; background: #F4F6F8"></div></div>
+      <div style="display: flex; gap: 8px; align-items: flex-start"><span style="width: 16px; color: #5C6373; font-size: 11px; text-align: right; padding-top: 2px">3</span><div style="flex: 1; aspect-ratio: 16 / 9; border-radius: 5px; background: #FFFFFF"></div></div>
+      <div style="display: flex; gap: 8px; align-items: flex-start"><span style="width: 16px; color: #171A21; font-size: 11px; font-weight: 600; text-align: right; padding-top: 2px">4</span><div style="flex: 1; aspect-ratio: 16 / 9; border-radius: 5px; background: #FFFFFF; outline: 2px solid #6B57F0; outline-offset: 2px; display: flex; align-items: flex-end; gap: 3px; padding: 8px; box-sizing: border-box"><div style="width: 8px; height: 26px; background: #9AA6B2"></div><div style="width: 8px; height: 22px; background: #9AA6B2"></div><div style="width: 8px; height: 14px; background: #0F6E6E"></div><div style="width: 8px; height: 10px; background: #0F6E6E"></div></div></div>
+      <div style="display: flex; gap: 8px; align-items: flex-start"><span style="width: 16px; color: #5C6373; font-size: 11px; text-align: right; padding-top: 2px">5</span><div style="flex: 1; aspect-ratio: 16 / 9; border-radius: 5px; background: #F4F6F8"></div></div>
+      <div style="display: flex; gap: 8px; align-items: flex-start"><span style="width: 16px; color: #5C6373; font-size: 11px; text-align: right; padding-top: 2px">6</span><div style="flex: 1; aspect-ratio: 16 / 9; border-radius: 5px; background: #FFFFFF"></div></div>
+      <button style="height: 32px; border-radius: 8px; border: 1px dashed #D5D9E1; background: transparent; color: #5C6373; font-size: 12px; margin-left: 24px">+ Slide from layout</button>
+    </nav>
+
+    <!-- Stage -->
+    <main style="flex: 1; min-width: 0; position: relative; display: flex; flex-direction: column; background-color: #EDEFF3; background-image: radial-gradient(#CDD2DA 1px, transparent 1px); background-size: 20px 20px">
+      <div style="flex: 1; display: flex; justify-content: center; padding: 26px 24px 0">
+        <div style="position: relative; width: 704px; height: 396px; background: #FFFFFF; border-radius: 3px; color: #12263A; box-shadow: 0 20px 40px rgba(20,24,33,0.14); padding: 34px 38px; box-sizing: border-box; display: flex; flex-direction: column; gap: 6px">
+          <span style="font-size: 11px; font-weight: 600; color: #0F6E6E; letter-spacing: 0.08em; text-transform: uppercase">Why change intake</span>
+          <span style="font-size: 26px; font-weight: 700; line-height: 1.15">Callbacks fall once photos arrive with the claim</span>
+          <div style="flex: 1; display: flex; gap: 28px; margin-top: 16px">
+            <!-- Chart (selected) -->
+            <div style="position: relative; flex: 1; display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; outline: 1.5px solid #6B57F0; outline-offset: 4px">
+              <span style="font-size: 11px; color: #3E4F60">Adjuster callbacks per 100 claims</span>
+              <div style="flex: 1; display: flex; align-items: flex-end; gap: 14px; border-bottom: 1px solid #C9D2DC; padding: 0 4px">
+                <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px"><span style="font-size: 10px; color: #3E4F60">[A]</span><div style="width: 100%; height: 150px; background: #9AA6B2; border-radius: 3px 3px 0 0"></div></div>
+                <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px"><span style="font-size: 10px; color: #3E4F60">[B]</span><div style="width: 100%; height: 132px; background: #9AA6B2; border-radius: 3px 3px 0 0"></div></div>
+                <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px"><span style="font-size: 10px; color: #0F6E6E; font-weight: 600">[C]</span><div style="width: 100%; height: 84px; background: #0F6E6E; border-radius: 3px 3px 0 0"></div></div>
+                <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px"><span style="font-size: 10px; color: #0F6E6E; font-weight: 600">[D]</span><div style="width: 100%; height: 62px; background: #0F6E6E; border-radius: 3px 3px 0 0"></div></div>
+              </div>
+              <div style="display: flex; gap: 14px; padding: 0 4px; font-size: 10px; color: #3E4F60"><span style="flex: 1; text-align: center">Q1</span><span style="flex: 1; text-align: center">Q2</span><span style="flex: 1; text-align: center">Q3 pilot</span><span style="flex: 1; text-align: center">Q4 pilot</span></div>
+              <span style="position: absolute; left: -9px; top: -9px; width: 8px; height: 8px; background: #fff; border: 1.5px solid #6B57F0"></span>
+              <span style="position: absolute; right: -9px; top: -9px; width: 8px; height: 8px; background: #fff; border: 1.5px solid #6B57F0"></span>
+              <span style="position: absolute; left: -9px; bottom: -9px; width: 8px; height: 8px; background: #fff; border: 1.5px solid #6B57F0"></span>
+              <span style="position: absolute; right: -9px; bottom: -9px; width: 8px; height: 8px; background: #fff; border: 1.5px solid #6B57F0"></span>
+            </div>
+            <div style="width: 170px; display: flex; flex-direction: column; justify-content: center; gap: 6px">
+              <span style="font-size: 32px; font-weight: 700; color: #0F6E6E">[X]%</span>
+              <span style="font-size: 12px; color: #3E4F60; line-height: 1.45">fewer callbacks in the pilot region after photo upload went live</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chart properties -->
+      <div role="toolbar" aria-label="Chart properties" style="margin: 14px 24px 0; display: flex; align-items: center; flex-wrap: wrap; gap: 16px; padding: 10px 16px; border-radius: 14px; background: #F1F3F6; border: 1px solid #D5D9E1">
+        <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 11px; color: #5C6373">Chart</span><span style="font-weight: 600">Callbacks per 100</span></div>
+        <div style="width: 1px; height: 36px; background: #D5D9E1"></div>
+        <div style="display: flex; flex-direction: column; gap: 4px">
+          <span style="font-size: 11px; color: #5C6373">Type</span>
+          <div style="display: flex; gap: 2px; padding: 2px; border-radius: 7px; background: #FFFFFF">
+            <button aria-label="Bar" style="width: 30px; height: 26px; border: 0; border-radius: 5px; background: #ECE9FE; color: #3F31A8; display: flex; align-items: center; justify-content: center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 20V10M12 20V4M18 20v-7"></path></svg></button>
+            <button aria-label="Line" style="width: 30px; height: 26px; border: 0; border-radius: 5px; background: transparent; color: #5C6373; display: flex; align-items: center; justify-content: center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"></path></svg></button>
+            <button aria-label="Donut" style="width: 30px; height: 26px; border: 0; border-radius: 5px; background: transparent; color: #5C6373; display: flex; align-items: center; justify-content: center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><circle cx="12" cy="12" r="3.5"></circle></svg></button>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 4px">
+          <span style="font-size: 11px; color: #5C6373">Series colors</span>
+          <div style="display: flex; align-items: center; gap: 5px">
+            <button aria-label="Before: color.neutral.400" style="width: 24px; height: 24px; border-radius: 6px; border: 1px solid #D5D9E1; background: #9AA6B2"></button>
+            <button aria-label="Pilot: color.brand.teal-700" style="width: 24px; height: 24px; border-radius: 6px; border: 2px solid #3F31A8; background: #0F6E6E"></button>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 4px">
+          <span style="font-size: 11px; color: #5C6373">Data</span>
+          <button style="height: 24px; padding: 0 8px; border-radius: 5px; border: 0; background: #FFFFFF; color: #171A21; font-size: 12px">Edit 4 values</button>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 4px">
+          <span style="font-size: 11px; color: #5C6373">Labels</span>
+          <span style="padding: 3px 8px; border-radius: 5px; background: #FFFFFF; font-size: 12px">On bars ▾</span>
+        </div>
+        <div style="flex: 1"></div>
+        <button style="height: 34px; padding: 0 12px; border-radius: 8px; border: 1px solid #C9C1F7; background: #F1EFFE; color: #3F31A8; font-size: 12px; font-weight: 500; display: flex; align-items: center; gap: 6px">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"></path></svg>
+          Ask Copilot about this
+        </button>
+      </div>
+
+      <div style="margin: 12px 24px 16px; padding: 10px 14px; border-radius: 10px; background: #FFFFFF; border: 1px solid #E3E6EC; display: flex; flex-direction: column; gap: 4px">
+        <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5C6373">Speaker notes</span>
+        <span style="color: #2E333D; line-height: 1.5">Gray is before the pilot, teal is after. Pause on Q3 — that's the quarter photo upload went live.</span>
+      </div>
+    </main>
+
+    <!-- Copilot -->
+    <aside aria-label="Copilot" style="width: 352px; flex-shrink: 0; display: flex; flex-direction: column; border-left: 1px solid #E3E6EC; background: #FBFBFC">
+      <div style="height: 48px; display: flex; align-items: center; gap: 8px; padding: 0 14px; border-bottom: 1px solid #E3E6EC">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5543C9" stroke-width="1.8" aria-hidden="true"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"></path></svg>
+        <span style="font-weight: 600">Copilot</span>
+        <span style="color: #5C6373; font-size: 12px">· Deck thread</span>
+      </div>
+      <div style="flex: 1; overflow: hidden; display: flex; flex-direction: column; gap: 14px; padding: 16px 14px">
+        <div style="align-self: flex-end; max-width: 88%; display: flex; flex-direction: column; gap: 6px; align-items: flex-end">
+          <span style="display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 6px; background: #ECE9FE; color: #3F31A8; font-size: 11px">Chart · Callbacks per 100</span>
+          <div style="padding: 10px 12px; border-radius: 12px 12px 4px 12px; background: #ECEEF2; line-height: 1.45">Make the pilot quarters stand out and drop the gridlines.</div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px; line-height: 1.5; color: #2E333D">
+          <span>Done on this chart only. Pilot bars use the brand teal and pre-pilot bars are muted gray. Gridlines are off and the value labels moved onto the bars.</span>
+          <div style="display: flex; flex-direction: column; border: 1px solid #E3E6EC; border-radius: 10px; overflow: hidden; font-size: 12px">
+            <div style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px solid #E3E6EC"><span style="padding: 1px 6px; border-radius: 4px; background: #FDF0D2; color: #8A5A00; font-family: 'Geist Mono', monospace; font-size: 11px">SERIES</span>Q3–Q4 → <span style="font-family: 'Geist Mono', monospace; color: #5543C9">teal-700</span></div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px solid #E3E6EC"><span style="padding: 1px 6px; border-radius: 4px; background: #FDECEC; color: #B42323; font-family: 'Geist Mono', monospace; font-size: 11px">DEL</span>Gridlines</div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 8px 12px"><span style="padding: 1px 6px; border-radius: 4px; background: #FDF0D2; color: #8A5A00; font-family: 'Geist Mono', monospace; font-size: 11px">LABELS</span>Axis → on bars</div>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 12px; background: #F5F3FF; border: 1px solid #DCD6FB">
+          <span style="font-size: 12px; font-weight: 600; color: #3F31A8">Values are placeholders</span>
+          <span style="font-size: 12px; color: #2E333D; line-height: 1.45">[A]–[D] and [X] aren't in the source docs. Paste the numbers or attach the report and I'll fill the chart.</span>
+          <button style="align-self: flex-start; height: 30px; padding: 0 10px; border-radius: 7px; border: 1px solid #C9C1F7; background: #F1EFFE; color: #171A21; font-size: 12px">Attach data</button>
+        </div>
+      </div>
+      <div style="padding: 12px; border-top: 1px solid #E3E6EC">
+        <label for="deckask" style="position: absolute; left: -9999px">Message Copilot</label>
+        <div style="display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-radius: 12px; background: #F1F3F6; border: 1px solid #D5D9E1">
+          <div style="display: flex; gap: 6px"><span style="display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 6px; background: #ECE9FE; color: #3F31A8; font-size: 11px">Chart · Callbacks per 100</span></div>
+          <input id="deckask" placeholder="Change the selection, this slide, or the deck" style="border: 0; outline: none; background: transparent; color: #171A21; font-family: inherit; font-size: 13px; padding: 2px 0">
+          <div style="display: flex; align-items: center; gap: 8px">
+            <button style="height: 26px; padding: 0 8px; border-radius: 6px; border: 1px solid #D5D9E1; background: transparent; color: #4B5262; font-size: 11px">Claude Sonnet 5.5 ▾</button>
+            <div style="flex: 1"></div>
+            <button aria-label="Send" style="width: 30px; height: 30px; border-radius: 8px; border: 0; background: #6B57F0; color: #fff; display: flex; align-items: center; justify-content: center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"></path></svg></button>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

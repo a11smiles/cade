@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>CADE design review link</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#B7ABFF}a:hover{color:#D9D2FF}
+button{font-family:inherit;cursor:pointer}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; box-sizing: border-box; display: flex; flex-direction: column; background: #0E1014; color: #E7E9EF; font-family: Geist, system-ui, sans-serif; font-size: 13px; overflow: hidden">
+
+  <!-- Browser address (reviewer sees this in any browser) -->
+  <div style="height: 40px; flex-shrink: 0; display: flex; align-items: center; gap: 10px; padding: 0 16px; background: #0B0D11; border-bottom: 1px solid #272C37">
+    <span style="display: flex; gap: 6px"><span style="width: 10px; height: 10px; border-radius: 50%; background: #3A3F4D"></span><span style="width: 10px; height: 10px; border-radius: 50%; background: #3A3F4D"></span><span style="width: 10px; height: 10px; border-radius: 50%; background: #3A3F4D"></span></span>
+    <div style="flex: 1; max-width: 640px; margin: 0 auto; height: 26px; display: flex; align-items: center; gap: 8px; padding: 0 12px; border-radius: 7px; background: #1B1F28; color: #B5BBC9; font-family: 'Geist Mono', monospace; font-size: 12px">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"></rect><path d="M8 11V8a4 4 0 018 0v3"></path></svg>
+      contoso.github.io/claims-portal/review/214
+    </div>
+  </div>
+
+  <header style="height: 56px; flex-shrink: 0; display: flex; align-items: center; gap: 14px; padding: 0 18px; border-bottom: 1px solid #272C37; background: #12151B">
+    <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><rect x="1" y="1" width="24" height="24" rx="7" fill="#6B57F0"></rect><path d="M8 18c2-1 3-4 5-7s4-3 5-2-1 3-3 5-5 3-7 4z" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"></path><circle cx="8" cy="18" r="1.6" fill="#F0B44C"></circle></svg>
+    <div style="display: flex; flex-direction: column; line-height: 1.2">
+      <span style="font-weight: 600">Design review · PR #214 · Intake flow: Step 1 with validation</span>
+      <span style="color: #9AA1B2; font-size: 11px">Shared by jdavis · version a41c9e2 · private to readers of contoso/claims-portal</span>
+    </div>
+    <div style="flex: 1"></div>
+    <span style="display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: 999px; background: {{ statusBg }}; color: {{ statusFg }}; font-size: 11px; font-weight: 600">{{ status }}</span>
+    <button onClick="{{ requestChanges }}" style="height: 34px; padding: 0 12px; border-radius: 8px; border: 1px solid #323848; background: transparent; color: #E7E9EF; font-size: 12px">Request changes</button>
+    <button onClick="{{ approve }}" style="height: 34px; padding: 0 14px; border-radius: 8px; border: 0; background: #1D7A4D; color: #fff; font-size: 12px; font-weight: 600">Approve</button>
+  </header>
+
+  <div style="flex: 1; display: flex; min-height: 0">
+
+    <!-- Frames -->
+    <main style="flex: 1; position: relative; min-width: 0; background-color: #0B0D11; background-image: radial-gradient(#232836 1px, transparent 1px); background-size: 20px 20px; overflow: hidden">
+      <div role="group" aria-label="Frames" style="position: absolute; left: 24px; top: 18px; display: flex; gap: 2px; padding: 3px; background: #1B1F28; border: 1px solid #272C37; border-radius: 10px">
+        <span style="height: 28px; padding: 0 12px; border-radius: 7px; background: #2A2F3C; font-size: 12px; font-weight: 600; display: flex; align-items: center">Step 1 · Mobile</span>
+        <span style="height: 28px; padding: 0 12px; border-radius: 7px; color: #9AA1B2; font-size: 12px; display: flex; align-items: center">Step 1 · Desktop</span>
+        <span style="height: 28px; padding: 0 12px; border-radius: 7px; color: #9AA1B2; font-size: 12px; display: flex; align-items: center">Prototype</span>
+      </div>
+
+      <div style="position: absolute; left: 140px; top: 76px; width: 320px; height: 640px; background: #FFFFFF; border-radius: 4px; overflow: hidden; color: #12263A; display: flex; flex-direction: column">
+        <div style="height: 54px; display: flex; align-items: center; justify-content: space-between; padding: 0 18px; border-bottom: 1px solid #E3E8EE"><span style="font-weight: 700; color: #0F6E6E">Contoso Claims</span><span style="font-size: 11px; color: #4A5B6C">Save &amp; exit</span></div>
+        <div style="margin: 16px 18px 0; padding: 10px 12px; border-radius: 6px; background: #FDECEC; color: #8A1C1C; font-size: 12px; line-height: 1.4">2 fields need attention before you continue.</div>
+        <div style="padding: 18px; display: flex; flex-direction: column; gap: 14px">
+          <span style="font-size: 21px; font-weight: 700">What happened?</span>
+          <div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 11px; font-weight: 600">Date of incident</span><div style="height: 40px; border: 2px solid #B42323; border-radius: 6px"></div><span style="font-size: 11px; color: #A11F1F">Enter a date on or before today.</span></div>
+          <div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 11px; font-weight: 600">Type of claim</span><div style="height: 40px; border: 1px solid #C9D2DC; border-radius: 6px"></div></div>
+          <div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 11px; font-weight: 600">Describe the incident</span><div style="height: 88px; border: 2px solid #B42323; border-radius: 6px"></div><span style="font-size: 11px; color: #A11F1F">Add at least 20 characters.</span></div>
+        </div>
+        <div style="flex: 1"></div>
+        <div style="padding: 18px"><div style="height: 48px; border-radius: 8px; background: #0F6E6E; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 600">Continue</div></div>
+      </div>
+
+      <!-- Pins -->
+      <sc-for list="{{ threads }}" as="t" hint-placeholder-count="3">
+        <button onClick="{{ t.pick }}" aria-label="Comment {{ t.n }}" style="position: absolute; left: {{ t.x }}; top: {{ t.y }}; width: 30px; height: 30px; border-radius: 15px 15px 15px 3px; border: {{ t.pinBorder }}; background: {{ t.pinBg }}; color: {{ t.pinFg }}; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; opacity: {{ t.pinOpacity }}">{{ t.n }}</button>
+      </sc-for>
+
+      <div style="position: absolute; left: 520px; top: 90px; width: 260px; display: flex; flex-direction: column; gap: 8px; padding: 14px; border-radius: 12px; background: #15181F; border: 1px solid #272C37">
+        <span style="font-weight: 600">How this link works</span>
+        <span style="font-size: 12px; color: #B5BBC9; line-height: 1.5">CADE published these frames to the repo's private GitHub Pages. Only people who can read contoso/claims-portal can open it. Comments post to PR #214 and show up back in CADE.</span>
+      </div>
+    </main>
+
+    <!-- Threads -->
+    <aside aria-label="Comments" style="width: 400px; flex-shrink: 0; display: flex; flex-direction: column; border-left: 1px solid #272C37; background: #15181F">
+      <div style="height: 48px; display: flex; align-items: center; gap: 8px; padding: 0 16px; border-bottom: 1px solid #272C37">
+        <span style="font-weight: 600">Comments</span>
+        <span style="padding: 1px 7px; border-radius: 999px; background: #2B2554; color: #D9D2FF; font-size: 11px">{{ openCount }} open</span>
+        <div style="flex: 1"></div>
+        <span style="font-size: 11px; color: #9AA1B2">Synced to PR #214</span>
+      </div>
+      <div style="flex: 1; display: flex; flex-direction: column; gap: 10px; padding: 14px; overflow: hidden">
+        <sc-for list="{{ threads }}" as="t" hint-placeholder-count="3">
+          <div style="display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 12px; background: {{ t.cardBg }}; border: {{ t.cardBorder }}; opacity: {{ t.cardOpacity }}">
+            <button onClick="{{ t.pick }}" style="display: flex; align-items: center; gap: 8px; padding: 0; border: 0; background: transparent; color: #E7E9EF; text-align: left">
+              <span style="width: 22px; height: 22px; border-radius: 50%; background: {{ t.avBg }}; color: {{ t.avFg }}; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center">{{ t.initials }}</span>
+              <span style="font-weight: 600; font-size: 12px">{{ t.who }}</span>
+              <span style="font-size: 11px; color: #9AA1B2">{{ t.role }}</span>
+              <span style="margin-left: auto; font-size: 11px; color: #9AA1B2">#{{ t.n }}</span>
+            </button>
+            <span style="font-size: 12px; line-height: 1.5; color: #D3D7E0">{{ t.text }}</span>
+            <sc-if value="{{ t.hasReply }}" hint-placeholder-val="{{ false }}">
+              <div style="display: flex; gap: 8px; padding: 8px 10px; border-radius: 8px; background: #1B1F28; font-size: 12px; line-height: 1.45; color: #B5BBC9"><span style="font-weight: 600; color: #E7E9EF">jdavis</span><span>{{ t.reply }}</span></div>
+            </sc-if>
+            <div style="display: flex; gap: 6px">
+              <button onClick="{{ t.toggle }}" style="height: 28px; padding: 0 10px; border-radius: 7px; border: 1px solid #323848; background: transparent; color: #E7E9EF; font-size: 11px">{{ t.toggleLabel }}</button>
+              <sc-if value="{{ t.canFix }}" hint-placeholder-val="{{ false }}">
+                <button onClick="{{ t.fix }}" style="height: 28px; padding: 0 10px; border-radius: 7px; border: 1px solid #4A4190; background: #241F4A; color: #D9D2FF; font-size: 11px">Ask Copilot to fix in CADE</button>
+              </sc-if>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="padding: 12px 14px; border-top: 1px solid #272C37">
+        <label for="rvcomment" style="position: absolute; left: -9999px">Add a comment</label>
+        <div style="display: flex; align-items: center; gap: 8px; padding: 8px 10px 8px 12px; border-radius: 12px; background: #1B1F28; border: 1px solid #323848">
+          <input id="rvcomment" placeholder="Click the design to place a comment" style="flex: 1; border: 0; outline: none; background: transparent; color: #E7E9EF; font-family: inherit; font-size: 13px">
+          <button style="height: 30px; padding: 0 12px; border-radius: 8px; border: 0; background: #6B57F0; color: #fff; font-size: 12px; font-weight: 600">Post</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { sel: 1, resolved: {}, fixed: {}, status: 'pending' };
+  }
+  renderVals() {
+    const base = [
+      { n: 1, x: '446px', y: '128px', initials: 'LG', who: 'Lena G.', role: 'Legal', avBg: '#F0B44C', avFg: '#2A1E05',
+        text: '“Need attention” reads as vague to policyholders. Can the summary name the two fields?' },
+      { n: 2, x: '446px', y: '258px', initials: 'MR', who: 'Marco R.', role: '@claims-frontend', avBg: '#3FB68B', avFg: '#08251A',
+        text: 'Date error should also block future dates set by timezone drift. Is that in the rule?',
+        reply: 'Yes, the rule uses the policyholder’s local date. It comes from the data model.' },
+      { n: 3, x: '446px', y: '664px', initials: 'DS', who: 'Dana S.', role: '@design-system', avBg: '#9B8CFF', avFg: '#14102E',
+        text: 'Looks right. Continue should look disabled while errors show, to match Code mode.' }
+    ];
+    const statusMap = {
+      pending: ['Review requested', '#2E2614', '#F0C574'],
+      approved: ['Approved', '#16301F', '#7FDDB0'],
+      changes: ['Changes requested', '#2A1515', '#F5A3A3']
+    };
+    const threads = base.map((t) => {
+      const isSel = this.state.sel === t.n;
+      const isRes = !!this.state.resolved[t.n];
+      const isFixed = !!this.state.fixed[t.n];
+      return {
+        ...t,
+        hasReply: !!t.reply || isFixed,
+        reply: isFixed ? 'Sent to Copilot in CADE. A fix will show up as a new version on this link.' : t.reply,
+        canFix: !isRes && !isFixed,
+        pinBg: isSel ? '#9B8CFF' : '#F0B44C',
+        pinFg: isSel ? '#14102E' : '#2A1E05',
+        pinBorder: isSel ? '2px solid #FFFFFF' : '0',
+        pinOpacity: isRes ? 0.35 : 1,
+        cardBg: isSel ? '#1A1830' : '#15181F',
+        cardBorder: isSel ? '1.5px solid #9B8CFF' : '1px solid #272C37',
+        cardOpacity: isRes ? 0.55 : 1,
+        toggleLabel: isRes ? 'Reopen' : 'Resolve',
+        pick: () => this.setState({ sel: t.n }),
+        toggle: () => this.setState({ resolved: { ...this.state.resolved, [t.n]: !isRes } }),
+        fix: () => this.setState({ fixed: { ...this.state.fixed, [t.n]: true }, sel: t.n })
+      };
+    });
+    const s = statusMap[this.state.status];
+    return {
+      threads,
+      openCount: base.filter((t) => !this.state.resolved[t.n]).length,
+      status: s[0], statusBg: s[1], statusFg: s[2],
+      approve: () => this.setState({ status: 'approved' }),
+      requestChanges: () => this.setState({ status: 'changes' })
+    };
+  }
+}
+</script>
+</body>
+</html>

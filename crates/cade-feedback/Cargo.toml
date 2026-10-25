@@ -1,0 +1,14 @@
+[package]
+name = "cade-feedback"
+description = "Bug, feature request and comment submission as GitHub issues, with redaction."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+regex.workspace = true
+serde.workspace = true
+thiserror.workspace = true

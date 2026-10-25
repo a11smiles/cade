@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>CADE image workspace (light)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#5543C9}a:hover{color:#3F31A8}
+button{font-family:inherit}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; box-sizing: border-box; display: flex; flex-direction: column; background: #F6F7F9; color: #171A21; font-family: Geist, system-ui, sans-serif; font-size: 13px; overflow: hidden">
+
+  <header style="height: 52px; flex-shrink: 0; display: flex; align-items: center; gap: 14px; padding: 0 16px; border-bottom: 1px solid #E3E6EC; background: #FFFFFF">
+    <a href="Start.light.dc.html" aria-label="Home" style="display: flex"><svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><rect x="1" y="1" width="24" height="24" rx="7" fill="#6B57F0"></rect><path d="M8 18c2-1 3-4 5-7s4-3 5-2-1 3-3 5-5 3-7 4z" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"></path><circle cx="8" cy="18" r="1.6" fill="#F0B44C"></circle></svg></a>
+    <span style="padding: 3px 8px; border-radius: 6px; background: #ECE9FE; color: #3F31A8; font-size: 11px; font-weight: 600; letter-spacing: 0.04em">IMAGE</span>
+    <div style="display: flex; flex-direction: column; line-height: 1.15">
+      <span style="font-weight: 600">Open enrollment banner</span>
+      <span style="color: #5C6373; font-size: 11px">~/design/open-enrollment · 4 sizes</span>
+    </div>
+    <div style="flex: 1"></div>
+    <div style="display: flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: 999px; background: #FFF7E6; border: 1px solid #F2D9A0; color: #8A5A00; font-size: 11px; font-weight: 500">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"></path></svg>
+      Brand-locked palette
+    </div>
+    <span style="color: #5C6373; font-size: 12px; font-family: 'Geist Mono', monospace">58%</span>
+    <button style="height: 34px; padding: 0 14px; border-radius: 8px; border: 0; background: #6B57F0; color: #fff; font-size: 12px; font-weight: 600">Export 4 sizes ▾</button>
+  </header>
+
+  <div style="flex: 1; display: flex; min-height: 0">
+
+    <!-- Tool rail: image tools -->
+    <nav aria-label="Tools" style="width: 52px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 0; border-right: 1px solid #E3E6EC; background: #FFFFFF">
+      <button aria-label="Select" style="width: 38px; height: 38px; border-radius: 9px; border: 0; background: #FFFFFF; color: #171A21; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 3l14 8-6 2-2 6z"></path></svg></button>
+      <button aria-label="Shapes" style="width: 38px; height: 38px; border-radius: 9px; border: 0; background: transparent; color: #5C6373; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="8" cy="9" r="5"></circle><rect x="11" y="11" width="10" height="10" rx="1.5"></rect></svg></button>
+      <button aria-label="Pen" style="width: 38px; height: 38px; border-radius: 9px; border: 0; background: transparent; color: #5C6373; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 19l7-7 2 2-7 7zM18 13l-1.5-7.5L3 3l2.5 13.5L13 18z"></path></svg></button>
+      <button aria-label="Text" style="width: 38px; height: 38px; border-radius: 9px; border: 0; background: transparent; color: #5C6373; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 6V4h14v2M12 4v16M9 20h6"></path></svg></button>
+      <button aria-label="Place image" style="width: 38px; height: 38px; border-radius: 9px; border: 0; background: transparent; color: #5C6373; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"></rect><circle cx="9" cy="10" r="1.6"></circle><path d="M21 16l-5-5-8 8"></path></svg></button>
+      <button aria-label="Brand assets" style="width: 38px; height: 38px; border-radius: 9px; border: 0; background: transparent; color: #5C6373; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 2l4 4-4 4-4-4zM6 8l4 4-4 4-4-4zM18 8l4 4-4 4-4-4zM12 14l4 4-4 4-4-4z"></path></svg></button>
+      <button aria-label="Eyedropper" style="width: 38px; height: 38px; border-radius: 9px; border: 0; background: transparent; color: #5C6373; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M14 4l6 6-3 3-6-6zM12 8l-8 8v4h4l8-8"></path></svg></button>
+      <button aria-label="Crop" style="width: 38px; height: 38px; border-radius: 9px; border: 0; background: transparent; color: #5C6373; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M6 2v16h16M2 6h16v16"></path></svg></button>
+    </nav>
+
+    <!-- Left: sizes + layers -->
+    <aside aria-label="Sizes and layers" style="width: 248px; flex-shrink: 0; display: flex; flex-direction: column; border-right: 1px solid #E3E6EC; background: #FBFBFC">
+      <div style="padding: 14px 14px 6px; color: #5C6373; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase">Sizes · kept in sync</div>
+      <div style="display: flex; flex-direction: column; padding: 0 8px; gap: 1px; font-size: 12px">
+        <div style="height: 30px; display: flex; align-items: center; gap: 8px; padding: 0 8px; border-radius: 6px; background: #E9ECF1"><span style="width: 18px; height: 10px; border: 1.5px solid #6B57F0; border-radius: 2px"></span><span style="flex: 1; font-weight: 500">LinkedIn</span><span style="font-family: 'Geist Mono', monospace; color: #5C6373; font-size: 11px">1200×628</span></div>
+        <div style="height: 30px; display: flex; align-items: center; gap: 8px; padding: 0 8px; color: #4B5262"><span style="width: 12px; height: 12px; border: 1.5px solid #8A91A0; border-radius: 2px; margin: 0 3px"></span><span style="flex: 1">Instagram</span><span style="font-family: 'Geist Mono', monospace; color: #5C6373; font-size: 11px">1080×1080</span></div>
+        <div style="height: 30px; display: flex; align-items: center; gap: 8px; padding: 0 8px; color: #4B5262"><span style="width: 18px; height: 10px; border: 1.5px solid #8A91A0; border-radius: 2px"></span><span style="flex: 1">Intranet hero</span><span style="font-family: 'Geist Mono', monospace; color: #5C6373; font-size: 11px">1920×600</span></div>
+        <div style="height: 30px; display: flex; align-items: center; gap: 8px; padding: 0 8px; color: #4B5262"><span style="width: 18px; height: 7px; border: 1.5px solid #8A91A0; border-radius: 2px"></span><span style="flex: 1">Email header</span><span style="font-family: 'Geist Mono', monospace; color: #5C6373; font-size: 11px">600×200</span></div>
+      </div>
+      <div style="padding: 18px 14px 6px; color: #5C6373; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase">Layers</div>
+      <div style="display: flex; flex-direction: column; padding: 0 8px; gap: 1px; font-size: 12px">
+        <div style="height: 26px; display: flex; align-items: center; gap: 8px; padding: 0 8px; color: #4B5262"><span style="width: 10px; height: 10px; border-radius: 2px; background: #FFFFFF"></span>Logo · Contoso</div>
+        <div style="height: 26px; display: flex; align-items: center; gap: 8px; padding: 0 8px; color: #4B5262"><span style="width: 10px; height: 10px; border-radius: 5px; background: #F0B44C"></span>Button · Review your plan</div>
+        <div style="height: 26px; display: flex; align-items: center; gap: 8px; padding: 0 8px; color: #4B5262"><span style="font-family: 'Geist Mono', monospace; font-size: 10px; width: 10px">T</span>Subhead</div>
+        <div style="height: 26px; display: flex; align-items: center; gap: 8px; padding: 0 8px; color: #4B5262"><span style="font-family: 'Geist Mono', monospace; font-size: 10px; width: 10px">T</span>Headline</div>
+        <div style="height: 26px; display: flex; align-items: center; gap: 8px; padding: 0 8px; border-radius: 6px; background: #ECE9FE; color: #171A21"><span style="width: 10px; height: 10px; border-radius: 50%; background: #F7C873"></span>Shape · Sun<span style="margin-left: auto; width: 7px; height: 7px; border-radius: 50%; background: #6B57F0"></span></div>
+        <div style="height: 26px; display: flex; align-items: center; gap: 8px; padding: 0 8px; color: #4B5262"><span style="width: 10px; height: 6px; border-radius: 5px 5px 0 0; background: #1E5E5E"></span>Shape · Near hill</div>
+        <div style="height: 26px; display: flex; align-items: center; gap: 8px; padding: 0 8px; color: #4B5262"><span style="width: 10px; height: 6px; border-radius: 5px 5px 0 0; background: #2C7A72"></span>Shape · Far hill</div>
+        <div style="height: 26px; display: flex; align-items: center; gap: 8px; padding: 0 8px; color: #4B5262"><span style="width: 10px; height: 10px; border-radius: 2px; background: #0F3B3B"></span>Background</div>
+      </div>
+    </aside>
+
+    <!-- Canvas -->
+    <main style="flex: 1; position: relative; min-width: 0; background-color: #EDEFF3; background-image: radial-gradient(#CDD2DA 1px, transparent 1px); background-size: 20px 20px; overflow: hidden">
+      <div style="position: absolute; left: 36px; top: 36px; color: #5C6373; font-size: 11px">LinkedIn <span style="font-family: 'Geist Mono', monospace">1200×628</span></div>
+
+      <!-- Banner -->
+      <div style="position: absolute; left: 36px; top: 56px; width: 700px; height: 366px; background: #0F3B3B; overflow: hidden; border-radius: 2px">
+        <div style="position: absolute; left: 470px; top: 46px; width: 168px; height: 168px; border-radius: 50%; background: #F7C873; box-shadow: 0 0 60px 18px rgba(247, 200, 115, 0.35)"></div>
+        <div style="position: absolute; left: 260px; top: 250px; width: 600px; height: 260px; border-radius: 50%; background: #2C7A72"></div>
+        <div style="position: absolute; left: -120px; top: 280px; width: 620px; height: 240px; border-radius: 50%; background: #1E5E5E"></div>
+        <div style="position: absolute; left: 44px; top: 40px; color: #FFFFFF; font-weight: 700; font-size: 15px; letter-spacing: 0.02em">Contoso</div>
+        <div style="position: absolute; left: 44px; top: 96px; width: 380px; color: #FFFFFF; font-weight: 700; font-size: 38px; line-height: 1.1">Open enrollment starts November 1</div>
+        <div style="position: absolute; left: 44px; top: 194px; width: 340px; color: #CFE6E3; font-size: 15px; line-height: 1.45">Compare plans in ten minutes. Your current coverage carries over if you do nothing.</div>
+        <div style="position: absolute; left: 44px; top: 262px; height: 40px; padding: 0 20px; border-radius: 20px; background: #F0B44C; color: #2A1E05; font-weight: 600; font-size: 14px; display: flex; align-items: center">Review your plan</div>
+      </div>
+
+      <!-- Selection on sun -->
+      <div style="position: absolute; left: 502px; top: 98px; width: 172px; height: 172px; border: 1.5px solid #6B57F0; box-sizing: border-box"></div>
+      <span style="position: absolute; left: 498px; top: 94px; width: 8px; height: 8px; background: #fff; border: 1.5px solid #6B57F0"></span>
+      <span style="position: absolute; left: 670px; top: 94px; width: 8px; height: 8px; background: #fff; border: 1.5px solid #6B57F0"></span>
+      <span style="position: absolute; left: 498px; top: 266px; width: 8px; height: 8px; background: #fff; border: 1.5px solid #6B57F0"></span>
+      <span style="position: absolute; left: 670px; top: 266px; width: 8px; height: 8px; background: #fff; border: 1.5px solid #6B57F0"></span>
+      <div style="position: absolute; left: 548px; top: 278px; padding: 2px 8px; border-radius: 4px; background: #6B57F0; color: #fff; font-family: 'Geist Mono', monospace; font-size: 11px">288 × 288</div>
+
+      <!-- Other sizes preview -->
+      <div style="position: absolute; left: 36px; top: 446px; display: flex; gap: 16px; align-items: flex-end">
+        <div style="display: flex; flex-direction: column; gap: 4px"><div style="width: 96px; height: 96px; background: #0F3B3B; position: relative; overflow: hidden; border-radius: 2px"><div style="position: absolute; right: 8px; top: 8px; width: 30px; height: 30px; border-radius: 50%; background: #F7C873"></div><div style="position: absolute; left: -20px; bottom: -28px; width: 140px; height: 56px; border-radius: 50%; background: #1E5E5E"></div><div style="position: absolute; left: 8px; top: 30px; width: 54px; height: 6px; background: #fff; border-radius: 1px"></div><div style="position: absolute; left: 8px; top: 40px; width: 40px; height: 6px; background: #fff; border-radius: 1px"></div></div><span style="font-size: 11px; color: #5C6373">Instagram</span></div>
+        <div style="display: flex; flex-direction: column; gap: 4px"><div style="width: 192px; height: 60px; background: #0F3B3B; position: relative; overflow: hidden; border-radius: 2px"><div style="position: absolute; right: 24px; top: 8px; width: 26px; height: 26px; border-radius: 50%; background: #F7C873"></div><div style="position: absolute; left: -20px; bottom: -26px; width: 200px; height: 44px; border-radius: 50%; background: #1E5E5E"></div><div style="position: absolute; left: 10px; top: 16px; width: 80px; height: 6px; background: #fff; border-radius: 1px"></div></div><span style="font-size: 11px; color: #5C6373">Intranet hero</span></div>
+        <div style="display: flex; flex-direction: column; gap: 4px"><div style="width: 150px; height: 50px; background: #0F3B3B; position: relative; overflow: hidden; border-radius: 2px"><div style="position: absolute; right: 12px; top: 8px; width: 22px; height: 22px; border-radius: 50%; background: #F7C873"></div><div style="position: absolute; left: 8px; top: 14px; width: 66px; height: 5px; background: #fff; border-radius: 1px"></div></div><span style="font-size: 11px; color: #5C6373">Email header</span></div>
+        <span style="font-size: 11px; color: #5543C9; padding-bottom: 20px">Sun updated in all 4</span>
+      </div>
+
+      <!-- Contextual properties for a shape -->
+      <div role="toolbar" aria-label="Shape properties" style="position: absolute; left: 24px; right: 24px; bottom: 20px; display: flex; align-items: center; flex-wrap: wrap; gap: 16px; padding: 10px 16px; border-radius: 14px; background: #F1F3F6; border: 1px solid #D5D9E1; box-shadow: 0 12px 32px rgba(20,24,33,0.10)">
+        <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 11px; color: #5C6373">Shape</span><span style="font-weight: 600">Sun</span></div>
+        <div style="width: 1px; height: 36px; background: #D5D9E1"></div>
+        <div style="display: flex; flex-direction: column; gap: 4px">
+          <span style="font-size: 11px; color: #5C6373">Form</span>
+          <div style="display: flex; gap: 2px; padding: 2px; border-radius: 7px; background: #FFFFFF">
+            <button aria-label="Circle" style="width: 30px; height: 26px; border: 0; border-radius: 5px; background: #ECE9FE; display: flex; align-items: center; justify-content: center"><span style="width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid #3F31A8"></span></button>
+            <button aria-label="Rounded square" style="width: 30px; height: 26px; border: 0; border-radius: 5px; background: transparent; display: flex; align-items: center; justify-content: center"><span style="width: 12px; height: 12px; border-radius: 3px; border: 1.5px solid #5C6373"></span></button>
+            <button aria-label="Crescent" style="width: 30px; height: 26px; border: 0; border-radius: 5px; background: transparent; color: #5C6373; display: flex; align-items: center; justify-content: center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 14A8 8 0 1110 4a6 6 0 0010 10z"></path></svg></button>
+            <button aria-label="Star" style="width: 30px; height: 26px; border: 0; border-radius: 5px; background: transparent; color: #5C6373; display: flex; align-items: center; justify-content: center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"></path></svg></button>
+            <button aria-label="Blob" style="width: 30px; height: 26px; border: 0; border-radius: 5px; background: transparent; color: #5C6373; display: flex; align-items: center; justify-content: center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 6c3-3 9-3 12 1s2 10-3 12-10 0-11-4 0-6 2-9z"></path></svg></button>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 4px">
+          <span style="font-size: 11px; color: #5C6373">Fill · brand tokens</span>
+          <div style="display: flex; align-items: center; gap: 5px">
+            <button aria-label="color.accent.warm-300" style="width: 24px; height: 24px; border-radius: 6px; border: 2px solid #3F31A8; background: #F7C873"></button>
+            <button aria-label="color.accent.warm-500" style="width: 24px; height: 24px; border-radius: 6px; border: 1px solid #D5D9E1; background: #F0B44C"></button>
+            <button aria-label="color.brand.teal-300" style="width: 24px; height: 24px; border-radius: 6px; border: 1px solid #D5D9E1; background: #7FC9BF"></button>
+            <button aria-label="color.neutral.0" style="width: 24px; height: 24px; border-radius: 6px; border: 1px solid #D5D9E1; background: #FFFFFF"></button>
+            <span style="font-family: 'Geist Mono', monospace; font-size: 11px; color: #5543C9; margin-left: 4px">warm-300</span>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 4px">
+          <span style="font-size: 11px; color: #5C6373">Effect</span>
+          <span style="padding: 3px 8px; border-radius: 5px; background: #FFFFFF; font-size: 12px">Glow · 60 / 35% ▾</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 4px">
+          <span style="font-size: 11px; color: #5C6373">Opacity</span>
+          <span style="padding: 3px 8px; border-radius: 5px; background: #FFFFFF; font-family: 'Geist Mono', monospace; font-size: 12px">100%</span>
+        </div>
+        <div style="flex: 1"></div>
+        <button style="height: 34px; padding: 0 12px; border-radius: 8px; border: 1px solid #C9C1F7; background: #F1EFFE; color: #3F31A8; font-size: 12px; font-weight: 500; display: flex; align-items: center; gap: 6px">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"></path></svg>
+          Ask Copilot about this
+        </button>
+      </div>
+    </main>
+
+    <!-- Copilot -->
+    <aside aria-label="Copilot" style="width: 368px; flex-shrink: 0; display: flex; flex-direction: column; border-left: 1px solid #E3E6EC; background: #FBFBFC">
+      <div style="height: 48px; display: flex; align-items: center; gap: 8px; padding: 0 14px; border-bottom: 1px solid #E3E6EC">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5543C9" stroke-width="1.8" aria-hidden="true"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"></path></svg>
+        <span style="font-weight: 600">Copilot</span>
+        <span style="color: #5C6373; font-size: 12px">· Banner thread</span>
+      </div>
+      <div style="flex: 1; overflow: hidden; display: flex; flex-direction: column; gap: 14px; padding: 16px 14px">
+        <div style="align-self: flex-end; max-width: 86%; display: flex; flex-direction: column; gap: 6px; align-items: flex-end">
+          <span style="display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 6px; background: #ECE9FE; color: #3F31A8; font-size: 11px">Shape · Sun</span>
+          <div style="padding: 10px 12px; border-radius: 12px 12px 4px 12px; background: #ECEEF2; line-height: 1.45">Make this feel like late afternoon — softer, with a warm glow.</div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px; line-height: 1.5; color: #2E333D">
+          <span>Changed only the sun. I moved it to the lighter warm token and added a glow. Both are on-brand, so the palette lock is still satisfied.</span>
+          <div style="display: flex; flex-direction: column; border: 1px solid #E3E6EC; border-radius: 10px; overflow: hidden; font-size: 12px">
+            <div style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px solid #E3E6EC"><span style="padding: 1px 6px; border-radius: 4px; background: #FDF0D2; color: #8A5A00; font-family: 'Geist Mono', monospace; font-size: 11px">FILL</span><span style="font-family: 'Geist Mono', monospace; color: #5C6373">warm-500</span><span>→</span><span style="font-family: 'Geist Mono', monospace; color: #5543C9">warm-300</span></div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px solid #E3E6EC"><span style="padding: 1px 6px; border-radius: 4px; background: #E5F6EC; color: #1D7A4D; font-family: 'Geist Mono', monospace; font-size: 11px">ADD</span>Glow · radius 60, 35%</div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: #FFFFFF; color: #4B5262">Applied to all 4 sizes</div>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #5C6373">Try on this shape</span>
+          <button style="min-height: 34px; padding: 0 12px; border-radius: 8px; border: 1px solid #D5D9E1; background: #F1F3F6; color: #171A21; font-size: 12px; text-align: left">Turn it into a crescent moon</button>
+          <button style="min-height: 34px; padding: 0 12px; border-radius: 8px; border: 1px solid #D5D9E1; background: #F1F3F6; color: #171A21; font-size: 12px; text-align: left">Show 3 variations side by side</button>
+          <button style="min-height: 34px; padding: 0 12px; border-radius: 8px; border: 1px solid #D5D9E1; background: #F1F3F6; color: #171A21; font-size: 12px; text-align: left">Make the hills match this light</button>
+        </div>
+      </div>
+      <div style="padding: 12px; border-top: 1px solid #E3E6EC; display: flex; flex-direction: column; gap: 8px">
+        <label for="imgask" style="position: absolute; left: -9999px">Message Copilot</label>
+        <div style="display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-radius: 12px; background: #F1F3F6; border: 1px solid #D5D9E1">
+          <div style="display: flex; gap: 6px"><span style="display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 6px; background: #ECE9FE; color: #3F31A8; font-size: 11px">Shape · Sun</span></div>
+          <input id="imgask" placeholder="Change the selection, or the whole image" style="border: 0; outline: none; background: transparent; color: #171A21; font-family: inherit; font-size: 13px; padding: 2px 0">
+          <div style="display: flex; align-items: center; gap: 8px">
+            <button style="height: 26px; padding: 0 8px; border-radius: 6px; border: 1px solid #D5D9E1; background: transparent; color: #4B5262; font-size: 11px">Claude Sonnet 5.5 ▾</button>
+            <div style="flex: 1"></div>
+            <button aria-label="Send" style="width: 30px; height: 30px; border-radius: 8px; border: 0; background: #6B57F0; color: #fff; display: flex; align-items: center; justify-content: center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"></path></svg></button>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

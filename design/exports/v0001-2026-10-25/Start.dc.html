@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>CADE start</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#B7ABFF}a:hover{color:#D9D2FF}
+button{font-family:inherit}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; box-sizing: border-box; display: flex; flex-direction: column; background: #0E1014; color: #E7E9EF; font-family: Geist, system-ui, sans-serif; font-size: 13px; overflow: hidden">
+
+  <header style="height: 56px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 24px; border-bottom: 1px solid #272C37; background: #12151B">
+    <svg width="28" height="28" viewBox="0 0 26 26" aria-hidden="true"><rect x="1" y="1" width="24" height="24" rx="7" fill="#6B57F0"></rect><path d="M8 18c2-1 3-4 5-7s4-3 5-2-1 3-3 5-5 3-7 4z" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"></path><circle cx="8" cy="18" r="1.6" fill="#F0B44C"></circle></svg>
+    <div style="display: flex; align-items: baseline; gap: 8px"><span style="font-weight: 700; font-size: 16px; letter-spacing: 0.04em">CADE</span><span style="color: #9AA1B2; font-size: 12px">Copilot ADE</span></div>
+    <div style="flex: 1"></div>
+    <div style="display: flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: 999px; background: #241E10; border: 1px solid #4A3B17; color: #F0C574; font-size: 11px; font-weight: 500">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"></path></svg>
+      Local only · Contoso policy
+    </div>
+    <a href="Import.dc.html" style="height: 32px; padding: 0 12px; border-radius: 8px; border: 1px solid #4A4190; background: #241F4A; color: #D9D2FF; font-size: 12px; font-weight: 500; display: flex; align-items: center; gap: 6px; text-decoration: none">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 15V3M7 8l5-5 5 5M4 15v5h16v-5"></path></svg>
+      Import from Spark, Figma…
+    </a>
+    <button style="height: 32px; padding: 0 12px; border-radius: 8px; border: 1px solid #272C37; background: #1B1F28; color: #E7E9EF; font-size: 12px">Open folder…</button>
+    <a href="Settings.dc.html" aria-label="Settings" style="width: 32px; height: 32px; border-radius: 8px; border: 1px solid #272C37; color: #B5BBC9; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"></path></svg></a>
+    <span style="width: 30px; height: 30px; border-radius: 50%; background: #3FB68B; color: #08251A; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center">JD</span>
+  </header>
+
+  <div style="flex: 1; display: flex; min-height: 0">
+    <main style="flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; padding: 44px 48px 32px; gap: 28px">
+
+      <div style="width: 100%; max-width: 1000px; display: flex; flex-direction: column; gap: 14px">
+        <h1 style="margin: 0; font-size: 30px; font-weight: 600; letter-spacing: -0.01em">What are you making?</h1>
+        <label for="startprompt" style="position: absolute; left: -9999px">Describe what you want to make</label>
+        <div style="display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; border-radius: 14px; background: #1B1F28; border: 1px solid #3A3373">
+          <input id="startprompt" placeholder="Describe it — Copilot will start from your design system" style="border: 0; outline: none; background: transparent; color: #E7E9EF; font-family: inherit; font-size: 15px; padding: 2px 0">
+          <div style="display: flex; align-items: center; gap: 8px">
+            <span style="display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 9px; border-radius: 6px; background: #1F2430; color: #B5BBC9; font-size: 11px"><span style="width: 7px; height: 7px; border-radius: 50%; background: #3FB68B"></span>Contoso Design System v4.2</span>
+            <button style="height: 26px; padding: 0 9px; border-radius: 6px; border: 1px solid #323848; background: transparent; color: #B5BBC9; font-size: 11px">+ Attach PRD, sketch or screenshot</button>
+            <div style="flex: 1"></div>
+            <span style="color: #9AA1B2; font-size: 11px">Output: <span style="color: #D9D2FF">Image</span></span>
+            <button aria-label="Start" style="width: 32px; height: 32px; border-radius: 8px; border: 0; background: #6B57F0; color: #fff; display: flex; align-items: center; justify-content: center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"></path></svg></button>
+          </div>
+        </div>
+      </div>
+
+      <div style="width: 100%; max-width: 1000px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px">
+
+        <!-- App -->
+        <a href="Main.dc.html" style="display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 14px; background: #15181F; border: 1px solid #272C37; color: #E7E9EF; text-decoration: none">
+          <div style="height: 104px; border-radius: 9px; background: #0B0D11; display: flex; gap: 8px; align-items: flex-end; justify-content: center; padding: 12px 12px 0">
+            <div style="width: 44px; height: 84px; border-radius: 6px 6px 0 0; background: #FFFFFF; display: flex; flex-direction: column; gap: 4px; padding: 6px 5px; box-sizing: border-box"><div style="height: 4px; width: 60%; background: #0F6E6E; border-radius: 1px"></div><div style="height: 10px; border: 1px solid #C9D2DC; border-radius: 2px"></div><div style="height: 10px; border: 1px solid #C9D2DC; border-radius: 2px"></div><div style="flex: 1"></div><div style="height: 8px; background: #0F6E6E; border-radius: 2px"></div></div>
+            <div style="width: 120px; height: 72px; border-radius: 6px 6px 0 0; background: #FFFFFF; display: flex"><div style="width: 28px; background: #F2F5F8"></div><div style="flex: 1; padding: 6px; display: flex; flex-direction: column; gap: 4px"><div style="height: 4px; width: 50%; background: #12263A; border-radius: 1px"></div><div style="height: 22px; border: 1px solid #C9D2DC; border-radius: 2px"></div></div></div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 3px">
+            <span style="font-weight: 600; font-size: 14px">App</span>
+            <span style="color: #9AA1B2; font-size: 12px; line-height: 1.4">Screens, flows and clickable prototypes that ship as code.</span>
+          </div>
+          <span style="font-family: 'Geist Mono', monospace; font-size: 11px; color: #8A92A5">React · spec · PR</span>
+        </a>
+
+        <!-- Image (selected) -->
+        <a href="Image.dc.html" style="display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 14px; background: #1A1830; border: 1.5px solid #9B8CFF; color: #E7E9EF; text-decoration: none">
+          <div style="height: 104px; border-radius: 9px; background: #0F3B3B; position: relative; overflow: hidden">
+            <div style="position: absolute; right: -14px; top: -18px; width: 86px; height: 86px; border-radius: 50%; background: #F0B44C"></div>
+            <div style="position: absolute; left: -10px; bottom: -30px; width: 170px; height: 70px; border-radius: 50%; background: #1E5E5E"></div>
+            <div style="position: absolute; left: 14px; top: 18px; width: 92px; height: 8px; border-radius: 2px; background: #FFFFFF"></div>
+            <div style="position: absolute; left: 14px; top: 32px; width: 64px; height: 8px; border-radius: 2px; background: #FFFFFF"></div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 3px">
+            <span style="font-weight: 600; font-size: 14px">Image</span>
+            <span style="color: #B5BBC9; font-size: 12px; line-height: 1.4">Banners, social posts, ads, illustrations and icons.</span>
+          </div>
+          <span style="font-family: 'Geist Mono', monospace; font-size: 11px; color: #B7ABFF">SVG · PNG · every size</span>
+        </a>
+
+        <!-- Deck -->
+        <a href="Slides.dc.html" style="display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 14px; background: #15181F; border: 1px solid #272C37; color: #E7E9EF; text-decoration: none">
+          <div style="height: 104px; border-radius: 9px; background: #0B0D11; display: flex; align-items: center; justify-content: center; position: relative">
+            <div style="position: absolute; width: 132px; height: 74px; border-radius: 4px; background: #2A2F3C; transform: translate(10px, -8px)"></div>
+            <div style="position: relative; width: 132px; height: 74px; border-radius: 4px; background: #FFFFFF; display: flex; gap: 6px; padding: 9px; box-sizing: border-box"><div style="flex: 1; display: flex; flex-direction: column; gap: 4px"><div style="height: 6px; width: 90%; background: #12263A; border-radius: 1px"></div><div style="height: 6px; width: 60%; background: #12263A; border-radius: 1px"></div><div style="flex: 1"></div><div style="height: 8px; width: 40%; background: #0F6E6E; border-radius: 1px"></div></div><div style="width: 36px; background: #E3EEEE; border-radius: 2px"></div></div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 3px">
+            <span style="font-weight: 600; font-size: 14px">Deck</span>
+            <span style="color: #9AA1B2; font-size: 12px; line-height: 1.4">Presentations with speaker notes, built on your slide masters.</span>
+          </div>
+          <span style="font-family: 'Geist Mono', monospace; font-size: 11px; color: #8A92A5">.pptx · PDF · present</span>
+        </a>
+
+        <!-- Document -->
+        <a href="Document.dc.html" style="display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 14px; background: #15181F; border: 1px solid #272C37; color: #E7E9EF; text-decoration: none">
+          <div style="height: 104px; border-radius: 9px; background: #0B0D11; display: flex; align-items: center; justify-content: center">
+            <div style="width: 78px; height: 92px; border-radius: 3px; background: #FFFFFF; display: flex; flex-direction: column; gap: 4px; padding: 9px 8px; box-sizing: border-box"><div style="height: 18px; background: #0F6E6E; border-radius: 2px"></div><div style="height: 3px; background: #9AA6B2"></div><div style="height: 3px; background: #9AA6B2"></div><div style="height: 3px; width: 70%; background: #9AA6B2"></div><div style="display: flex; gap: 3px; margin-top: 3px"><div style="flex: 1; height: 16px; background: #E3EEEE"></div><div style="flex: 1; height: 16px; background: #E3EEEE"></div></div></div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 3px">
+            <span style="font-weight: 600; font-size: 14px">Document</span>
+            <span style="color: #9AA1B2; font-size: 12px; line-height: 1.4">One-pagers, reports, briefs and print layouts.</span>
+          </div>
+          <span style="font-family: 'Geist Mono', monospace; font-size: 11px; color: #8A92A5">PDF · .docx · print</span>
+        </a>
+
+        <!-- Diagram -->
+        <a href="Diagram.dc.html" style="display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 14px; background: #15181F; border: 1px solid #272C37; color: #E7E9EF; text-decoration: none">
+          <div style="height: 104px; border-radius: 9px; background: #0B0D11; display: flex; align-items: center; justify-content: center; gap: 12px">
+            <div style="width: 46px; height: 26px; border-radius: 5px; border: 1.5px solid #9B8CFF"></div>
+            <div style="width: 16px; height: 1.5px; background: #6E7689"></div>
+            <div style="display: flex; flex-direction: column; gap: 10px"><div style="width: 46px; height: 26px; border-radius: 5px; border: 1.5px solid #3FB68B"></div><div style="width: 46px; height: 26px; border-radius: 5px; border: 1.5px solid #F0B44C"></div></div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 3px">
+            <span style="font-weight: 600; font-size: 14px">Diagram</span>
+            <span style="color: #9AA1B2; font-size: 12px; line-height: 1.4">Process flows, swimlanes, org charts and journey maps. Opens Visio files.</span>
+          </div>
+          <span style="font-family: 'Geist Mono', monospace; font-size: 11px; color: #8A92A5">.vsdx · SVG · Mermaid</span>
+        </a>
+
+        <!-- Motion -->
+        <a href="Motion.dc.html" style="display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 14px; background: #15181F; border: 1px solid #272C37; color: #E7E9EF; text-decoration: none">
+          <div style="height: 104px; border-radius: 9px; background: #0B0D11; display: flex; flex-direction: column; justify-content: center; gap: 10px; padding: 0 16px">
+            <div style="display: flex; align-items: center; gap: 6px"><div style="width: 18px; height: 18px; border-radius: 50%; background: #2B2554"></div><div style="width: 18px; height: 18px; border-radius: 50%; background: #4A3F9A"></div><div style="width: 18px; height: 18px; border-radius: 50%; background: #9B8CFF"></div></div>
+            <div style="height: 4px; border-radius: 2px; background: #272C37; position: relative"><div style="position: absolute; left: 0; top: 0; width: 55%; height: 4px; border-radius: 2px; background: #9B8CFF"></div></div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 3px">
+            <span style="font-weight: 600; font-size: 14px">Motion</span>
+            <span style="color: #9AA1B2; font-size: 12px; line-height: 1.4">Short animations, product loops and animated UI states.</span>
+          </div>
+          <span style="font-family: 'Geist Mono', monospace; font-size: 11px; color: #8A92A5">MP4 · GIF · Lottie</span>
+        </a>
+
+        <!-- Architecture -->
+        <a href="Architecture.dc.html" style="display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 14px; background: #15181F; border: 1px solid #272C37; color: #E7E9EF; text-decoration: none">
+          <div style="height: 104px; border-radius: 9px; background: #0B0D11; position: relative">
+            <div style="position: absolute; left: 12px; top: 12px; right: 12px; bottom: 12px; border: 1px dashed #3A6FB0; border-radius: 6px"></div>
+            <div style="position: absolute; left: 24px; top: 36px; width: 30px; height: 30px; border-radius: 6px; background: #13304F; border: 1px solid #3A6FB0; color: #8CC1FF; font-size: 8px; font-weight: 700; display: flex; align-items: center; justify-content: center">FD</div>
+            <div style="position: absolute; left: 54px; top: 51px; width: 26px; height: 1.5px; background: #6E7689"></div>
+            <div style="position: absolute; left: 80px; top: 36px; width: 30px; height: 30px; border-radius: 6px; background: #13304F; border: 1.5px solid #9B8CFF; color: #8CC1FF; font-size: 8px; font-weight: 700; display: flex; align-items: center; justify-content: center">APP</div>
+            <div style="position: absolute; left: 110px; top: 51px; width: 26px; height: 1.5px; background: #6E7689"></div>
+            <div style="position: absolute; left: 136px; top: 36px; width: 30px; height: 30px; border-radius: 6px; background: #13304F; border: 1px solid #3A6FB0; color: #8CC1FF; font-size: 8px; font-weight: 700; display: flex; align-items: center; justify-content: center">SQL</div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 3px">
+            <span style="font-weight: 600; font-size: 14px">Architecture</span>
+            <span style="color: #9AA1B2; font-size: 12px; line-height: 1.4">Azure services with real configs, drawn with Azure's own icons.</span>
+          </div>
+          <span style="font-family: 'Geist Mono', monospace; font-size: 11px; color: #8A92A5">Bicep · Terraform · PR</span>
+        </a>
+
+        <!-- Data model -->
+        <a href="Data.dc.html" style="display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 14px; background: #15181F; border: 1px solid #272C37; color: #E7E9EF; text-decoration: none">
+          <div style="height: 104px; border-radius: 9px; background: #0B0D11; position: relative">
+            <div style="position: absolute; left: 18px; top: 18px; width: 62px; border-radius: 5px; background: #FFFFFF; overflow: hidden"><div style="height: 12px; background: #2C5F8A"></div><div style="padding: 4px 5px; display: flex; flex-direction: column; gap: 3px"><div style="height: 3px; width: 80%; background: #9AA6B2"></div><div style="height: 3px; width: 60%; background: #9AA6B2"></div><div style="height: 3px; width: 70%; background: #9AA6B2"></div></div></div>
+            <div style="position: absolute; left: 80px; top: 36px; width: 26px; height: 1.5px; background: #6E7689"></div>
+            <div style="position: absolute; left: 106px; top: 30px; width: 62px; border-radius: 5px; background: #FFFFFF; overflow: hidden; outline: 1.5px solid #9B8CFF"><div style="height: 12px; background: #2C5F8A"></div><div style="padding: 4px 5px; display: flex; flex-direction: column; gap: 3px"><div style="height: 3px; width: 70%; background: #9AA6B2"></div><div style="height: 3px; width: 85%; background: #9AA6B2"></div><div style="height: 3px; width: 50%; background: #9AA6B2"></div><div style="height: 3px; width: 65%; background: #9AA6B2"></div></div></div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 3px">
+            <span style="font-weight: 600; font-size: 14px">Data model</span>
+            <span style="color: #9AA1B2; font-size: 12px; line-height: 1.4">Entities, relationships and classifications that generate DDL and migrations.</span>
+          </div>
+          <span style="font-family: 'Geist Mono', monospace; font-size: 11px; color: #8A92A5">DDL · migrations · PR</span>
+        </a>
+      </div>
+    </main>
+
+    <!-- Recent and templates -->
+    <aside aria-label="Recent work" style="width: 340px; flex-shrink: 0; border-left: 1px solid #272C37; background: #15181F; padding: 24px 20px; display: flex; flex-direction: column; gap: 22px">
+      <div style="display: flex; flex-direction: column; gap: 8px">
+        <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #9AA1B2">Recent</span>
+        <div style="display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 9px; background: #1B1F28">
+          <span style="padding: 2px 6px; border-radius: 4px; background: #16301F; color: #7FDDB0; font-size: 10px; font-weight: 600">APP</span>
+          <div style="display: flex; flex-direction: column"><span style="font-weight: 500">Claims Portal</span><span style="font-size: 11px; color: #9AA1B2">Edited 12 min ago</span></div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 9px">
+          <span style="padding: 2px 6px; border-radius: 4px; background: #2E2614; color: #F0C574; font-size: 10px; font-weight: 600">DECK</span>
+          <div style="display: flex; flex-direction: column"><span style="font-weight: 500">Claims Portal — exec review</span><span style="font-size: 11px; color: #9AA1B2">Yesterday</span></div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 9px">
+          <span style="padding: 2px 6px; border-radius: 4px; background: #2B2554; color: #D9D2FF; font-size: 10px; font-weight: 600">IMG</span>
+          <div style="display: flex; flex-direction: column"><span style="font-weight: 500">Fall open enrollment banners</span><span style="font-size: 11px; color: #9AA1B2">Oct 21</span></div>
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px">
+        <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #9AA1B2">From Contoso Design System</span>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+          <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 62px; border-radius: 7px; background: #0F3B3B"></div><span style="font-size: 12px">Social post</span></div>
+          <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 62px; border-radius: 7px; background: #F4F6F8"></div><span style="font-size: 12px">Board deck</span></div>
+          <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 62px; border-radius: 7px; background: #FFFFFF"></div><span style="font-size: 12px">Internal tool</span></div>
+          <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 62px; border-radius: 7px; background: #E3EEEE"></div><span style="font-size: 12px">One-pager</span></div>
+        </div>
+      </div>
+      <div style="flex: 1"></div>
+      <div style="padding: 12px; border-radius: 10px; background: #1B1F28; border: 1px solid #272C37; font-size: 12px; color: #B5BBC9; line-height: 1.45">Every output is made of real layers. Pick a shape in an image or a chart on a slide and change it by hand or by asking Copilot.</div>
+    </aside>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

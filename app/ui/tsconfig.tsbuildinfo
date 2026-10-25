@@ -1,0 +1,1 @@
+{"root":["./src/App.tsx","./src/ipc.ts","./src/main.tsx","./src/components/Button.tsx","./src/components/Icon.tsx","./src/components/Status.tsx","./src/feedback/FeedbackDialog.tsx","./src/feedback/types.ts","./src/screens/Start.tsx"],"version":"5.9.3"}

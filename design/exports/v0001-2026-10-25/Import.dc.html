@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>CADE import</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#B7ABFF}a:hover{color:#D9D2FF}
+button{font-family:inherit;cursor:pointer}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; box-sizing: border-box; display: flex; flex-direction: column; background: #0E1014; color: #E7E9EF; font-family: Geist, system-ui, sans-serif; font-size: 13px; overflow: hidden">
+
+  <header style="height: 52px; flex-shrink: 0; display: flex; align-items: center; gap: 14px; padding: 0 16px; border-bottom: 1px solid #272C37; background: #12151B">
+    <a href="Start.dc.html" aria-label="Home" style="display: flex"><svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><rect x="1" y="1" width="24" height="24" rx="7" fill="#6B57F0"></rect><path d="M8 18c2-1 3-4 5-7s4-3 5-2-1 3-3 5-5 3-7 4z" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"></path><circle cx="8" cy="18" r="1.6" fill="#F0B44C"></circle></svg></a>
+    <span style="font-weight: 600; font-size: 14px">Import into CADE</span>
+    <div style="flex: 1"></div>
+    <div style="display: flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: 999px; background: #241E10; border: 1px solid #4A3B17; color: #F0C574; font-size: 11px; font-weight: 500">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"></path></svg>
+      Files are converted on this machine
+    </div>
+  </header>
+
+  <div style="flex: 1; display: flex; min-height: 0">
+
+    <!-- Sources -->
+    <nav aria-label="Import sources" style="width: 300px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; padding: 18px 14px; border-right: 1px solid #272C37; background: #15181F">
+      <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #9AA1B2; padding: 0 4px">Bring your work</span>
+      <sc-for list="{{ sources }}" as="s" hint-placeholder-count="4">
+        <button onClick="{{ s.pick }}" style="display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 12px; border: {{ s.border }}; background: {{ s.bg }}; color: #E7E9EF; text-align: left">
+          <span style="width: 38px; height: 38px; border-radius: 9px; background: {{ s.tagBg }}; color: {{ s.tagFg }}; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0">{{ s.tag }}</span>
+          <span style="display: flex; flex-direction: column; gap: 2px">
+            <span style="font-weight: 600">{{ s.name }}</span>
+            <span style="font-size: 11px; color: #9AA1B2">{{ s.formats }}</span>
+          </span>
+        </button>
+      </sc-for>
+      <div style="flex: 1"></div>
+      <div style="padding: 12px; border-radius: 10px; background: #1B1F28; border: 1px solid #272C37; font-size: 11px; color: #9AA1B2; line-height: 1.5">Imports never change the original. CADE writes a new project folder and opens it as a git repo.</div>
+    </nav>
+
+    <!-- Detail -->
+    <main style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 18px; padding: 26px 32px; overflow: hidden">
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <h1 style="margin: 0; font-size: 24px; font-weight: 600">{{ cur.title }}</h1>
+        <span style="color: #B5BBC9; line-height: 1.5; max-width: 760px">{{ cur.blurb }}</span>
+      </div>
+
+      <section aria-label="Found items" style="display: flex; flex-direction: column; gap: 8px">
+        <span style="font-size: 12px; font-weight: 600; color: #B5BBC9">{{ cur.foundLabel }}</span>
+        <div style="display: flex; flex-direction: column; border: 1px solid #272C37; border-radius: 12px; overflow: hidden; background: #15181F">
+          <sc-for list="{{ cur.items }}" as="it" hint-placeholder-count="3">
+            <div style="display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-bottom: 1px solid #272C37; background: {{ it.bg }}">
+              <span style="width: 16px; height: 16px; border-radius: 4px; border: {{ it.check }}; background: {{ it.checkBg }}; box-sizing: border-box; flex-shrink: 0"></span>
+              <span style="flex: 1; font-family: 'Geist Mono', monospace; font-size: 12px">{{ it.name }}</span>
+              <span style="font-size: 12px; color: #9AA1B2">{{ it.meta }}</span>
+            </div>
+          </sc-for>
+          <div style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; color: #9AA1B2; font-size: 12px">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+            {{ cur.addLabel }}
+          </div>
+        </div>
+      </section>
+
+      <div style="display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 16px; flex: 1; min-height: 0">
+        <section aria-label="How it converts" style="display: flex; flex-direction: column; gap: 8px">
+          <span style="font-size: 12px; font-weight: 600; color: #B5BBC9">How it converts</span>
+          <div style="display: flex; flex-direction: column; border: 1px solid #272C37; border-radius: 12px; overflow: hidden; background: #15181F">
+            <sc-for list="{{ cur.maps }}" as="m" hint-placeholder-count="5">
+              <div style="display: grid; grid-template-columns: minmax(0, 1fr) 20px minmax(0, 1fr); gap: 10px; align-items: center; padding: 9px 14px; border-bottom: 1px solid #272C37; font-size: 12px">
+                <span style="color: #B5BBC9">{{ m.from }}</span>
+                <span style="color: #6E7689">→</span>
+                <span>{{ m.to }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+        <section aria-label="Needs attention" style="display: flex; flex-direction: column; gap: 8px">
+          <span style="font-size: 12px; font-weight: 600; color: #B5BBC9">Needs attention</span>
+          <div style="display: flex; flex-direction: column; gap: 8px">
+            <sc-for list="{{ cur.warns }}" as="w" hint-placeholder-count="2">
+              <div style="display: flex; gap: 10px; padding: 10px 12px; border-radius: 10px; background: #1D1A10; border: 1px solid #4A3B17; font-size: 12px; color: #D9C9A3; line-height: 1.45">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#F0C574" stroke-width="2.4" aria-hidden="true" style="flex-shrink: 0; margin-top: 2px"><path d="M12 4l9 16H3z"></path><path d="M12 10v4"></path></svg>
+                <span>{{ w }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+      </div>
+
+      <!-- Action -->
+      <sc-if value="{{ notDone }}" hint-placeholder-val="{{ true }}">
+        <div style="display: flex; align-items: center; gap: 12px">
+          <button onClick="{{ doImport }}" style="height: 42px; padding: 0 20px; border-radius: 10px; border: 0; background: #6B57F0; color: #fff; font-size: 14px; font-weight: 600">{{ cur.cta }}</button>
+          <span style="font-size: 12px; color: #9AA1B2">Opens in the {{ cur.targetName }} workspace</span>
+        </div>
+      </sc-if>
+      <sc-if value="{{ done }}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; align-items: center; gap: 14px; padding: 12px 16px; border-radius: 12px; background: #16301F; border: 1px solid #22553A">
+          <span style="width: 26px; height: 26px; border-radius: 50%; background: #1D7A4D; display: flex; align-items: center; justify-content: center"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.8" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg></span>
+          <span style="flex: 1; color: #7FDDB0; font-weight: 500">{{ cur.doneText }}</span>
+          <a href="{{ cur.target }}" style="height: 34px; padding: 0 14px; border-radius: 8px; background: #6B57F0; color: #fff; font-size: 12px; font-weight: 600; display: flex; align-items: center; text-decoration: none">Open {{ cur.targetName }}</a>
+        </div>
+      </sc-if>
+    </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { src: 'spark', done: false };
+  }
+  renderVals() {
+    const data = {
+      spark: {
+        tag: 'SPARK', tagBg: '#2B2554', tagFg: '#D9D2FF', name: 'GitHub Spark apps', formats: 'Exported Spark repos',
+        title: 'Bring your Spark apps into CADE',
+        blurb: 'Spark closed to new apps in August. CADE finds the repos you exported, turns each one into an editable App project, and replaces the retired llm() calls with Copilot.',
+        foundLabel: 'Found in your GitHub account', addLabel: 'Add a repo by URL',
+        items: [
+          { name: 'jdavis/expense-tracker-spark', meta: 'React · 14 files · uses llm()', on: true },
+          { name: 'contoso/team-standup-spark', meta: 'React · 9 files · KV store', on: true },
+          { name: 'contoso/link-manager-spark', meta: 'React · 6 files', on: false }
+        ],
+        maps: [
+          { from: 'React + TypeScript screens', to: 'App frames, editable on canvas' },
+          { from: 'Inline styles and Tailwind', to: 'Mapped to your design system tokens' },
+          { from: 'useKV() data', to: 'Data model entities + seed data' },
+          { from: 'llm() calls (GitHub Models, retired)', to: 'Copilot SDK calls' },
+          { from: 'GitHub auth', to: 'Kept, via your org SSO' }
+        ],
+        warns: [
+          'expense-tracker uses 2 colors that aren’t in Contoso DS. Copilot will suggest the closest tokens.',
+          'Spark-hosted deploys aren’t moved. Use Deploy app to pick an architecture.'
+        ],
+        cta: 'Import 2 apps', target: 'Main.dc.html', targetName: 'App',
+        doneText: '2 apps imported to ~/design. expense-tracker now calls Copilot instead of llm().'
+      },
+      figma: {
+        tag: 'FIG', tagBg: '#3A1F2A', tagFg: '#F5A3C0', name: 'Figma', formats: 'Link, .fig, or team library',
+        title: 'Import from Figma',
+        blurb: 'Paste a file link or drop a .fig export. Frames, components, variables and prototype links come across as native CADE layers, not pictures.',
+        foundLabel: 'Files to import', addLabel: 'Paste a Figma link',
+        items: [
+          { name: 'Claims Portal — v12.fig', meta: '6 pages · 212 frames', on: true },
+          { name: 'Contoso DS — library', meta: '148 components · 312 variables', on: true }
+        ],
+        maps: [
+          { from: 'Frames and groups', to: 'Frames and layers' },
+          { from: 'Components and variants', to: 'Components with variant properties' },
+          { from: 'Variables and modes', to: 'Tokens with dark and light values' },
+          { from: 'Auto layout', to: 'Flex and grid layout' },
+          { from: 'Prototype connections', to: 'Prototype flows' }
+        ],
+        warns: [
+          'Plugin data and 3 third-party widgets can’t be imported. Their layers come in as locked images.',
+          '11 layers use a blend mode CADE doesn’t support yet. They’re flattened and flagged.'
+        ],
+        cta: 'Import 2 files', target: 'Main.dc.html', targetName: 'App',
+        doneText: 'Claims Portal imported. Contoso DS published as a local library.'
+      },
+      pptx: {
+        tag: 'PPTX', tagBg: '#2E2614', tagFg: '#F0C574', name: 'PowerPoint', formats: '.pptx, .potx templates',
+        title: 'Import a PowerPoint deck',
+        blurb: 'Slides, masters and charts come in as editable layers. A .potx template becomes a slide master you can reuse.',
+        foundLabel: 'Files to import', addLabel: 'Choose a .pptx or .potx',
+        items: [
+          { name: 'Q3 Claims Review.pptx', meta: '24 slides · 6 charts', on: true },
+          { name: 'Contoso Board.potx', meta: 'Template · 9 layouts', on: true }
+        ],
+        maps: [
+          { from: 'Slide masters and layouts', to: 'Slide masters' },
+          { from: 'Charts with embedded data', to: 'Native charts, data editable' },
+          { from: 'Speaker notes', to: 'Speaker notes' },
+          { from: 'Theme colors and fonts', to: 'Tokens, matched to Contoso DS' }
+        ],
+        warns: [
+          '2 SmartArt graphics come in as grouped shapes, not live SmartArt.',
+          'Embedded video on slide 18 links to the original file.'
+        ],
+        cta: 'Import deck and template', target: 'Slides.dc.html', targetName: 'Deck',
+        doneText: 'Q3 Claims Review imported with the Contoso Board master.'
+      },
+      visio: {
+        tag: 'VSDX', tagBg: '#12303A', tagFg: '#7FD3E6', name: 'Visio', formats: '.vsdx, .vsd, .vssx, .vstx',
+        title: 'Import Visio diagrams',
+        blurb: 'Pages, layers, shape data and connector glue are kept. Stencils become reusable shape libraries. Macros are never run.',
+        foundLabel: 'Files to import', addLabel: 'Choose Visio files',
+        items: [
+          { name: 'Adjudication_v3.vsdx', meta: '2 pages · 38 shapes', on: true },
+          { name: 'Contoso BPMN.vssx', meta: 'Stencil · 24 masters', on: true }
+        ],
+        maps: [
+          { from: 'Pages and layers', to: 'Pages and layers' },
+          { from: 'Masters and stencils', to: 'Shape libraries' },
+          { from: 'Shape Data', to: 'Shape properties' },
+          { from: 'Glued connectors', to: 'Connected lines' }
+        ],
+        warns: [
+          '2 custom shapes become vectors. Copilot can rebuild them as native shapes.',
+          '1 ShapeSheet formula is frozen at its current value.'
+        ],
+        cta: 'Import 2 files', target: 'Diagram.dc.html', targetName: 'Diagram',
+        doneText: 'Adjudication_v3 imported. Contoso BPMN added to your stencils.'
+      }
+    };
+    const keys = ['spark', 'figma', 'pptx', 'visio'];
+    const cur = Object.assign({}, data[this.state.src]);
+    cur.items = cur.items.map((it) => ({
+      ...it,
+      bg: 'transparent',
+      check: it.on ? '5px solid #9B8CFF' : '1.5px solid #6E7689',
+      checkBg: it.on ? '#9B8CFF' : 'transparent'
+    }));
+    return {
+      sources: keys.map((k) => ({
+        ...data[k],
+        bg: k === this.state.src ? '#1A1830' : '#15181F',
+        border: k === this.state.src ? '1.5px solid #9B8CFF' : '1px solid #272C37',
+        pick: () => this.setState({ src: k, done: false })
+      })),
+      cur,
+      done: this.state.done,
+      notDone: !this.state.done,
+      doImport: () => this.setState({ done: true })
+    };
+  }
+}
+</script>
+</body>
+</html>

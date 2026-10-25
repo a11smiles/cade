@@ -1,0 +1,13 @@
+[package]
+name = "cade-layout"
+description = "Auto layout (flex/grid) for frames on Taffy."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+taffy.workspace = true
+thiserror.workspace = true

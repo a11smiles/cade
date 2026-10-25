@@ -1,0 +1,15 @@
+[package]
+name = "cade-render"
+description = "GPU canvas renderer: builds Vello scenes from the document and draws on a wgpu surface."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+cade-core.workspace = true
+vello.workspace = true
+wgpu.workspace = true
+thiserror.workspace = true

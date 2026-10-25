@@ -1,0 +1,13 @@
+[package]
+name = "cade-git"
+description = "Git persistence for CADE projects: commit per save and per Copilot run, branches."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+gix.workspace = true
+thiserror.workspace = true

@@ -1,0 +1,15 @@
+[package]
+name = "cade-crdt"
+description = "Loro-backed .cade project documents: layer tree, snapshots, JSON export."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+cade-core.workspace = true
+loro.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true

@@ -1,0 +1,13 @@
+[package]
+name = "cade-system"
+description = "Linked Data → App → Architecture graph: bindings, impact, missing settings, deploy plan."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+serde.workspace = true
+thiserror.workspace = true

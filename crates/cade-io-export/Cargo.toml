@@ -1,0 +1,13 @@
+[package]
+name = "cade-io-export"
+description = "Raster, vector, document and motion exporters (PNG, SVG, PDF, MP4, GIF, Lottie, CSS)."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+cade-core.workspace = true
+thiserror.workspace = true

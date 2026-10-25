@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Commands the CADE UI may call. Nothing here reaches the network directly; GitHub and Copilot calls go through Rust.",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}

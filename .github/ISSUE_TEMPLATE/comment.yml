@@ -1,0 +1,16 @@
+name: Comment
+description: Anything else — praise, questions, ideas.
+title: "[Comment] "
+labels: ["feedback"]
+body:
+  - type: textarea
+    id: comment
+    attributes:
+      label: Your comment
+    validations:
+      required: true
+  - type: input
+    id: where
+    attributes:
+      label: Where in CADE?
+      placeholder: "App › Copilot agent run"

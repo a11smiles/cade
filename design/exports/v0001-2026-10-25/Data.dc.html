@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>CADE data model workspace</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#B7ABFF}a:hover{color:#D9D2FF}
+button{font-family:inherit}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; box-sizing: border-box; display: flex; flex-direction: column; background: #0E1014; color: #E7E9EF; font-family: Geist, system-ui, sans-serif; font-size: 13px; overflow: hidden">
+
+  <header style="height: 52px; flex-shrink: 0; display: flex; align-items: center; gap: 14px; padding: 0 16px; border-bottom: 1px solid #272C37; background: #12151B">
+    <a href="Start.dc.html" aria-label="Home" style="display: flex"><svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><rect x="1" y="1" width="24" height="24" rx="7" fill="#6B57F0"></rect><path d="M8 18c2-1 3-4 5-7s4-3 5-2-1 3-3 5-5 3-7 4z" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"></path><circle cx="8" cy="18" r="1.6" fill="#F0B44C"></circle></svg></a>
+    <span style="padding: 3px 8px; border-radius: 6px; background: #12303A; color: #7FD3E6; font-size: 11px; font-weight: 600; letter-spacing: 0.04em">DATA MODEL</span>
+    <div style="display: flex; flex-direction: column; line-height: 1.15">
+      <span style="font-weight: 600">Claims — entity model</span>
+      <span style="color: #9AA1B2; font-size: 11px">~/data/claims · schema intake · v7 draft</span>
+    </div>
+    <div style="flex: 1"></div>
+    <div role="group" aria-label="SQL dialect" style="display: flex; gap: 2px; padding: 3px; background: #1B1F28; border: 1px solid #272C37; border-radius: 10px">
+      <button style="height: 28px; padding: 0 12px; border: 0; border-radius: 7px; background: #2A2F3C; color: #E7E9EF; font-size: 12px; font-weight: 600">PostgreSQL</button>
+      <button style="height: 28px; padding: 0 12px; border: 0; border-radius: 7px; background: transparent; color: #9AA1B2; font-size: 12px">SQL Server</button>
+      <button style="height: 28px; padding: 0 12px; border: 0; border-radius: 7px; background: transparent; color: #9AA1B2; font-size: 12px">MySQL</button>
+      <button style="height: 28px; padding: 0 12px; border: 0; border-radius: 7px; background: transparent; color: #9AA1B2; font-size: 12px">Oracle</button>
+    </div>
+    <div style="display: flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: 999px; background: #241E10; border: 1px solid #4A3B17; color: #F0C574; font-size: 11px; font-weight: 500">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"></path></svg>
+      Contoso data standards
+    </div>
+    <button style="height: 34px; padding: 0 14px; border-radius: 8px; border: 0; background: #6B57F0; color: #fff; font-size: 12px; font-weight: 600">Ship migration to repo</button>
+  </header>
+
+  <div style="flex: 1; display: flex; min-height: 0">
+
+    <!-- Left: model tree -->
+    <aside aria-label="Model" style="width: 236px; flex-shrink: 0; display: flex; flex-direction: column; border-right: 1px solid #272C37; background: #15181F">
+      <div style="padding: 14px 14px 6px; color: #9AA1B2; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase">Entities</div>
+      <div style="display: flex; flex-direction: column; padding: 0 8px; gap: 1px; font-size: 12px">
+        <div style="height: 28px; display: flex; align-items: center; gap: 8px; padding: 0 8px; color: #B5BBC9"><span style="width: 10px; height: 10px; border-radius: 2px; background: #2C5F8A"></span>Policyholder<span style="margin-left: auto; padding: 0 5px; border-radius: 4px; background: #3A1F2A; color: #F5A3C0; font-size: 10px">PII</span></div>
+        <div style="height: 28px; display: flex; align-items: center; gap: 8px; padding: 0 8px; color: #B5BBC9"><span style="width: 10px; height: 10px; border-radius: 2px; background: #2C5F8A"></span>Policy</div>
+        <div style="height: 28px; display: flex; align-items: center; gap: 8px; padding: 0 8px; border-radius: 6px; background: #2B2554; color: #E7E9EF"><span style="width: 10px; height: 10px; border-radius: 2px; background: #2C5F8A"></span>Claim<span style="margin-left: auto; width: 7px; height: 7px; border-radius: 50%; background: #9B8CFF"></span></div>
+        <div style="height: 28px; display: flex; align-items: center; gap: 8px; padding: 0 8px; color: #B5BBC9"><span style="width: 10px; height: 10px; border-radius: 2px; background: #2C5F8A"></span>ClaimPhoto</div>
+        <div style="height: 28px; display: flex; align-items: center; gap: 8px; padding: 0 8px; color: #B5BBC9"><span style="width: 10px; height: 10px; border-radius: 2px; background: #2C5F8A"></span>Adjuster</div>
+        <div style="height: 28px; display: flex; align-items: center; gap: 8px; padding: 0 8px; color: #B7ABFF"><span style="width: 10px; height: 10px; border-radius: 2px; border: 1.5px dashed #9B8CFF; box-sizing: border-box"></span>ClaimStatusHistory<span style="margin-left: auto; font-size: 10px">new</span></div>
+      </div>
+      <div style="padding: 16px 14px 6px; color: #9AA1B2; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase">Enums</div>
+      <div style="display: flex; flex-direction: column; padding: 0 8px; gap: 1px; font-size: 12px; font-family: 'Geist Mono', monospace">
+        <div style="height: 26px; display: flex; align-items: center; padding: 0 8px; color: #B5BBC9">claim_type</div>
+        <div style="height: 26px; display: flex; align-items: center; padding: 0 8px; color: #B7ABFF">claim_status · new</div>
+      </div>
+      <div style="padding: 16px 14px 6px; color: #9AA1B2; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase">Classifications</div>
+      <div style="display: flex; flex-wrap: wrap; gap: 6px; padding: 0 14px">
+        <span style="padding: 2px 8px; border-radius: 5px; background: #3A1F2A; color: #F5A3C0; font-size: 11px">PII · 4 columns</span>
+        <span style="padding: 2px 8px; border-radius: 5px; background: #2E2614; color: #F0C574; font-size: 11px">Confidential · 2 tables</span>
+      </div>
+      <div style="flex: 1"></div>
+      <div style="margin: 10px; padding: 10px 12px; border-radius: 10px; background: #1B1F28; border: 1px solid #272C37; display: flex; flex-direction: column; gap: 4px">
+        <span style="font-size: 12px; font-weight: 600">Linked system</span>
+        <span style="font-size: 11px; color: #9AA1B2; line-height: 1.4">Claims Portal forms read field names, types and validation from this model. Migrations deploy to sql-claims.</span>
+        <a href="Deploy.dc.html" style="font-size: 11px; font-weight: 500">Open system view →</a>
+      </div>
+    </aside>
+
+    <!-- Canvas + DDL drawer -->
+    <div style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+      <main style="flex: 1; position: relative; min-height: 0; background-color: #0B0D11; background-image: radial-gradient(#232836 1px, transparent 1px); background-size: 20px 20px; overflow: hidden">
+
+        <!-- Relationship lines -->
+        <div style="position: absolute; left: 130px; top: 158px; width: 2px; height: 42px; background: #6E7689"></div>
+        <span style="position: absolute; left: 138px; top: 160px; font-size: 10px; color: #9AA1B2; font-family: 'Geist Mono', monospace">1</span>
+        <span style="position: absolute; left: 138px; top: 184px; font-size: 10px; color: #9AA1B2; font-family: 'Geist Mono', monospace">∗</span>
+        <div style="position: absolute; left: 230px; top: 230px; width: 82px; height: 2px; background: #6E7689"></div>
+        <span style="position: absolute; left: 236px; top: 214px; font-size: 10px; color: #9AA1B2; font-family: 'Geist Mono', monospace">1</span>
+        <span style="position: absolute; left: 300px; top: 214px; font-size: 10px; color: #9AA1B2; font-family: 'Geist Mono', monospace">∗</span>
+        <div style="position: absolute; left: 542px; top: 86px; width: 74px; height: 2px; background: #6E7689"></div>
+        <span style="position: absolute; left: 548px; top: 70px; font-size: 10px; color: #9AA1B2; font-family: 'Geist Mono', monospace">1</span>
+        <span style="position: absolute; left: 604px; top: 70px; font-size: 10px; color: #9AA1B2; font-family: 'Geist Mono', monospace">∗</span>
+        <div style="position: absolute; left: 542px; top: 240px; width: 74px; height: 2px; background: #6E7689"></div>
+        <span style="position: absolute; left: 548px; top: 224px; font-size: 10px; color: #9AA1B2; font-family: 'Geist Mono', monospace">∗</span>
+        <span style="position: absolute; left: 604px; top: 224px; font-size: 10px; color: #9AA1B2; font-family: 'Geist Mono', monospace">1</span>
+        <div style="position: absolute; left: 430px; top: 256px; width: 2px; height: 120px; background: #9B8CFF"></div>
+        <div style="position: absolute; left: 430px; top: 374px; width: 186px; height: 2px; background: #9B8CFF"></div>
+        <span style="position: absolute; left: 438px; top: 260px; font-size: 10px; color: #B7ABFF; font-family: 'Geist Mono', monospace">1</span>
+        <span style="position: absolute; left: 604px; top: 358px; font-size: 10px; color: #B7ABFF; font-family: 'Geist Mono', monospace">∗</span>
+
+        <!-- Policyholder -->
+        <div style="position: absolute; left: 30px; top: 24px; width: 200px; border-radius: 8px; background: #FFFFFF; color: #12263A; overflow: hidden; font-size: 11px">
+          <div style="height: 26px; display: flex; align-items: center; padding: 0 10px; background: #2C5F8A; color: #FFFFFF; font-weight: 600; font-size: 12px">Policyholder</div>
+          <div style="display: flex; flex-direction: column; padding: 4px 0">
+            <div style="height: 20px; display: flex; align-items: center; gap: 6px; padding: 0 10px"><span style="font-size: 9px; font-weight: 700; color: #8A6A00; width: 16px">PK</span><span style="flex: 1">id</span><span style="font-family: 'Geist Mono', monospace; color: #4A5B6C">uuid</span></div>
+            <div style="height: 20px; display: flex; align-items: center; gap: 6px; padding: 0 10px"><span style="width: 16px"></span><span style="flex: 1">full_name</span><span style="padding: 0 4px; border-radius: 3px; background: #FCE4EC; color: #9C1C4A; font-size: 9px; font-weight: 600">PII</span><span style="font-family: 'Geist Mono', monospace; color: #4A5B6C">text</span></div>
+            <div style="height: 20px; display: flex; align-items: center; gap: 6px; padding: 0 10px"><span style="width: 16px"></span><span style="flex: 1">email</span><span style="padding: 0 4px; border-radius: 3px; background: #FCE4EC; color: #9C1C4A; font-size: 9px; font-weight: 600">PII</span><span style="font-family: 'Geist Mono', monospace; color: #4A5B6C">citext</span></div>
+            <div style="height: 20px; display: flex; align-items: center; gap: 6px; padding: 0 10px"><span style="width: 16px"></span><span style="flex: 1">phone</span><span style="padding: 0 4px; border-radius: 3px; background: #FCE4EC; color: #9C1C4A; font-size: 9px; font-weight: 600">PII</span><span style="font-family: 'Geist Mono', monospace; color: #4A5B6C">text</span></div>
+            <div style="height: 20px; display: flex; align-items: center; gap: 6px; padding: 0 10px"><span style="width: 16px"></span><span style="flex: 1">created_at</span><span style="font-family: 'Geist Mono', monospace; color: #4A5B6C">timestamptz</span></div>
+          </div>
+        </div>
+
+        <!-- Policy -->
+        <div style="position: absolute; left: 30px; top: 200px; width: 200px; border-radius: 8px; background: #FFFFFF; color: #12263A; overflow: hidden; font-size: 11px">
+          <div style="height: 26px; display: flex; align-items: center; padding: 0 10px; background: #2C5F8A; color: #FFFFFF; font-weight: 600; font-size: 12px">Policy</div>
+          <div style="display: flex; flex-direction: column; padding: 4px 0">
+            <div style="height: 20px; display: flex; align-items: center; gap: 6px; padding: 0 10px"><span style="font-size: 9px; font-weight: 700; color: #8A6A00; width: 16px">PK</span><span style="flex: 1">id</span><span style="font-family: 'Geist Mono', monospace; color: #4A5B6C">uuid</span></div>
+            <div style="height: 20px; display: flex; align-items: center; gap: 6px; padding: 0 10px"><span style="font-size: 9px; font-weight: 700; color: #2C5F8A; width: 16px">FK</span><span style="flex: 1">policyholder_id</span><span style="font-family: 'Geist Mono', monospace; color: #4A5B6C">uuid</span></div>
+            <div style="height: 20px; display: flex; align-items: center; gap: 6px; padding: 0 10px"><span style="width: 16px"></span><span style="flex: 1">policy_number</span><span style="font-family: 'Geist Mono', monospace; color: #4A5B6C">text</span></div>
+            <div style="height: 20px; display: flex; align-items: center; gap: 6px; padding: 0 10px"><span style="width: 16px"></span><span style="flex: 1">effective_from</span><span style="font-family: 'Geist Mono', monospace; color: #4A5B6C">date</span></div>
+            <div style="height: 20px; display: flex; align-items: center; gap: 6px; padding: 0 10px"><span style="width: 16px"></span><span style="flex: 1">effective_to</span><span style="font-family: 'Geist Mono', monospace; color: #4A5B6C">date</span></div>
+          </div>
+        </div>
+
+        <!-- Claim (selected) -->
+        <div style="position: absolute; left: 312px; top: 56px; width: 230px; border-radius: 8px; background: #FFFFFF; color: #12263A; overflow: hidden; font-size: 11px; outline: 2px solid #9B8CFF; outline-offset: 3px">
+          <div style="height: 26px; display: flex; align-items: center; padding: 0 10px; background: #2C5F8A; color: #FFFFFF; font-weight: 600; font-size: 12px">Claim<span style="margin-left: auto; font-weight: 400; font-size: 10px; color: #CFE0EF">intake.claims</span></div>
+          <div style="display: flex; flex-direction: column; padding: 4px 0">
+            <div style="height: 20px; display: flex; align-items: center; gap: 6px; padding: 0 10px"><span style="font-size: 9px; font-weight: 700; color: #8A6A00; width: 16px">PK</span><span style="flex: 1">id</span><span style="font-family: 'Geist Mono', monospace; color: #4A5B6C">uuid</span></div>
+            <div style="height: 20px; display: flex; align-items: center; gap: 6px; padding: 0 10px"><span style="font-size: 9px; font-weight: 700; color: #2C5F8A; width: 16px">FK</span><span style="flex: 1">policy_id</span><span style="font-family: 'Geist Mono', monospace; color: #4A5B6C">uuid</span></div>
+            <div style="height: 20px; display: flex; align-items: center; gap: 6px; padding: 0 10px"><span style="width: 16px"></span><span style="flex: 1">incident_date</span><span style="font-family: 'Geist Mono', monospace; color: #4A5B6C">date</span></div>
+            <div style="height: 20px; display: flex; align-items: center; gap: 6px; padding: 0 10px"><span style="width: 16px"></span><span style="flex: 1">incident_type</span><span style="font-family: 'Geist Mono', monospace; color: #4A5B6C">claim_type</span></div>
+            <div style="height: 20px; display: flex; align-items: center; gap: 6px; padding: 0 10px"><span style="width: 16px"></span><span style="flex: 1">description</span><span style="font-family: 'Geist Mono', monospace; color: #4A5B6C">text</span></div>
+            <div style="height: 20px; display: flex; align-items: center; gap: 6px; padding: 0 10px; background: #E8F7EF"><span style="width: 16px; color: #1D7A4D; font-weight: 700">+</span><span style="flex: 1">status</span><span style="font-family: 'Geist Mono', monospace; color: #1D7A4D">claim_status</span></div>
+            <div style="height: 20px; display: flex; align-items: center; gap: 6px; padding: 0 10px"><span style="font-size: 9px; font-weight: 700; color: #2C5F8A; width: 16px">FK</span><span style="flex: 1">adjuster_id</span><span style="font-family: 'Geist Mono', monospace; color: #4A5B6C">uuid ?</span></div>
+            <div style="height: 20px; display: flex; align-items: center; gap: 6px; padding: 0 10px"><span style="width: 16px"></span><span style="flex: 1">submitted_at</span><span style="font-family: 'Geist Mono', monospace; color: #4A5B6C">timestamptz ?</span></div>
+          </div>
+        </div>
+
+        <!-- ClaimPhoto -->
+        <div style="position: absolute; left: 616px; top: 40px; width: 190px; border-radius: 8px; background: #FFFFFF; color: #12263A; overflow: hidden; font-size: 11px">
+          <div style="height: 26px; display: flex; align-items: center; padding: 0 10px; background: #2C5F8A; color: #FFFFFF; font-weight: 600; font-size: 12px">ClaimPhoto</div>
+          <div style="display: flex; flex-direction: column; padding: 4px 0">
+            <div style="height: 20px; display: flex; align-items: center; gap: 6px; padding: 0 10px"><span style="font-size: 9px; font-weight: 700; color: #8A6A00; width: 16px">PK</span><span style="flex: 1">id</span><span style="font-family: 'Geist Mono', monospace; color: #4A5B6C">uuid</span></div>
+            <div style="height: 20px; display: flex; align-items: center; gap: 6px; padding: 0 10px"><span style="font-size: 9px; font-weight: 700; color: #2C5F8A; width: 16px">FK</span><span style="flex: 1">claim_id</span><span style="font-family: 'Geist Mono', monospace; color: #4A5B6C">uuid</span></div>
+            <div style="height: 20px; display: flex; align-items: center; gap: 6px; padding: 0 10px"><span style="width: 16px"></span><span style="flex: 1">blob_uri</span><span style="font-family: 'Geist Mono', monospace; color: #4A5B6C">text</span></div>
+            <div style="height: 20px; display: flex; align-items: center; gap: 6px; padding: 0 10px"><span style="width: 16px"></span><span style="flex: 1">sha256</span><span style="font-family: 'Geist Mono', monospace; color: #4A5B6C">bytea</span></div>
+          </div>
+        </div>
+
+        <!-- Adjuster -->
+        <div style="position: absolute; left: 616px; top: 228px; width: 190px; border-radius: 8px; background: #FFFFFF; color: #12263A; overflow: hidden; font-size: 11px">
+          <div style="height: 26px; display: flex; align-items: center; padding: 0 10px; background: #2C5F8A; color: #FFFFFF; font-weight: 600; font-size: 12px">Adjuster</div>
+          <div style="display: flex; flex-direction: column; padding: 4px 0">
+            <div style="height: 20px; display: flex; align-items: center; gap: 6px; padding: 0 10px"><span style="font-size: 9px; font-weight: 700; color: #8A6A00; width: 16px">PK</span><span style="flex: 1">id</span><span style="font-family: 'Geist Mono', monospace; color: #4A5B6C">uuid</span></div>
+            <div style="height: 20px; display: flex; align-items: center; gap: 6px; padding: 0 10px"><span style="width: 16px"></span><span style="flex: 1">full_name</span><span style="font-family: 'Geist Mono', monospace; color: #4A5B6C">text</span></div>
+          </div>
+        </div>
+
+        <!-- ClaimStatusHistory (staged) -->
+        <div style="position: absolute; left: 616px; top: 318px; width: 190px; border-radius: 8px; background: #FFFFFF; color: #12263A; overflow: hidden; font-size: 11px; outline: 2px dashed #9B8CFF; outline-offset: 3px">
+          <div style="height: 26px; display: flex; align-items: center; padding: 0 10px; background: #4A3F9A; color: #FFFFFF; font-weight: 600; font-size: 12px">ClaimStatusHistory</div>
+          <div style="display: flex; flex-direction: column; padding: 4px 0">
+            <div style="height: 20px; display: flex; align-items: center; gap: 6px; padding: 0 10px"><span style="font-size: 9px; font-weight: 700; color: #2C5F8A; width: 16px">FK</span><span style="flex: 1">claim_id</span><span style="font-family: 'Geist Mono', monospace; color: #4A5B6C">uuid</span></div>
+            <div style="height: 20px; display: flex; align-items: center; gap: 6px; padding: 0 10px"><span style="width: 16px"></span><span style="flex: 1">to_status</span><span style="font-family: 'Geist Mono', monospace; color: #4A5B6C">claim_status</span></div>
+            <div style="height: 20px; display: flex; align-items: center; gap: 6px; padding: 0 10px"><span style="width: 16px"></span><span style="flex: 1">changed_by</span><span style="font-family: 'Geist Mono', monospace; color: #4A5B6C">uuid</span></div>
+            <div style="height: 20px; display: flex; align-items: center; gap: 6px; padding: 0 10px"><span style="width: 16px"></span><span style="flex: 1">changed_at</span><span style="font-family: 'Geist Mono', monospace; color: #4A5B6C">timestamptz</span></div>
+          </div>
+        </div>
+
+        <!-- Entity properties strip -->
+        <div role="toolbar" aria-label="Entity properties" style="position: absolute; left: 16px; right: 16px; bottom: 14px; display: flex; align-items: center; flex-wrap: wrap; gap: 14px; padding: 9px 14px; border-radius: 14px; background: #1B1F28; border: 1px solid #323848; box-shadow: 0 12px 32px rgba(0,0,0,0.45)">
+          <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 11px; color: #9AA1B2">Entity</span><span style="font-weight: 600">Claim</span></div>
+          <div style="width: 1px; height: 34px; background: #323848"></div>
+          <div style="display: flex; flex-direction: column; gap: 3px"><span style="font-size: 11px; color: #9AA1B2">Table</span><span style="padding: 2px 8px; border-radius: 5px; background: #12151B; font-family: 'Geist Mono', monospace; font-size: 12px">intake.claims</span></div>
+          <div style="display: flex; flex-direction: column; gap: 3px"><span style="font-size: 11px; color: #9AA1B2">Key</span><span style="padding: 2px 8px; border-radius: 5px; background: #12151B; font-family: 'Geist Mono', monospace; font-size: 12px">uuid · gen_random_uuid()</span></div>
+          <div style="display: flex; flex-direction: column; gap: 3px"><span style="font-size: 11px; color: #9AA1B2">Audit columns</span><span style="padding: 2px 8px; border-radius: 5px; background: #16301F; color: #7FDDB0; font-size: 12px">On</span></div>
+          <div style="display: flex; flex-direction: column; gap: 3px"><span style="font-size: 11px; color: #9AA1B2">Classification</span><span style="padding: 2px 8px; border-radius: 5px; background: #2E2614; color: #F0C574; font-size: 12px">Confidential ▾</span></div>
+          <div style="flex: 1"></div>
+          <button style="height: 32px; padding: 0 12px; border-radius: 8px; border: 1px solid #4A4190; background: #241F4A; color: #D9D2FF; font-size: 12px; font-weight: 500; display: flex; align-items: center; gap: 6px">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"></path></svg>
+            Ask Copilot
+          </button>
+        </div>
+      </main>
+
+      <!-- DDL drawer -->
+      <section aria-label="Generated SQL" style="height: 248px; flex-shrink: 0; border-top: 1px solid #272C37; background: #12151B; display: flex; flex-direction: column">
+        <div style="height: 40px; display: flex; align-items: center; gap: 4px; padding: 0 12px; border-bottom: 1px solid #272C37">
+          <button style="height: 28px; padding: 0 10px; border: 0; border-radius: 6px; background: transparent; color: #9AA1B2; font-family: 'Geist Mono', monospace; font-size: 12px">schema.sql</button>
+          <button style="height: 28px; padding: 0 10px; border: 0; border-radius: 6px; background: #1F2430; color: #E7E9EF; font-family: 'Geist Mono', monospace; font-size: 12px">0007_claim_status.sql</button>
+          <button style="height: 28px; padding: 0 10px; border: 0; border-radius: 6px; background: transparent; color: #9AA1B2; font-family: 'Geist Mono', monospace; font-size: 12px">0007_down.sql</button>
+          <div style="flex: 1"></div>
+          <span style="display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: #7FDDB0"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg>Parses on PostgreSQL 16</span>
+          <span style="display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: #7FDDB0; margin-left: 10px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg>Reversible</span>
+          <span style="font-size: 11px; color: #9AA1B2; margin-left: 10px">Synced with model</span>
+        </div>
+        <div style="flex: 1; display: flex; overflow: hidden; font-family: 'Geist Mono', monospace; font-size: 12px; line-height: 19px">
+          <div style="width: 40px; padding: 8px 8px 0 0; text-align: right; color: #5E6678; flex-shrink: 0">1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9<br>10</div>
+          <div style="flex: 1; padding: 8px 12px 0; white-space: pre; color: #C9CED9"><span style="color: #C792EA">CREATE TYPE</span> intake.claim_status <span style="color: #C792EA">AS ENUM</span> (<span style="color: #C3E88D">'draft'</span>, <span style="color: #C3E88D">'submitted'</span>, <span style="color: #C3E88D">'in_review'</span>, <span style="color: #C3E88D">'approved'</span>, <span style="color: #C3E88D">'denied'</span>, <span style="color: #C3E88D">'closed'</span>);
+<span style="color: #C792EA">ALTER TABLE</span> intake.claims <span style="color: #C792EA">ADD COLUMN</span> status intake.claim_status <span style="color: #C792EA">NOT NULL DEFAULT</span> <span style="color: #C3E88D">'draft'</span>;
+<span style="color: #C792EA">CREATE TABLE</span> intake.claim_status_history (
+  id          uuid <span style="color: #C792EA">PRIMARY KEY DEFAULT</span> gen_random_uuid(),
+  claim_id    uuid <span style="color: #C792EA">NOT NULL REFERENCES</span> intake.claims(id),
+  from_status intake.claim_status,
+  to_status   intake.claim_status <span style="color: #C792EA">NOT NULL</span>,
+  changed_by  uuid <span style="color: #C792EA">NOT NULL</span>,
+  changed_at  timestamptz <span style="color: #C792EA">NOT NULL DEFAULT</span> now()
+);</div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Copilot -->
+    <aside aria-label="Copilot" style="width: 352px; flex-shrink: 0; display: flex; flex-direction: column; border-left: 1px solid #272C37; background: #15181F">
+      <div style="height: 48px; display: flex; align-items: center; gap: 8px; padding: 0 14px; border-bottom: 1px solid #272C37">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B7ABFF" stroke-width="1.8" aria-hidden="true"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"></path></svg>
+        <span style="font-weight: 600">Copilot</span>
+        <span style="color: #9AA1B2; font-size: 12px">· Model thread</span>
+      </div>
+      <div style="flex: 1; overflow: hidden; display: flex; flex-direction: column; gap: 14px; padding: 16px 14px">
+        <div style="align-self: flex-end; max-width: 88%; display: flex; flex-direction: column; gap: 6px; align-items: flex-end">
+          <span style="display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 6px; background: #2B2554; color: #D9D2FF; font-size: 11px">Entity · Claim</span>
+          <div style="padding: 10px 12px; border-radius: 12px 12px 4px 12px; background: #262B38; line-height: 1.45">Add a status lifecycle and keep a history of who changed it.</div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px; line-height: 1.5; color: #D3D7E0">
+          <span>Staged as migration 0007, with a down script so it can be rolled back:</span>
+          <div style="display: flex; flex-direction: column; border: 1px solid #272C37; border-radius: 10px; overflow: hidden; font-size: 12px">
+            <div style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px solid #272C37"><span style="padding: 1px 6px; border-radius: 4px; background: #16301F; color: #7FDDB0; font-family: 'Geist Mono', monospace; font-size: 11px">ADD</span>Enum claim_status · 6 values</div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px solid #272C37"><span style="padding: 1px 6px; border-radius: 4px; background: #16301F; color: #7FDDB0; font-family: 'Geist Mono', monospace; font-size: 11px">ADD</span>Claim.status, default draft</div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 8px 12px"><span style="padding: 1px 6px; border-radius: 4px; background: #16301F; color: #7FDDB0; font-family: 'Geist Mono', monospace; font-size: 11px">ADD</span>ClaimStatusHistory + index</div>
+          </div>
+          <span style="font-size: 12px; color: #9AA1B2">The new column has a constant default, so on PostgreSQL 11+ it won't rewrite the claims table.</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 12px; background: #1A1830; border: 1px solid #3A3373">
+          <span style="font-size: 12px; font-weight: 600; color: #D9D2FF">Question</span>
+          <span style="font-size: 12px; color: #D3D7E0; line-height: 1.45">Can a denied claim be reopened? That decides whether I add a transition from denied back to in_review.</span>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap">
+            <button style="height: 30px; padding: 0 10px; border-radius: 7px; border: 1px solid #4A4190; background: #241F4A; color: #E7E9EF; font-size: 12px">Yes, reopenable</button>
+            <button style="height: 30px; padding: 0 10px; border-radius: 7px; border: 1px solid #323848; background: transparent; color: #E7E9EF; font-size: 12px">No, final</button>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <button style="min-height: 34px; padding: 0 12px; border-radius: 8px; border: 1px solid #323848; background: #1B1F28; color: #E7E9EF; font-size: 12px; text-align: left">Generate the same migration for SQL Server</button>
+          <button style="min-height: 34px; padding: 0 12px; border-radius: 8px; border: 1px solid #323848; background: #1B1F28; color: #E7E9EF; font-size: 12px; text-align: left">Reverse-engineer from a live schema</button>
+        </div>
+      </div>
+      <div style="padding: 12px; border-top: 1px solid #272C37">
+        <label for="dataask" style="position: absolute; left: -9999px">Message Copilot</label>
+        <div style="display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-radius: 12px; background: #1B1F28; border: 1px solid #323848">
+          <div style="display: flex; gap: 6px"><span style="display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 6px; background: #2B2554; color: #D9D2FF; font-size: 11px">Entity · Claim</span></div>
+          <input id="dataask" placeholder="Change an entity, a field, or the model" style="border: 0; outline: none; background: transparent; color: #E7E9EF; font-family: inherit; font-size: 13px; padding: 2px 0">
+          <div style="display: flex; align-items: center; gap: 8px">
+            <button style="height: 26px; padding: 0 8px; border-radius: 6px; border: 1px solid #323848; background: transparent; color: #B5BBC9; font-size: 11px">Claude Sonnet 5.5 ▾</button>
+            <div style="flex: 1"></div>
+            <button aria-label="Send" style="width: 30px; height: 30px; border-radius: 8px; border: 0; background: #6B57F0; color: #fff; display: flex; align-items: center; justify-content: center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"></path></svg></button>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

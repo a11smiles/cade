@@ -1,0 +1,13 @@
+[package]
+name = "cade-codegen-react"
+description = "React + design-system code generation and two-way sync for App projects."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+cade-core.workspace = true
+thiserror.workspace = true

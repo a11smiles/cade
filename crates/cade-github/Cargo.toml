@@ -1,0 +1,17 @@
+[package]
+name = "cade-github"
+description = "GitHub API: device-flow sign-in, hosts (github.com, GHE.com, GHES), PRs, Pages, issues."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+octocrab.workspace = true
+keyring.workspace = true
+tokio.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+url.workspace = true

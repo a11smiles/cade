@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>CADE version history</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#B7ABFF}a:hover{color:#D9D2FF}
+button{font-family:inherit;cursor:pointer}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; box-sizing: border-box; display: flex; flex-direction: column; background: #0E1014; color: #E7E9EF; font-family: Geist, system-ui, sans-serif; font-size: 13px; overflow: hidden">
+
+  <header style="height: 52px; flex-shrink: 0; display: flex; align-items: center; gap: 14px; padding: 0 16px; border-bottom: 1px solid #272C37; background: #12151B">
+    <a href="Main.dc.html" aria-label="Back to canvas" style="width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #B5BBC9; border: 1px solid #272C37"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg></a>
+    <div style="display: flex; flex-direction: column; line-height: 1.15">
+      <span style="font-weight: 600">Version history · Claims Portal</span>
+      <span style="color: #9AA1B2; font-size: 11px">Every save and every Copilot run is a commit on <span style="font-family: 'Geist Mono', monospace">cade/intake-flow</span></span>
+    </div>
+    <div style="flex: 1"></div>
+    <div role="group" aria-label="Filter" style="display: flex; gap: 2px; padding: 3px; background: #1B1F28; border: 1px solid #272C37; border-radius: 10px">
+      <sc-for list="{{ filters }}" as="f" hint-placeholder-count="4">
+        <button onClick="{{ f.pick }}" style="height: 28px; padding: 0 12px; border: 0; border-radius: 7px; background: {{ f.bg }}; color: {{ f.fg }}; font-size: 12px; font-weight: {{ f.weight }}">{{ f.label }}</button>
+      </sc-for>
+    </div>
+  </header>
+
+  <div style="flex: 1; display: flex; min-height: 0">
+
+    <!-- Timeline -->
+    <nav aria-label="Versions" style="width: 380px; flex-shrink: 0; display: flex; flex-direction: column; border-right: 1px solid #272C37; background: #15181F; overflow: hidden">
+      <sc-for list="{{ versions }}" as="v" hint-placeholder-count="6">
+        <button onClick="{{ v.pick }}" style="display: flex; gap: 12px; padding: 12px 16px; border: 0; border-bottom: 1px solid #272C37; background: {{ v.bg }}; box-shadow: {{ v.bar }}; color: #E7E9EF; text-align: left">
+          <span style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding-top: 2px">
+            <span style="width: 10px; height: 10px; border-radius: 50%; background: {{ v.dot }}"></span>
+          </span>
+          <span style="flex: 1; display: flex; flex-direction: column; gap: 4px">
+            <span style="display: flex; align-items: center; gap: 8px">
+              <span style="padding: 1px 6px; border-radius: 4px; background: {{ v.tagBg }}; color: {{ v.tagFg }}; font-size: 10px; font-weight: 600; letter-spacing: 0.04em">{{ v.kind }}</span>
+              <span style="font-size: 11px; color: #9AA1B2">{{ v.when }}</span>
+              <span style="margin-left: auto; font-family: 'Geist Mono', monospace; font-size: 11px; color: #6E7689">{{ v.sha }}</span>
+            </span>
+            <span style="font-weight: 500; line-height: 1.35">{{ v.title }}</span>
+            <span style="font-size: 11px; color: #9AA1B2">{{ v.detail }}</span>
+          </span>
+        </button>
+      </sc-for>
+    </nav>
+
+    <!-- Compare -->
+    <main style="flex: 1; min-width: 0; display: flex; flex-direction: column; background-color: #0B0D11; background-image: radial-gradient(#232836 1px, transparent 1px); background-size: 20px 20px">
+      <div style="display: flex; align-items: center; gap: 12px; padding: 14px 24px">
+        <span style="font-weight: 600">{{ sel.title }}</span>
+        <span style="color: #9AA1B2; font-size: 12px">compared with the current version</span>
+      </div>
+      <div style="flex: 1; display: flex; gap: 40px; justify-content: center; padding: 6px 24px 0">
+        <sc-for list="{{ panes }}" as="p" hint-placeholder-count="2">
+          <div style="display: flex; flex-direction: column; gap: 8px">
+            <span style="font-size: 11px; color: {{ p.labelColor }}">{{ p.label }}</span>
+            <div style="width: 270px; height: 540px; background: #FFFFFF; border-radius: 4px; overflow: hidden; color: #12263A; display: flex; flex-direction: column">
+              <div style="height: 46px; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; border-bottom: 1px solid #E3E8EE"><span style="font-weight: 700; color: #0F6E6E; font-size: 12px">Contoso Claims</span><span style="font-size: 10px; color: #4A5B6C">Save &amp; exit</span></div>
+              <sc-if value="{{ p.progress }}" hint-placeholder-val="{{ true }}">
+                <div style="padding: 12px 14px 0; display: flex; flex-direction: column; gap: 5px"><span style="font-size: 10px; color: #4A5B6C">Step 1 of 4</span><div style="height: 4px; border-radius: 2px; background: #E3E8EE"><div style="width: 25%; height: 4px; border-radius: 2px; background: #0F6E6E"></div></div></div>
+              </sc-if>
+              <sc-if value="{{ p.errors }}" hint-placeholder-val="{{ false }}">
+                <div style="margin: 12px 14px 0; padding: 8px 10px; border-radius: 6px; background: #FDECEC; color: #8A1C1C; font-size: 11px">2 fields need attention before you continue.</div>
+              </sc-if>
+              <div style="padding: 14px; display: flex; flex-direction: column; gap: 12px">
+                <span style="font-size: 17px; font-weight: 700">What happened?</span>
+                <div style="display: flex; flex-direction: column; gap: 3px"><span style="font-size: 10px; font-weight: 600">Date of incident</span><div style="height: 32px; border: {{ p.field }}; border-radius: 6px"></div></div>
+                <div style="display: flex; flex-direction: column; gap: 3px"><span style="font-size: 10px; font-weight: 600">Type of claim</span><div style="height: 32px; border: 1px solid #C9D2DC; border-radius: 6px"></div></div>
+                <div style="display: flex; flex-direction: column; gap: 3px"><span style="font-size: 10px; font-weight: 600">Describe the incident</span><div style="height: 70px; border: {{ p.field }}; border-radius: 6px"></div></div>
+              </div>
+              <div style="flex: 1"></div>
+              <div style="padding: 14px"><div style="height: 40px; border-radius: {{ p.radius }}; background: #0F6E6E; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px">Continue</div></div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </main>
+
+    <!-- Detail -->
+    <aside aria-label="Version detail" style="width: 340px; flex-shrink: 0; display: flex; flex-direction: column; gap: 14px; padding: 18px 16px; border-left: 1px solid #272C37; background: #15181F">
+      <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #9AA1B2">What changed since then</span>
+      <div style="display: flex; flex-direction: column; border: 1px solid #272C37; border-radius: 10px; overflow: hidden; font-size: 12px">
+        <sc-for list="{{ sel.diff }}" as="d" hint-placeholder-count="3">
+          <div style="display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-bottom: 1px solid #272C37">
+            <span style="padding: 1px 6px; border-radius: 4px; background: {{ d.bg }}; color: {{ d.fg }}; font-family: 'Geist Mono', monospace; font-size: 10px">{{ d.op }}</span>
+            <span>{{ d.text }}</span>
+          </div>
+        </sc-for>
+        <sc-if value="{{ sel.isCurrent }}" hint-placeholder-val="{{ false }}">
+          <div style="padding: 10px 12px; color: #9AA1B2">This is the current version.</div>
+        </sc-if>
+      </div>
+      <sc-if value="{{ sel.hasRun }}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; flex-direction: column; gap: 6px; padding: 12px; border-radius: 10px; background: #1A1830; border: 1px solid #3A3373; font-size: 12px">
+          <span style="font-weight: 600; color: #D9D2FF">Copilot run</span>
+          <span style="color: #D3D7E0; line-height: 1.45">{{ sel.prompt }}</span>
+          <span style="color: #9AA1B2">{{ sel.runMeta }}</span>
+        </div>
+      </sc-if>
+      <div style="flex: 1"></div>
+      <sc-if value="{{ feedback }}" hint-placeholder-val="{{ false }}">
+        <div role="status" style="padding: 10px 12px; border-radius: 10px; background: #16301F; border: 1px solid #22553A; color: #7FDDB0; font-size: 12px; line-height: 1.45">{{ feedback }}</div>
+      </sc-if>
+      <div style="display: flex; flex-direction: column; gap: 8px">
+        <button onClick="{{ restore }}" style="height: 40px; border-radius: 10px; border: 0; background: {{ restoreBg }}; color: #fff; font-size: 13px; font-weight: 600">Restore this version</button>
+        <div style="display: flex; gap: 8px">
+          <button onClick="{{ branch }}" style="flex: 1; height: 36px; border-radius: 9px; border: 1px solid #323848; background: transparent; color: #E7E9EF; font-size: 12px">Branch from here</button>
+          <button onClick="{{ copyLink }}" style="flex: 1; height: 36px; border-radius: 9px; border: 1px solid #323848; background: transparent; color: #E7E9EF; font-size: 12px">Share for review</button>
+        </div>
+        <span style="font-size: 11px; color: #9AA1B2; text-align: center">Restoring adds a new version. Nothing is deleted.</span>
+      </div>
+    </aside>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { sel: 'v8', filter: 'all', feedback: '' };
+  }
+  renderVals() {
+    const T = {
+      COPILOT: ['#2B2554', '#D9D2FF', '#9B8CFF'],
+      YOU: ['#1F2430', '#B5BBC9', '#B5BBC9'],
+      SHIP: ['#16301F', '#7FDDB0', '#3FB68B'],
+      IMPORT: ['#2E2614', '#F0C574', '#F0B44C']
+    };
+    const V = [
+      { id: 'v8', kind: 'COPILOT', when: 'Today 08:52', sha: 'a41c9e2', title: 'Added error states to Step 1', detail: 'Copilot · 6 changes · applied by you',
+        errors: true, progress: true, radius: '8px', prompt: '“Add validation and error states to Step 1, matching how our design system does forms.”', runMeta: 'Claude Sonnet 5.5 · 186K tokens', diff: [] },
+      { id: 'v7', kind: 'YOU', when: 'Today 08:31', sha: '7d02b11', title: 'Button radius 6 → 8 on Continue', detail: 'Manual edit · 1 layer',
+        errors: false, progress: true, radius: '8px',
+        diff: [{ op: 'ADD', text: 'Error summary alert' }, { op: 'MOD', text: '2 fields → state=error' }, { op: 'ADD', text: 'Helper text × 2' }] },
+      { id: 'v6', kind: 'SHIP', when: 'Yesterday 17:04', sha: 'e9b3f40', title: 'Shipped as PR #212', detail: 'contoso/claims-portal · merged',
+        errors: false, progress: true, radius: '6px',
+        diff: [{ op: 'MOD', text: 'Button radius 6 → 8' }, { op: 'ADD', text: 'Error states on Step 1' }] },
+      { id: 'v5', kind: 'COPILOT', when: 'Yesterday 15:40', sha: '3c7aa18', title: 'Built Step 1 from docs/intake.md', detail: 'Copilot · 41 layers · applied by you',
+        errors: false, progress: false, radius: '6px', prompt: '“Build the 4-step claim intake from the PRD. Mobile first, then desktop.”', runMeta: 'Claude Sonnet 5.5 · 412K tokens',
+        diff: [{ op: 'ADD', text: 'Progress bar' }, { op: 'MOD', text: 'Button radius 6 → 8' }, { op: 'ADD', text: 'Error states on Step 1' }] },
+      { id: 'v4', kind: 'IMPORT', when: 'Oct 22', sha: '0f1d6c3', title: 'Imported from Figma: Claims Portal v12', detail: '212 frames · Contoso DS linked',
+        errors: false, progress: false, radius: '4px',
+        diff: [{ op: 'MOD', text: 'Rebuilt Step 1 from the PRD' }, { op: 'ADD', text: 'Progress bar' }, { op: 'MOD', text: 'Button radius 4 → 8' }, { op: 'ADD', text: 'Error states' }] }
+    ];
+    const filters = [['all', 'All'], ['COPILOT', 'Copilot'], ['YOU', 'Mine'], ['SHIP', 'Shipped']];
+    const visible = V.filter((v) => this.state.filter === 'all' || v.kind === this.state.filter);
+    const sel = V.find((v) => v.id === this.state.sel) || V[0];
+    const cur = V[0];
+    const pane = (v, label, color) => ({
+      label, labelColor: color, progress: v.progress, errors: v.errors, radius: v.radius,
+      field: v.errors ? '2px solid #B42323' : '1px solid #C9D2DC'
+    });
+    const opColor = { ADD: ['#16301F', '#7FDDB0'], MOD: ['#2E2614', '#F0C574'], DEL: ['#2A1515', '#F5A3A3'] };
+    return {
+      filters: filters.map(([k, label]) => ({
+        label,
+        bg: this.state.filter === k ? '#2A2F3C' : 'transparent',
+        fg: this.state.filter === k ? '#E7E9EF' : '#9AA1B2',
+        weight: this.state.filter === k ? '600' : '400',
+        pick: () => this.setState({ filter: k })
+      })),
+      versions: visible.map((v) => ({
+        ...v,
+        tagBg: T[v.kind][0], tagFg: T[v.kind][1], dot: T[v.kind][2],
+        bg: v.id === sel.id ? '#1F2430' : 'transparent',
+        bar: v.id === sel.id ? 'inset 3px 0 0 #9B8CFF' : 'none',
+        pick: () => this.setState({ sel: v.id, feedback: '' })
+      })),
+      panes: sel.id === cur.id
+        ? [pane(cur, 'Current · ' + cur.sha, '#B7ABFF')]
+        : [pane(sel, sel.when + ' · ' + sel.sha, '#9AA1B2'), pane(cur, 'Current · ' + cur.sha, '#B7ABFF')],
+      sel: {
+        ...sel,
+        isCurrent: sel.id === cur.id,
+        hasRun: !!sel.prompt,
+        diff: sel.diff.map((d) => ({ ...d, bg: opColor[d.op][0], fg: opColor[d.op][1] }))
+      },
+      feedback: this.state.feedback,
+      restoreBg: sel.id === cur.id ? '#3A3F4D' : '#6B57F0',
+      restore: () => this.setState({ feedback: sel.id === cur.id ? 'Already on the current version.' : 'Restored as a new version. ' + sel.sha + ' is now on top, and every later version is still in history.' }),
+      branch: () => this.setState({ feedback: 'Created branch cade/from-' + sel.sha + '. Open it to explore without touching the main version.' }),
+      copyLink: () => this.setState({ feedback: 'Review link created for ' + sel.sha + '. Reviewers open it in a browser and need read access to the repo.' })
+    };
+  }
+}
+</script>
+</body>
+</html>

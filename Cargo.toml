@@ -1,0 +1,65 @@
+[workspace]
+resolver = "3"
+members = ["crates/*", "app/src-tauri"]
+# The Tauri app needs platform webview libraries; CI builds it per OS.
+default-members = ["crates/*"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.94"
+license = "Apache-2.0"
+authors = ["Joshua Davis"]
+repository = "https://github.com/[owner]/cade"
+
+[workspace.dependencies]
+# internal
+cade-core = { path = "crates/cade-core" }
+cade-crdt = { path = "crates/cade-crdt" }
+cade-render = { path = "crates/cade-render" }
+cade-text = { path = "crates/cade-text" }
+cade-layout = { path = "crates/cade-layout" }
+cade-copilot = { path = "crates/cade-copilot" }
+cade-policy = { path = "crates/cade-policy" }
+cade-git = { path = "crates/cade-git" }
+cade-github = { path = "crates/cade-github" }
+cade-feedback = { path = "crates/cade-feedback" }
+cade-io-visio = { path = "crates/cade-io-visio" }
+cade-io-figma = { path = "crates/cade-io-figma" }
+cade-io-pptx = { path = "crates/cade-io-pptx" }
+cade-io-spark = { path = "crates/cade-io-spark" }
+cade-io-export = { path = "crates/cade-io-export" }
+cade-codegen-react = { path = "crates/cade-codegen-react" }
+cade-iac = { path = "crates/cade-iac" }
+cade-ddl = { path = "crates/cade-ddl" }
+cade-system = { path = "crates/cade-system" }
+
+# external
+loro = "1.17"
+wgpu = "30"
+vello = "0.11"
+parley = "0.12"
+taffy = "0.15"
+# Release builds enable the "bundled-cli" feature (FOUND backlog) so the Copilot CLI ships inside the app.
+github-copilot-sdk = { version = "=1.0.26", default-features = false, features = ["runtime"] }
+async-trait = "0.1"
+octocrab = "0.54"
+gix = { version = "0.90", default-features = false, features = ["status", "index", "revision", "sha1", "parallel"] }
+keyring = "4.2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_yaml_ng = "0.10"
+thiserror = "2"
+anyhow = "1"
+tracing = "0.1"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time"] }
+uuid = { version = "1", features = ["v7", "serde"] }
+quick-xml = "0.42"
+zip = { version = "9", default-features = false, features = ["deflate"] }
+regex = "1"
+url = "2"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = "symbols"
