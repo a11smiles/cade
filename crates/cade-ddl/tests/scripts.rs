@@ -1,8 +1,4 @@
 //! Full schema and migration scripts compared with checked-in golden files.
-//!
-//! Oracle has no golden files yet: its column definitions put `DEFAULT` after
-//! `NOT NULL`/`PRIMARY KEY`, which Oracle rejects, so a golden would lock in
-//! invalid SQL. Oracle's type mapping and quoting are unit-tested in `src/lib.rs`.
 
 mod common;
 
@@ -15,7 +11,7 @@ fn golden(name: &str) -> String {
 }
 
 fn with_golden() -> impl Iterator<Item = (Dialect, &'static str)> {
-    common::DIALECTS.into_iter().filter(|(d, _)| *d != Dialect::Oracle)
+    common::DIALECTS.into_iter()
 }
 
 #[test]

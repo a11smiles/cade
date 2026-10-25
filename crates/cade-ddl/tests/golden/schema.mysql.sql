@@ -12,7 +12,8 @@ CREATE TABLE `shop`.`customers` (
 
 CREATE TABLE `shop`.`orders` (
   `id` char(36) PRIMARY KEY DEFAULT (uuid()),
-  `customer_id` char(36) NOT NULL REFERENCES `shop`.`customers`(`id`),
+  `customer_id` char(36) NOT NULL,
   `total` decimal(12,2) NOT NULL,
-  `state` enum('open', 'paid') NOT NULL
+  `state` enum('open', 'paid') NOT NULL,
+  CONSTRAINT `fk_orders_customer_id` FOREIGN KEY (`customer_id`) REFERENCES `shop`.`customers`(`id`)
 );

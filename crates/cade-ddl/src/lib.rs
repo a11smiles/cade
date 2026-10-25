@@ -72,7 +72,15 @@ pub struct Field {
 pub enum DefaultValue {
     GeneratedUuid,
     Now,
-    Literal { sql: String },
+    /// One SQL literal written as is: a number, `TRUE`/`FALSE`/`NULL`, or a quoted string
+    /// with its quotes already doubled. Anything else is rejected as [`DdlError::UnsafeDefault`].
+    Literal {
+        sql: String,
+    },
+    /// A string default, quoted and escaped per dialect.
+    Text {
+        value: String,
+    },
 }
 
 impl Field {
@@ -141,14 +149,52 @@ pub enum DdlError {
     UnclassifiedPii { entity: String, field: String },
     #[error("unknown enum {0}")]
     UnknownEnum(String),
+    #[error("the default for {field} isn't a single SQL literal: {sql}")]
+    UnsafeDefault { field: String, sql: String },
 }
 
+/// Quote an identifier, doubling the dialect's closing quote inside it. PostgreSQL and
+/// Oracle leave plain names (`[A-Za-z_][A-Za-z0-9_]*`) bare so their case folding is
+/// unchanged, and double-quote anything else.
 fn q(d: Dialect, ident: &str) -> String {
     match d {
-        Dialect::PostgreSql | Dialect::Oracle => ident.to_string(),
-        Dialect::SqlServer => format!("[{ident}]"),
-        Dialect::MySql => format!("`{ident}`"),
+        Dialect::PostgreSql | Dialect::Oracle if is_plain_ident(ident) => ident.to_string(),
+        Dialect::PostgreSql | Dialect::Oracle => format!("\"{}\"", ident.replace('"', "\"\"")),
+        Dialect::SqlServer => format!("[{}]", ident.replace(']', "]]")),
+        Dialect::MySql => format!("`{}`", ident.replace('`', "``")),
     }
+}
+
+fn is_plain_ident(ident: &str) -> bool {
+    let mut chars = ident.chars();
+    chars.next().is_some_and(|c| c.is_ascii_alphabetic() || c == '_') && chars.all(|c| c.is_ascii_alphanumeric() || c == '_')
+}
+
+/// True when `sql` is exactly one literal: a number, `TRUE`/`FALSE`/`NULL`, or a quoted
+/// string whose inner quotes are doubled (and, for MySQL, with no backslash escapes).
+fn is_single_literal(d: Dialect, sql: &str) -> bool {
+    let number = sql.strip_prefix('-').unwrap_or(sql);
+    let (whole, frac) = number.split_once('.').unwrap_or((number, "0"));
+    let is_digits = |s: &str| !s.is_empty() && s.chars().all(|c| c.is_ascii_digit());
+    if is_digits(whole) && is_digits(frac) {
+        return true;
+    }
+    if ["TRUE", "FALSE", "NULL"].iter().any(|k| sql.eq_ignore_ascii_case(k)) {
+        return true;
+    }
+    let Some(inner) = sql.strip_prefix('\'').and_then(|s| s.strip_suffix('\'')) else {
+        return false;
+    };
+    if d == Dialect::MySql && inner.contains('\\') {
+        return false;
+    }
+    let mut chars = inner.chars();
+    while let Some(c) = chars.next() {
+        if c == '\'' && chars.next() != Some('\'') {
+            return false;
+        }
+    }
+    true
 }
 
 fn qualified(d: Dialect, schema: &str, name: &str) -> String {
@@ -199,7 +245,7 @@ pub fn type_sql(d: Dialect, ty: &FieldType, model: &Model) -> Result<String, Ddl
                 .ok_or_else(|| DdlError::UnknownEnum(name.clone()))?;
             match d {
                 PostgreSql => qualified(d, &e.schema, &e.name),
-                MySql => format!("enum({})", e.values.iter().map(|v| format!("'{v}'")).collect::<Vec<_>>().join(", ")),
+                MySql => format!("enum({})", enum_values(d, e)),
                 SqlServer => "nvarchar(32)".into(),
                 Oracle => "varchar2(32)".into(),
             }
@@ -218,23 +264,101 @@ fn default_sql(d: Dialect, def: &DefaultValue) -> String {
         (Dialect::MySql, DefaultValue::Now) => "CURRENT_TIMESTAMP".into(),
         (Dialect::Oracle, DefaultValue::Now) => "systimestamp".into(),
         (_, DefaultValue::Literal { sql }) => sql.clone(),
+        (_, DefaultValue::Text { value }) => lit(d, value),
     }
 }
 
 fn column_sql(d: Dialect, f: &Field, model: &Model) -> Result<String, DdlError> {
+    if let Some(DefaultValue::Literal { sql }) = &f.default
+        && !is_single_literal(d, sql)
+    {
+        return Err(DdlError::UnsafeDefault {
+            field: f.name.clone(),
+            sql: sql.clone(),
+        });
+    }
     let mut s = format!("{} {}", q(d, &f.name), type_sql(d, &f.ty, model)?);
+    let default = f.default.as_ref().map(|def| format!(" DEFAULT {}", default_sql(d, def)));
+    // Oracle only accepts DEFAULT before inline constraints; the others keep it after.
+    if d == Dialect::Oracle {
+        s.push_str(default.as_deref().unwrap_or_default());
+    }
     if f.primary_key {
         s.push_str(" PRIMARY KEY");
     } else if !f.nullable {
         s.push_str(" NOT NULL");
     }
-    if let Some(def) = &f.default {
-        s.push_str(&format!(" DEFAULT {}", default_sql(d, def)));
+    if d != Dialect::Oracle {
+        s.push_str(default.as_deref().unwrap_or_default());
     }
-    if let Some(r) = &f.references {
+    if let Some(r) = &f.references
+        && d != Dialect::MySql
+    {
         s.push_str(&format!(" REFERENCES {}({})", qualified(d, &r.schema, &r.table), q(d, &r.column)));
     }
     Ok(s)
+}
+
+/// A string literal with its quote doubled; MySQL also treats `\` as an escape, so it's doubled there too.
+fn lit(d: Dialect, value: &str) -> String {
+    let value = if d == Dialect::MySql {
+        value.replace('\\', "\\\\")
+    } else {
+        value.to_string()
+    };
+    format!("'{}'", value.replace('\'', "''"))
+}
+
+fn enum_values(d: Dialect, e: &EnumType) -> String {
+    e.values.iter().map(|v| lit(d, v)).collect::<Vec<_>>().join(", ")
+}
+
+/// The named CHECK that limits a SQL Server or Oracle enum column to its values.
+/// PostgreSQL has enum types and MySQL inline `enum(...)`, so neither needs one.
+fn check_sql(d: Dialect, table: &str, f: &Field, model: &Model) -> Result<Option<String>, DdlError> {
+    let FieldType::Enum { name } = &f.ty else { return Ok(None) };
+    if !matches!(d, Dialect::SqlServer | Dialect::Oracle) {
+        return Ok(None);
+    }
+    let e = model
+        .enums
+        .iter()
+        .find(|e| &e.name == name)
+        .ok_or_else(|| DdlError::UnknownEnum(name.clone()))?;
+    Ok(Some(format!(
+        "CONSTRAINT {} CHECK ({} IN ({}))",
+        q(d, &constraint_name(d, "ck", table, &f.name)),
+        q(d, &f.name),
+        enum_values(d, e)
+    )))
+}
+
+/// A column with its inline constraints, as it appears in CREATE TABLE and ALTER TABLE … ADD.
+fn column_def(d: Dialect, table: &str, f: &Field, model: &Model) -> Result<String, DdlError> {
+    let column = column_sql(d, f, model)?;
+    Ok(match check_sql(d, table, f, model)? {
+        Some(check) => format!("{column} {check}"),
+        None => column,
+    })
+}
+
+/// Explicit constraint name `<prefix>_<table>_<column>`, cut to the dialect's identifier limit.
+fn constraint_name(d: Dialect, prefix: &str, table: &str, column: &str) -> String {
+    let max = if d == Dialect::MySql { 64 } else { 128 };
+    format!("{prefix}_{table}_{column}").chars().take(max).collect()
+}
+
+/// MySQL's table-level foreign key for a referencing field. InnoDB ignores inline
+/// `REFERENCES`, so MySQL needs this; the other dialects reference inline.
+fn foreign_key_sql(d: Dialect, table: &str, f: &Field) -> Option<String> {
+    let r = f.references.as_ref().filter(|_| d == Dialect::MySql)?;
+    Some(format!(
+        "CONSTRAINT {} FOREIGN KEY ({}) REFERENCES {}({})",
+        q(d, &constraint_name(d, "fk", table, &f.name)),
+        q(d, &f.name),
+        qualified(d, &r.schema, &r.table),
+        q(d, &r.column)
+    ))
 }
 
 pub fn create_enum(d: Dialect, e: &EnumType) -> Option<String> {
@@ -242,18 +366,28 @@ pub fn create_enum(d: Dialect, e: &EnumType) -> Option<String> {
         Dialect::PostgreSql => Some(format!(
             "CREATE TYPE {} AS ENUM ({});",
             qualified(d, &e.schema, &e.name),
-            e.values.iter().map(|v| format!("'{v}'")).collect::<Vec<_>>().join(", ")
+            enum_values(d, e)
         )),
         _ => None, // inline enum (MySQL) or check-constrained string (SQL Server, Oracle)
     }
 }
 
 pub fn create_table(d: Dialect, e: &Entity, model: &Model) -> Result<String, DdlError> {
-    let cols: Result<Vec<_>, _> = e.fields.iter().map(|f| column_sql(d, f, model).map(|c| format!("  {c}"))).collect();
+    let mut lines = e
+        .fields
+        .iter()
+        .map(|f| column_def(d, &e.table, f, model).map(|c| format!("  {c}")))
+        .collect::<Result<Vec<_>, _>>()?;
+    lines.extend(
+        e.fields
+            .iter()
+            .filter_map(|f| foreign_key_sql(d, &e.table, f))
+            .map(|fk| format!("  {fk}")),
+    );
     Ok(format!(
         "CREATE TABLE {} (\n{}\n);",
         qualified(d, &e.schema, &e.table),
-        cols?.join(",\n")
+        lines.join(",\n")
     ))
 }
 
@@ -355,16 +489,25 @@ pub fn migration(d: Dialect, from: &Model, to: &Model) -> Result<Migration, DdlE
                 }
                 let kw = if d == Dialect::Oracle { "ADD" } else { "ADD COLUMN" };
                 let kw = if d == Dialect::SqlServer { "ADD" } else { kw };
-                up.push(format!(
-                    "ALTER TABLE {} {kw} {};",
-                    qualified(d, &entity.schema, &entity.table),
-                    column_sql(d, &field, to)?
-                ));
-                down.push(format!(
-                    "ALTER TABLE {} DROP COLUMN {};",
-                    qualified(d, &entity.schema, &entity.table),
-                    q(d, &field.name)
-                ));
+                let table = qualified(d, &entity.schema, &entity.table);
+                let column = column_def(d, &entity.table, &field, to)?;
+                let name = q(d, &field.name);
+                let constraint = |prefix| q(d, &constraint_name(d, prefix, &entity.table, &field.name));
+                // One statement each way, so a column and its named constraint come and go together.
+                // SQL Server won't drop a column that a CHECK still uses; Oracle drops single-column
+                // constraints with the column.
+                let fk = foreign_key_sql(d, &entity.table, &field);
+                up.push(match &fk {
+                    Some(fk) => format!("ALTER TABLE {table} {kw} {column}, ADD {fk};"),
+                    None => format!("ALTER TABLE {table} {kw} {column};"),
+                });
+                down.push(if fk.is_some() {
+                    format!("ALTER TABLE {table} DROP FOREIGN KEY {}, DROP COLUMN {name};", constraint("fk"))
+                } else if d == Dialect::SqlServer && check_sql(d, &entity.table, &field, to)?.is_some() {
+                    format!("ALTER TABLE {table} DROP CONSTRAINT {}, COLUMN {name};", constraint("ck"))
+                } else {
+                    format!("ALTER TABLE {table} DROP COLUMN {name};")
+                });
             }
         }
     }
@@ -465,7 +608,7 @@ mod tests {
         let s = schema_sql(Dialect::MySql, &v7()).unwrap();
         assert!(s.contains("`incident_type` enum('auto', 'property')"));
         let s = schema_sql(Dialect::Oracle, &v7()).unwrap();
-        assert!(s.contains("changed_at timestamp with time zone NOT NULL DEFAULT systimestamp"));
+        assert!(s.contains("changed_at timestamp with time zone DEFAULT systimestamp NOT NULL"));
     }
 
     #[test]
@@ -669,8 +812,291 @@ mod tests {
     fn column_sql_reference_quotes_target_table_and_column() {
         let f = Field::new("user_id", FieldType::Uuid).nullable().references("app", "users", "id");
         assert_eq!(
-            column_sql(Dialect::MySql, &f, &Model::default()).unwrap(),
-            "`user_id` char(36) REFERENCES `app`.`users`(`id`)"
+            column_sql(Dialect::SqlServer, &f, &Model::default()).unwrap(),
+            "[user_id] uniqueidentifier REFERENCES [app].[users]([id])"
+        );
+    }
+
+    #[test]
+    fn column_sql_mysql_reference_is_not_inline() {
+        // InnoDB parses an inline REFERENCES and ignores it; MySQL gets a table-level FOREIGN KEY instead.
+        let f = Field::new("user_id", FieldType::Uuid).nullable().references("app", "users", "id");
+        assert_eq!(column_sql(Dialect::MySql, &f, &Model::default()).unwrap(), "`user_id` char(36)");
+    }
+
+    #[test]
+    fn create_table_mysql_reference_emits_named_table_level_foreign_key() {
+        let e = entity(
+            "orders",
+            vec![Field::new("customer_id", FieldType::Uuid).references("s", "customers", "id")],
+        );
+        assert_eq!(
+            create_table(Dialect::MySql, &e, &Model::default()).unwrap(),
+            "CREATE TABLE `s`.`orders` (\n  `customer_id` char(36) NOT NULL,\n  \
+             CONSTRAINT `fk_orders_customer_id` FOREIGN KEY (`customer_id`) REFERENCES `s`.`customers`(`id`)\n);"
+        );
+    }
+
+    #[test]
+    fn create_table_mysql_long_foreign_key_name_is_cut_to_64_chars() {
+        let table = "t".repeat(60);
+        let e = entity(
+            &table,
+            vec![Field::new("owner_id", FieldType::Uuid).references("s", "owners", "id")],
+        );
+        let sql = create_table(Dialect::MySql, &e, &Model::default()).unwrap();
+        let name = sql.split("CONSTRAINT `").nth(1).and_then(|r| r.split('`').next()).unwrap();
+        assert_eq!(name, format!("fk_{}_", "t".repeat(60)));
+        assert_eq!(name.chars().count(), 64);
+    }
+
+    const HOSTILE: &str = "a]b\"c`d";
+
+    #[test]
+    fn q_hostile_identifier_escapes_quote_per_dialect() {
+        let got: Vec<String> = ALL.iter().map(|d| q(*d, HOSTILE)).collect();
+        assert_eq!(got, ["\"a]b\"\"c`d\"", "[a]]b\"c`d]", "`a]b\"c``d`", "\"a]b\"\"c`d\""]);
+    }
+
+    #[test]
+    fn q_plain_identifier_with_capitals_and_digits_stays_unquoted() {
+        assert_eq!(q(Dialect::PostgreSql, "Order_2"), "Order_2");
+        assert_eq!(q(Dialect::Oracle, "_tmp1"), "_tmp1");
+    }
+
+    #[test]
+    fn create_enum_value_with_quote_is_escaped() {
+        let e = EnumType {
+            schema: "s".into(),
+            name: "kind".into(),
+            values: vec!["it's".into()],
+        };
+        assert_eq!(
+            create_enum(Dialect::PostgreSql, &e).as_deref(),
+            Some("CREATE TYPE s.kind AS ENUM ('it''s');")
+        );
+    }
+
+    #[test]
+    fn type_sql_mysql_enum_value_with_quote_and_backslash_is_escaped() {
+        let m = Model {
+            enums: vec![EnumType {
+                schema: "s".into(),
+                name: "kind".into(),
+                values: vec!["it's".into(), "a\\".into()],
+            }],
+            entities: vec![],
+        };
+        assert_eq!(
+            type_sql(Dialect::MySql, &FieldType::Enum { name: "kind".into() }, &m).unwrap(),
+            "enum('it''s', 'a\\\\')"
+        );
+    }
+
+    #[test]
+    fn column_sql_text_default_with_quote_is_escaped_per_dialect() {
+        let f = Field::new("c", FieldType::CiText).default(DefaultValue::Text { value: "a'b\\c".into() });
+        let got: Vec<String> = ALL.iter().map(|d| column_sql(*d, &f, &Model::default()).unwrap()).collect();
+        assert_eq!(
+            got,
+            [
+                "c citext NOT NULL DEFAULT 'a''b\\c'",
+                "[c] nvarchar(320) COLLATE Latin1_General_CI_AS NOT NULL DEFAULT 'a''b\\c'",
+                "`c` varchar(320) NOT NULL DEFAULT 'a''b\\\\c'",
+                "c varchar2(320) DEFAULT 'a''b\\c' NOT NULL",
+            ]
+        );
+    }
+
+    #[test]
+    fn column_sql_literal_default_with_injection_returns_unsafe_default() {
+        for sql in ["'x'); DROP TABLE t; --", "0; DROP TABLE t", "'it's'", "now()", "'a\\'"] {
+            let f = Field::new("c", FieldType::Text).default(DefaultValue::Literal { sql: sql.into() });
+            assert_eq!(
+                column_sql(Dialect::MySql, &f, &Model::default()),
+                Err(DdlError::UnsafeDefault {
+                    field: "c".into(),
+                    sql: sql.into()
+                }),
+                "{sql}"
+            );
+        }
+    }
+
+    #[test]
+    fn column_sql_literal_default_single_literal_is_written_as_is() {
+        for sql in ["0", "-1.5", "'it''s'", "TRUE", "false", "NULL", "''"] {
+            let f = Field::new("c", FieldType::Text).default(DefaultValue::Literal { sql: sql.into() });
+            for d in ALL {
+                assert_eq!(
+                    column_sql(d, &f, &Model::default())
+                        .unwrap()
+                        .split(" DEFAULT ")
+                        .nth(1)
+                        .map(|s| s.trim_end_matches(" NOT NULL")),
+                    Some(sql),
+                    "{d:?} {sql}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn create_table_hostile_table_name_and_default_are_escaped_per_dialect() {
+        let e = entity(
+            HOSTILE,
+            vec![
+                Field::new("c", FieldType::CiText)
+                    .nullable()
+                    .default(DefaultValue::Text { value: "x'y".into() }),
+            ],
+        );
+        let got: Vec<String> = ALL.iter().map(|d| create_table(*d, &e, &Model::default()).unwrap()).collect();
+        assert_eq!(
+            got,
+            [
+                "CREATE TABLE s.\"a]b\"\"c`d\" (\n  c citext DEFAULT 'x''y'\n);",
+                "CREATE TABLE [s].[a]]b\"c`d] (\n  [c] nvarchar(320) COLLATE Latin1_General_CI_AS DEFAULT 'x''y'\n);",
+                "CREATE TABLE `s`.`a]b\"c``d` (\n  `c` varchar(320) DEFAULT 'x''y'\n);",
+                "CREATE TABLE s.\"a]b\"\"c`d\" (\n  c varchar2(320) DEFAULT 'x''y'\n);",
+            ]
+        );
+    }
+
+    fn kind_model(values: &[&str]) -> Model {
+        Model {
+            enums: vec![EnumType {
+                schema: "s".into(),
+                name: "kind".into(),
+                values: values.iter().map(|v| v.to_string()).collect(),
+            }],
+            entities: vec![entity("t", vec![Field::new("id", FieldType::Uuid).pk()])],
+        }
+    }
+
+    fn kind_field() -> Field {
+        Field::new("k", FieldType::Enum { name: "kind".into() })
+    }
+
+    #[test]
+    fn create_table_sqlserver_enum_adds_named_check_with_values() {
+        let m = kind_model(&["a", "b"]);
+        assert_eq!(
+            create_table(Dialect::SqlServer, &entity("t", vec![kind_field()]), &m).unwrap(),
+            "CREATE TABLE [s].[t] (\n  [k] nvarchar(32) NOT NULL CONSTRAINT [ck_t_k] CHECK ([k] IN ('a', 'b'))\n);"
+        );
+    }
+
+    #[test]
+    fn create_table_oracle_enum_adds_named_check_with_values() {
+        let m = kind_model(&["a", "b"]);
+        assert_eq!(
+            create_table(Dialect::Oracle, &entity("t", vec![kind_field()]), &m).unwrap(),
+            "CREATE TABLE s.t (\n  k varchar2(32) NOT NULL CONSTRAINT ck_t_k CHECK (k IN ('a', 'b'))\n);"
+        );
+    }
+
+    #[test]
+    fn create_table_enum_value_with_quote_is_escaped_in_check() {
+        let m = kind_model(&["it's"]);
+        let e = entity("t", vec![kind_field()]);
+        assert!(
+            create_table(Dialect::SqlServer, &e, &m)
+                .unwrap()
+                .contains("CHECK ([k] IN ('it''s'))")
+        );
+        assert!(create_table(Dialect::Oracle, &e, &m).unwrap().contains("CHECK (k IN ('it''s'))"));
+    }
+
+    #[test]
+    fn create_table_postgresql_and_mysql_enums_have_no_check() {
+        let m = kind_model(&["a"]);
+        let e = entity("t", vec![kind_field()]);
+        for d in [Dialect::PostgreSql, Dialect::MySql] {
+            assert!(!create_table(d, &e, &m).unwrap().contains("CHECK"), "{d:?}");
+        }
+    }
+
+    #[test]
+    fn migration_add_enum_field_sqlserver_drops_check_with_column() {
+        let from = kind_model(&["a"]);
+        let mut to = from.clone();
+        to.entities[0].fields.push(kind_field().nullable());
+        let m = migration(Dialect::SqlServer, &from, &to).unwrap();
+        assert_eq!(
+            m.up,
+            "ALTER TABLE [s].[t] ADD [k] nvarchar(32) CONSTRAINT [ck_t_k] CHECK ([k] IN ('a'));\n"
+        );
+        assert_eq!(m.down, "ALTER TABLE [s].[t] DROP CONSTRAINT [ck_t_k], COLUMN [k];\n");
+    }
+
+    #[test]
+    fn migration_add_enum_field_oracle_adds_check_and_drops_it_with_column() {
+        let from = kind_model(&["a"]);
+        let mut to = from.clone();
+        to.entities[0].fields.push(kind_field().nullable());
+        let m = migration(Dialect::Oracle, &from, &to).unwrap();
+        assert_eq!(m.up, "ALTER TABLE s.t ADD k varchar2(32) CONSTRAINT ck_t_k CHECK (k IN ('a'));\n");
+        // Oracle drops a column's single-column constraints with it.
+        assert_eq!(m.down, "ALTER TABLE s.t DROP COLUMN k;\n");
+    }
+
+    #[test]
+    fn migration_add_reference_field_mysql_adds_and_drops_named_foreign_key() {
+        let from = Model {
+            enums: vec![],
+            entities: vec![entity("t", vec![Field::new("id", FieldType::Uuid).pk()])],
+        };
+        let mut to = from.clone();
+        to.entities[0]
+            .fields
+            .push(Field::new("owner_id", FieldType::Uuid).nullable().references("s", "owners", "id"));
+        let m = migration(Dialect::MySql, &from, &to).unwrap();
+        assert_eq!(
+            m.up,
+            "ALTER TABLE `s`.`t` ADD COLUMN `owner_id` char(36), \
+             ADD CONSTRAINT `fk_t_owner_id` FOREIGN KEY (`owner_id`) REFERENCES `s`.`owners`(`id`);\n"
+        );
+        assert_eq!(
+            m.down,
+            "ALTER TABLE `s`.`t` DROP FOREIGN KEY `fk_t_owner_id`, DROP COLUMN `owner_id`;\n"
+        );
+    }
+
+    #[test]
+    fn column_sql_oracle_default_precedes_primary_key() {
+        let f = Field::new("id", FieldType::Uuid).pk();
+        assert_eq!(
+            column_sql(Dialect::Oracle, &f, &Model::default()).unwrap(),
+            "id raw(16) DEFAULT sys_guid() PRIMARY KEY"
+        );
+    }
+
+    #[test]
+    fn column_sql_oracle_default_precedes_not_null_and_references() {
+        let f = Field::new("rank", FieldType::Int)
+            .default(DefaultValue::Literal { sql: "0".into() })
+            .references("s", "ranks", "id");
+        assert_eq!(
+            column_sql(Dialect::Oracle, &f, &Model::default()).unwrap(),
+            "rank number(10) DEFAULT 0 NOT NULL REFERENCES s.ranks(id)"
+        );
+    }
+
+    #[test]
+    fn column_sql_other_dialects_keep_default_after_not_null() {
+        let f = Field::new("rank", FieldType::Int).default(DefaultValue::Literal { sql: "0".into() });
+        let got: Vec<String> = [Dialect::PostgreSql, Dialect::SqlServer, Dialect::MySql]
+            .iter()
+            .map(|d| column_sql(*d, &f, &Model::default()).unwrap())
+            .collect();
+        assert_eq!(
+            got,
+            [
+                "rank int NOT NULL DEFAULT 0",
+                "[rank] int NOT NULL DEFAULT 0",
+                "`rank` int NOT NULL DEFAULT 0"
+            ]
         );
     }
 
