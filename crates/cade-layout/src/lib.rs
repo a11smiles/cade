@@ -61,10 +61,13 @@ pub fn layout(frame: &AutoLayout, width: f32, height: f32, children: &[Child]) -
     let kids: Vec<NodeId> = children
         .iter()
         .map(|c| {
-            let grow_main = match frame.direction {
-                Direction::Row => c.width == Sizing::Fill,
-                Direction::Column => c.height == Sizing::Fill,
+            let main = match frame.direction {
+                Direction::Row => c.width,
+                Direction::Column => c.height,
             };
+            let grow_main = main == Sizing::Fill;
+            // A fixed size holds even when siblings overflow the frame.
+            let shrink_main = !matches!(main, Sizing::Fixed(_));
             let stretch_cross = match frame.direction {
                 Direction::Row => c.height == Sizing::Fill,
                 Direction::Column => c.width == Sizing::Fill,
@@ -75,6 +78,7 @@ pub fn layout(frame: &AutoLayout, width: f32, height: f32, children: &[Child]) -
                     height: dim(c.height),
                 },
                 flex_grow: if grow_main { 1.0 } else { 0.0 },
+                flex_shrink: if shrink_main { 1.0 } else { 0.0 },
                 align_self: if stretch_cross {
                     Some(AlignSelf::STRETCH)
                 } else {
@@ -271,6 +275,30 @@ mod tests {
                 h: 140.0
             }
         );
+    }
+
+    #[test]
+    fn layout_row_fixed_children_overflowing_frame_keep_their_size() {
+        let r = layout(
+            &frame(Direction::Row, 0.0, 0.0),
+            100.0,
+            50.0,
+            &[fixed(80.0, 20.0), fixed(80.0, 20.0)],
+        )
+        .unwrap();
+        assert_eq!(r.iter().map(|c| (c.x, c.w)).collect::<Vec<_>>(), vec![(0.0, 80.0), (80.0, 80.0)]);
+    }
+
+    #[test]
+    fn layout_column_fixed_children_overflowing_frame_keep_their_size() {
+        let r = layout(
+            &frame(Direction::Column, 0.0, 0.0),
+            50.0,
+            100.0,
+            &[fixed(20.0, 80.0), fixed(20.0, 80.0)],
+        )
+        .unwrap();
+        assert_eq!(r.iter().map(|c| (c.y, c.h)).collect::<Vec<_>>(), vec![(0.0, 80.0), (80.0, 80.0)]);
     }
 
     #[test]
