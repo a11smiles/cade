@@ -155,14 +155,244 @@ pub enum DdlError {
 
 /// Quote an identifier, doubling the dialect's closing quote inside it. PostgreSQL and
 /// Oracle leave plain names (`[A-Za-z_][A-Za-z0-9_]*`) bare so their case folding is
-/// unchanged, and double-quote anything else.
+/// unchanged, and double-quote anything else, including the dialect's reserved words.
 fn q(d: Dialect, ident: &str) -> String {
     match d {
-        Dialect::PostgreSql | Dialect::Oracle if is_plain_ident(ident) => ident.to_string(),
+        Dialect::PostgreSql | Dialect::Oracle if is_plain_ident(ident) && !is_reserved(d, ident) => ident.to_string(),
         Dialect::PostgreSql | Dialect::Oracle => format!("\"{}\"", ident.replace('"', "\"\"")),
         Dialect::SqlServer => format!("[{}]", ident.replace(']', "]]")),
         Dialect::MySql => format!("`{}`", ident.replace('`', "``")),
     }
+}
+
+/// PostgreSQL key words that can't be a bare table or column name: those marked "reserved"
+/// and "reserved (can be function or type)" in the PostgreSQL 17 docs, Appendix C, "SQL Key Words".
+const POSTGRESQL_RESERVED: &[&str] = &[
+    "all",
+    "analyse",
+    "analyze",
+    "and",
+    "any",
+    "array",
+    "as",
+    "asc",
+    "asymmetric",
+    "authorization",
+    "binary",
+    "both",
+    "case",
+    "cast",
+    "check",
+    "collate",
+    "collation",
+    "column",
+    "concurrently",
+    "constraint",
+    "create",
+    "cross",
+    "current_catalog",
+    "current_date",
+    "current_role",
+    "current_schema",
+    "current_time",
+    "current_timestamp",
+    "current_user",
+    "default",
+    "deferrable",
+    "desc",
+    "distinct",
+    "do",
+    "else",
+    "end",
+    "except",
+    "false",
+    "fetch",
+    "for",
+    "foreign",
+    "freeze",
+    "from",
+    "full",
+    "grant",
+    "group",
+    "having",
+    "ilike",
+    "in",
+    "initially",
+    "inner",
+    "intersect",
+    "into",
+    "is",
+    "isnull",
+    "join",
+    "lateral",
+    "leading",
+    "left",
+    "like",
+    "limit",
+    "localtime",
+    "localtimestamp",
+    "natural",
+    "not",
+    "notnull",
+    "null",
+    "offset",
+    "on",
+    "only",
+    "or",
+    "order",
+    "outer",
+    "overlaps",
+    "placing",
+    "primary",
+    "references",
+    "returning",
+    "right",
+    "select",
+    "session_user",
+    "similar",
+    "some",
+    "symmetric",
+    "system_user",
+    "table",
+    "tablesample",
+    "then",
+    "to",
+    "trailing",
+    "true",
+    "union",
+    "unique",
+    "user",
+    "using",
+    "variadic",
+    "verbose",
+    "when",
+    "where",
+    "window",
+    "with",
+];
+
+/// Oracle's reserved words, from the Oracle Database 23ai SQL Language Reference,
+/// Appendix D, "Oracle SQL Reserved Words".
+const ORACLE_RESERVED: &[&str] = &[
+    "access",
+    "add",
+    "all",
+    "alter",
+    "and",
+    "any",
+    "as",
+    "asc",
+    "audit",
+    "between",
+    "by",
+    "char",
+    "check",
+    "cluster",
+    "column",
+    "column_value",
+    "comment",
+    "compress",
+    "connect",
+    "create",
+    "current",
+    "date",
+    "decimal",
+    "default",
+    "delete",
+    "desc",
+    "distinct",
+    "drop",
+    "else",
+    "exclusive",
+    "exists",
+    "file",
+    "float",
+    "for",
+    "from",
+    "grant",
+    "group",
+    "having",
+    "identified",
+    "immediate",
+    "in",
+    "increment",
+    "index",
+    "initial",
+    "insert",
+    "integer",
+    "intersect",
+    "into",
+    "is",
+    "level",
+    "like",
+    "lock",
+    "long",
+    "maxextents",
+    "minus",
+    "mlslabel",
+    "mode",
+    "modify",
+    "nested_table_id",
+    "noaudit",
+    "nocompress",
+    "not",
+    "nowait",
+    "null",
+    "number",
+    "of",
+    "offline",
+    "on",
+    "online",
+    "option",
+    "or",
+    "order",
+    "pctfree",
+    "prior",
+    "public",
+    "raw",
+    "rename",
+    "resource",
+    "revoke",
+    "row",
+    "rowid",
+    "rownum",
+    "rows",
+    "select",
+    "session",
+    "set",
+    "share",
+    "size",
+    "smallint",
+    "start",
+    "successful",
+    "synonym",
+    "sysdate",
+    "table",
+    "then",
+    "to",
+    "trigger",
+    "uid",
+    "union",
+    "unique",
+    "update",
+    "user",
+    "validate",
+    "values",
+    "varchar",
+    "varchar2",
+    "view",
+    "whenever",
+    "where",
+    "with",
+];
+
+fn is_reserved(d: Dialect, ident: &str) -> bool {
+    let words = match d {
+        Dialect::PostgreSql => POSTGRESQL_RESERVED,
+        Dialect::Oracle => ORACLE_RESERVED,
+        Dialect::SqlServer | Dialect::MySql => return false, // always quoted
+    };
+    words.iter().any(|w| w.eq_ignore_ascii_case(ident))
 }
 
 fn is_plain_ident(ident: &str) -> bool {
@@ -676,7 +906,52 @@ mod tests {
     #[test]
     fn q_each_dialect_uses_its_identifier_quoting() {
         let got: Vec<String> = ALL.iter().map(|d| q(*d, "order")).collect();
-        assert_eq!(got, ["order", "[order]", "`order`", "order"]);
+        assert_eq!(got, ["\"order\"", "[order]", "`order`", "\"order\""]);
+    }
+
+    #[test]
+    fn q_reserved_word_in_any_case_is_quoted() {
+        for word in ["select", "SELECT", "Group", "user"] {
+            assert_eq!(q(Dialect::PostgreSql, word), format!("\"{word}\""), "postgresql {word}");
+            assert_eq!(q(Dialect::Oracle, word), format!("\"{word}\""), "oracle {word}");
+        }
+    }
+
+    #[test]
+    fn q_reserved_word_is_quoted_only_in_dialects_that_reserve_it() {
+        // `limit` and `window` are reserved in PostgreSQL only; `level` and `number` in Oracle only.
+        assert_eq!(q(Dialect::PostgreSql, "limit"), "\"limit\"");
+        assert_eq!(q(Dialect::Oracle, "limit"), "limit");
+        assert_eq!(q(Dialect::PostgreSql, "window"), "\"window\"");
+        assert_eq!(q(Dialect::Oracle, "window"), "window");
+        assert_eq!(q(Dialect::Oracle, "level"), "\"level\"");
+        assert_eq!(q(Dialect::PostgreSql, "level"), "level");
+        assert_eq!(q(Dialect::Oracle, "number"), "\"number\"");
+        assert_eq!(q(Dialect::PostgreSql, "number"), "number");
+    }
+
+    #[test]
+    fn q_name_containing_reserved_word_stays_unquoted() {
+        for d in [Dialect::PostgreSql, Dialect::Oracle] {
+            for name in ["orders", "user_id", "selected", "group_name"] {
+                assert_eq!(q(d, name), name, "{d:?} {name}");
+            }
+        }
+    }
+
+    #[test]
+    fn create_table_reserved_table_and_column_names_are_quoted_per_dialect() {
+        let e = entity("order", vec![Field::new("user", FieldType::CiText).nullable()]);
+        let got: Vec<String> = ALL.iter().map(|d| create_table(*d, &e, &Model::default()).unwrap()).collect();
+        assert_eq!(
+            got,
+            [
+                "CREATE TABLE s.\"order\" (\n  \"user\" citext\n);",
+                "CREATE TABLE [s].[order] (\n  [user] nvarchar(320) COLLATE Latin1_General_CI_AS\n);",
+                "CREATE TABLE `s`.`order` (\n  `user` varchar(320)\n);",
+                "CREATE TABLE s.\"order\" (\n  \"user\" varchar2(320)\n);",
+            ]
+        );
     }
 
     #[test]
