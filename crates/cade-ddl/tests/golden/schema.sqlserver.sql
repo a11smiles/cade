@@ -14,5 +14,5 @@ CREATE TABLE [shop].[orders] (
   [id] uniqueidentifier PRIMARY KEY DEFAULT newsequentialid(),
   [customer_id] uniqueidentifier NOT NULL REFERENCES [shop].[customers]([id]),
   [total] decimal(12,2) NOT NULL,
-  [state] nvarchar(32) NOT NULL
+  [state] nvarchar(32) NOT NULL CONSTRAINT [ck_orders_state] CHECK ([state] IN ('open', 'paid'))
 );
