@@ -12,10 +12,18 @@ test.describe('Start screen', () => {
     await expect(page).toHaveTitle('CADE');
     await expect(page.getByRole('heading', { level: 1, name: 'What are you making?' })).toBeVisible();
     for (const label of ['App', 'Image', 'Deck', 'Document', 'Motion', 'Diagram', 'Architecture', 'Data model']) {
-      await expect(page.locator('.start-card .c-tag', { hasText: new RegExp(`^${label}$`) })).toBeVisible();
+      await expect(page.getByRole('button', { name: label, exact: true })).toBeVisible();
     }
     await expect(page.getByText('Local only')).toBeVisible();
     expect(errors).toEqual([]);
+  });
+
+  test('Start_OutputCard_IsNamedByTypeAndDescribedByBlurb', async ({ page }) => {
+    await page.goto('/');
+
+    const card = page.getByRole('button', { name: 'Architecture', exact: true });
+
+    await expect(card).toHaveAccessibleDescription('Azure services with real configs, drawn with Azure’s own icons. Bicep · Terraform · PR');
   });
 
   test('Start_AnyWindowSize_HasNoHorizontalOverflow', async ({ page }) => {
