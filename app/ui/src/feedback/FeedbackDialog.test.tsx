@@ -280,6 +280,25 @@ describe('FeedbackDialog', () => {
     expect(opener).toHaveFocus();
   });
 
+  it('FeedbackDialog_PreviewResponsesOutOfOrder_ShowsTheLatestEdit', async () => {
+    const pending: { title: string; resolve: (d: IssueDraft) => void }[] = [];
+    ipc.call.mockImplementation(
+      (cmd: string, args: { feedback: Feedback }) =>
+        cmd === 'preview_feedback' ? new Promise<IssueDraft>((resolve) => pending.push({ title: args.feedback.title, resolve })) : new Promise(() => {}),
+    );
+    render(<FeedbackDialog onClose={vi.fn()} />);
+    await userEvent.type(screen.getByRole('textbox', { name: 'Title' }), 'ab');
+    await waitFor(() => expect(pending.map((p) => p.title)).toContain('ab'));
+
+    const draft = (title: string): IssueDraft => ({ title: `[Bug] ${title}`, body: '', labels: ['bug'] });
+    pending.filter((p) => p.title === 'ab').forEach((p) => p.resolve(draft('ab')));
+    await screen.findByText('[Bug] ab');
+    pending.filter((p) => p.title === 'a').forEach((p) => p.resolve(draft('a')));
+    await new Promise((r) => setTimeout(r, 20));
+
+    expect(screen.getByLabelText('Issue preview').textContent).toBe('[Bug] ab\n\n');
+  });
+
   it('FeedbackDialog_OutsideTauri_CannotSendAndSaysWhere', async () => {
     ipc.inTauri = false;
     render(<FeedbackDialog onClose={vi.fn()} />);
