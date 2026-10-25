@@ -204,6 +204,33 @@ async fn open_pull_request_posts_head_base_body_and_draft_and_returns_html_url()
 }
 
 #[tokio::test]
+async fn open_pull_request_response_without_html_url_returns_missing_field_error() {
+    let server = MockServer::start().await;
+    let mut created = fixture("pull_request.json");
+    created.as_object_mut().unwrap().remove("html_url");
+    Mock::given(method("POST"))
+        .and(path("/api/v3/repos/acme/designs/pulls"))
+        .respond_with(ResponseTemplate::new(201).set_body_json(created))
+        .expect(1)
+        .mount(&server)
+        .await;
+
+    let result = client(&server)
+        .open_pull_request(&PullRequest {
+            owner: "acme",
+            repo: "designs",
+            head: "cade/onboarding",
+            base: "main",
+            title: "t",
+            body: "b",
+            draft: false,
+        })
+        .await;
+
+    assert!(matches!(result, Err(GitHubError::MissingField("html_url"))), "got {result:?}");
+}
+
+#[tokio::test]
 async fn open_pull_request_existing_pr_for_branch_returns_422_api_error() {
     let server = MockServer::start().await;
     Mock::given(method("POST"))
