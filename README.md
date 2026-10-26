@@ -116,6 +116,10 @@ Use Help → Send feedback in the app, or the
 filed from your own GitHub account. Set `CADE_FEEDBACK_OWNER` at build time to
 the GitHub account that owns this repository.
 
+## Community standards
+
+Please read the [Code of Conduct](CODE_OF_CONDUCT.md) before participating.
+
 ## License and affiliation
 
 CADE is licensed under Apache-2.0; see [NOTICE](NOTICE). CADE is an independent
