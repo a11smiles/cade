@@ -33,9 +33,18 @@ describe('Start', () => {
   ])('Start_OutputCard_%s_ShowsItsFormats', (label, formats) => {
     renderStart();
 
-    const card = screen.getByText(label, { selector: '.c-tag' }).closest('button');
-    if (!card) throw new Error(`no card for ${label}`);
+    const card = screen.getByRole('button', { name: label });
     expect(within(card).getByText(formats)).toBeInTheDocument();
+  });
+
+  it.each([
+    ['App', 'Screens, flows and clickable prototypes that ship as code.', 'React · spec · PR'],
+    ['Architecture', 'Azure services with real configs, drawn with Azure’s own icons.', 'Bicep · Terraform · PR'],
+    ['Data model', 'Entities, relationships and classifications that generate DDL.', 'DDL · migrations · PR'],
+  ])('Start_OutputCard_%s_IsNamedByTypeAndDescribedByBlurbAndFormats', (label, blurb, formats) => {
+    renderStart();
+
+    expect(screen.getByRole('button', { name: label })).toHaveAccessibleDescription(`${blurb} ${formats}`);
   });
 
   it('Start_Rendered_ShowsExactlyEightOutputCards', () => {

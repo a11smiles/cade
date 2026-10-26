@@ -89,6 +89,11 @@ resource "azurerm_private_endpoint" "kv_claims" {
     subresource_names              = ["vault"]
     is_manual_connection           = false
   }
+
+  private_dns_zone_group {
+    name                 = "default"
+    private_dns_zone_ids = [azurerm_private_dns_zone.vault.id]
+  }
 }
 
 resource "azurerm_storage_account" "stclaimsphotos" {
@@ -99,5 +104,18 @@ resource "azurerm_storage_account" "stclaimsphotos" {
   account_replication_type = "ZRS"
   min_tls_version          = "TLS1_2"
   allow_nested_items_to_be_public = false
+}
+
+resource "azurerm_private_dns_zone" "vault" {
+  name                = "privatelink.vaultcore.azure.net"
+  resource_group_name = var.resource_group_name
+}
+
+resource "azurerm_private_dns_zone_virtual_network_link" "vault_1" {
+  name                  = "link-vnet-claims"
+  resource_group_name   = var.resource_group_name
+  private_dns_zone_name = azurerm_private_dns_zone.vault.name
+  virtual_network_id    = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-claims-net/providers/Microsoft.Network/virtualNetworks/vnet-claims"
+  registration_enabled  = false
 }
 

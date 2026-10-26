@@ -28,6 +28,8 @@ cargo run -p cade-app
 
 - Participation is governed by the [Code of Conduct](CODE_OF_CONDUCT.md).
 - One backlog item per pull request where possible. Put the id in the PR title.
+- Every future code commit must reference an actual backlog issue number in its commit message. Keep code commits and PRs scoped to identified backlog work; do not bundle unrelated work.
+- Link existing code history through issue evidence comments with commit SHA links; never rewrite history merely to add attribution. A commit alone does not establish issue completion.
 - Every change keeps `cargo fmt`, `cargo clippy -D warnings`, `cargo test` and `pnpm --dir app/ui test` green.
 - UI values come from design tokens only. Edit `design/system/tokens.json`, never `tokens.css`.
 - Check dark and light themes.
