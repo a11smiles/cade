@@ -1,7 +1,7 @@
-name: Bug
+name: Bug report
 description: Something in CADE is broken or wrong.
 title: "[Bug] "
-labels: ["bug", "needs-triage"]
+labels: ["bug", "needs-triage", "type:bug"]
 body:
   - type: markdown
     attributes:
@@ -29,14 +29,26 @@ body:
       label: What did you expect?
     validations:
       required: false
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
   - type: dropdown
     id: output
     attributes:
       label: Output type
       multiple: true
-      options: [App, Image, Deck, Document, Motion, Diagram, Architecture, Data model, Not specific]
+      options: [App, Image, Deck, Document, Motion, Diagram, Architecture, Data model, System, Other]
   - type: input
-    id: version
+    id: area
+    attributes:
+      label: Area
+  - type: input
+    id: severity
+    attributes:
+      label: Severity
+  - type: input
+    id: app_version
     attributes:
       label: CADE version
       placeholder: "0.1.0 (abc1234)"
@@ -45,3 +57,15 @@ body:
     attributes:
       label: Operating system
       options: [macOS, Windows, Linux]
+  - type: input
+    id: gpu
+    attributes:
+      label: GPU and renderer
+  - type: input
+    id: policy_version
+    attributes:
+      label: Policy version
+  - type: input
+    id: screenshot_url
+    attributes:
+      label: Screenshot URL

@@ -10,3 +10,9 @@ endorsed by, or sponsored by GitHub, Inc. or Microsoft Corporation.
 Azure architecture icons are not part of this repository. Users download
 Microsoft's Azure Architecture Icons and place them in assets/icons/azure/,
 subject to Microsoft's terms of use for those icons.
+
+The test fixture crates/cade-feedback/tests/fixtures/github-issue-forms.json
+is from SchemaStore/schemastore, licensed under Apache-2.0 (see LICENSE),
+at commit 64cc4a9ee27111df7a6a68eb64451690234a12ba,
+source path src/schemas/json/github-issue-forms.json.
+It is third-party SchemaStore material, not an official GitHub schema.

@@ -1,0 +1,36 @@
+[
+  {
+    "kind": "bug",
+    "title": "Contract fixture",
+    "answers": [
+      {"heading": "What happened?", "text": "what-happened"},
+      {"heading": "Steps to reproduce", "text": "steps"},
+      {"heading": "What did you expect?", "text": "expected"},
+      {"heading": "Output type", "text": "App"}
+    ],
+    "environment": {"app_version": "0.1.0", "os": null, "gpu": null, "policy_version": null, "logs": null},
+    "screenshot_url": null
+  },
+  {
+    "kind": "feature-request",
+    "title": "Contract fixture",
+    "answers": [
+      {"heading": "What problem would this solve?", "text": "problem"},
+      {"heading": "What would you like CADE to do?", "text": "proposal"},
+      {"heading": "Which output type?", "text": "App"},
+      {"heading": "What do you do today instead?", "text": "alternatives"}
+    ],
+    "environment": {"app_version": "0.1.0", "os": null, "gpu": null, "policy_version": null, "logs": null},
+    "screenshot_url": null
+  },
+  {
+    "kind": "comment",
+    "title": "Contract fixture",
+    "answers": [
+      {"heading": "Your comment", "text": "comment"},
+      {"heading": "Where in CADE?", "text": "where"}
+    ],
+    "environment": {"app_version": "0.1.0", "os": null, "gpu": null, "policy_version": null, "logs": null},
+    "screenshot_url": null
+  }
+]
