@@ -35,10 +35,17 @@ export function FeedbackDialog({ onClose }: { onClose: () => void }) {
     [kind, title, answers, env, form],
   );
 
+  const feedbackKey = JSON.stringify(feedback);
   useEffect(() => {
     if (!inTauri) return;
-    call<IssueDraft>('preview_feedback', { feedback }).then(setPreview).catch(() => setPreview(null));
-  }, [feedback]);
+    let current = true;
+    call<IssueDraft>('preview_feedback', { feedback: JSON.parse(feedbackKey) as Feedback })
+      .then((draft) => current && setPreview(draft))
+      .catch(() => current && setPreview(null));
+    return () => {
+      current = false;
+    };
+  }, [feedbackKey]);
 
   const canSend = title.trim() !== '' && form.questions.every((q, i) => !q.required || (answers[i] ?? '').trim() !== '');
 
