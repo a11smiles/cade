@@ -52,6 +52,10 @@ Linux needs `libwebkit2gtk-4.1-dev`, `librsvg2-dev` and `libsecret-1-dev`.
 
 Use Help › Send feedback in the app, or the issue forms here (bug, feature request, comment). Either way the issue is filed from your own GitHub account. Set `CADE_FEEDBACK_OWNER` at build time to the GitHub account that owns this repo.
 
+## Community standards
+
+Please read the [Code of Conduct](CODE_OF_CONDUCT.md) before participating.
+
 ## License
 
 Apache-2.0. CADE is an independent project, not affiliated with GitHub or Microsoft. See [NOTICE](NOTICE).
