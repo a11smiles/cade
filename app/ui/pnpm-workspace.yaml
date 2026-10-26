@@ -1,2 +1,6 @@
+# Supply-chain policy for every pnpm that installs here (pinned by packageManager in package.json):
+# never install a version published less than a day ago.
+minimumReleaseAge: 1440
+
 allowBuilds:
   esbuild@0.25.12: true

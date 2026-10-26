@@ -36,14 +36,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
-        with: { version: 10 }
+        with: { package_json_file: app/ui/package.json }
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
       - name: Linux webview libraries
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libsecret-1-dev
       - name: UI
-        run: pnpm --dir app/ui install --frozen-lockfile=false && pnpm --dir app/ui build
+        run: pnpm --dir app/ui install --frozen-lockfile && pnpm --dir app/ui build
       - name: UI typecheck (including e2e)
         run: pnpm --dir app/ui typecheck
       - name: UI tests
@@ -58,11 +58,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
-        with: { version: 10 }
+        with: { package_json_file: app/ui/package.json }
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
       - name: Install
-        run: pnpm --dir app/ui install --frozen-lockfile=false && pnpm --dir app/ui exec playwright install --with-deps chromium
+        run: pnpm --dir app/ui install --frozen-lockfile && pnpm --dir app/ui exec playwright install --with-deps chromium
       - name: Playwright
         run: pnpm --dir app/ui test:e2e
       - name: Report
