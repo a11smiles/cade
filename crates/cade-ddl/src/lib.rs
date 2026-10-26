@@ -582,10 +582,28 @@ fn column_def(d: Dialect, table: &str, f: &Field, model: &Model) -> Result<Strin
     })
 }
 
-/// Explicit constraint name `<prefix>_<table>_<column>`, cut to the dialect's identifier limit.
+/// Explicit constraint name `<prefix>_<table>_<column>`, bounded to the dialect's identifier limit.
+/// Overlong names retain a readable prefix and a stable suffix derived from the full identity.
 fn constraint_name(d: Dialect, prefix: &str, table: &str, column: &str) -> String {
     let max = if d == Dialect::MySql { 64 } else { 128 };
-    format!("{prefix}_{table}_{column}").chars().take(max).collect()
+    let name = format!("{prefix}_{table}_{column}");
+    if name.chars().count() <= max {
+        return name;
+    }
+
+    // Fixed FNV-1a, not a randomized or platform-dependent hasher. This distinguishes
+    // generated names, not security identities. Length framing keeps component
+    // boundaries distinct even when table and column names contain underscores.
+    let mut hash = 0xcbf29ce484222325_u64;
+    for part in [prefix, table, column] {
+        for byte in (part.len() as u64).to_le_bytes().into_iter().chain(part.bytes()) {
+            hash ^= u64::from(byte);
+            hash = hash.wrapping_mul(0x100000001b3);
+        }
+    }
+    let suffix = format!("_{hash:016x}");
+    let head: String = name.chars().take(max - suffix.len()).collect();
+    format!("{head}{suffix}")
 }
 
 /// MySQL's table-level foreign key for a referencing field. InnoDB ignores inline
@@ -1194,16 +1212,31 @@ mod tests {
     }
 
     #[test]
-    fn create_table_mysql_long_foreign_key_name_is_cut_to_64_chars() {
-        let table = "t".repeat(60);
-        let e = entity(
-            &table,
-            vec![Field::new("owner_id", FieldType::Uuid).references("s", "owners", "id")],
-        );
-        let sql = create_table(Dialect::MySql, &e, &Model::default()).unwrap();
-        let name = sql.split("CONSTRAINT `").nth(1).and_then(|r| r.split('`').next()).unwrap();
-        assert_eq!(name, format!("fk_{}_", "t".repeat(60)));
-        assert_eq!(name.chars().count(), 64);
+    fn constraint_name_overlong_inputs_preserves_bounded_distinct_identity() {
+        for (dialect, max) in [(Dialect::MySql, 64), (Dialect::SqlServer, 128), (Dialect::Oracle, 128)] {
+            for character in ["t", "é"] {
+                let table = character.repeat(max - 4);
+                let identities = [
+                    ("fk", table.clone(), "owner_id"),
+                    ("ck", table.clone(), "owner_id"),
+                    ("fk", format!("{table}x"), "owner_id"),
+                    ("fk", table.clone(), "owner_ix"),
+                    // Same joined text, but different table/column boundaries.
+                    ("fk", format!("{table}_"), "owner_id"),
+                    ("fk", table.clone(), "_owner_id"),
+                ];
+                let mut suffixes = Vec::new();
+                for (prefix, table, column) in identities {
+                    let name = constraint_name(dialect, prefix, &table, column);
+                    assert_eq!(name.chars().count(), max, "{dialect:?}: {name}");
+                    assert!(name.starts_with(&format!("{prefix}_{character}")), "{name}");
+                    assert_eq!(constraint_name(dialect, prefix, &table, column), name);
+                    let suffix = name.rsplit_once('_').unwrap().1.to_string();
+                    assert!(!suffixes.contains(&suffix), "{dialect:?}: {name}");
+                    suffixes.push(suffix);
+                }
+            }
+        }
     }
 
     const HOSTILE: &str = "a]b\"c`d";
