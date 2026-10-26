@@ -5,6 +5,10 @@
 //! the project's real design-system components (never look-alikes). The
 //! reverse direction (parse TSX edits back onto the canvas) is APP backlog.
 
+use std::sync::LazyLock;
+
+use regex::Regex;
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Element {
     pub component: String,
@@ -38,7 +42,10 @@ impl Element {
 
 fn collect(e: &Element, out: &mut Vec<String>) {
     let root = e.component.split('.').next().unwrap_or(&e.component).to_string();
-    if root.chars().next().is_some_and(|c| c.is_uppercase()) && !out.contains(&root) {
+    // Only undotted names starting with an ASCII lowercase letter are intrinsic.
+    // A member expression always needs its root binding, even `controls.Item`.
+    let intrinsic = !e.component.contains('.') && root.starts_with(|c: char| c.is_ascii_lowercase());
+    if !intrinsic && !out.contains(&root) {
         out.push(root);
     }
     for c in &e.children {
@@ -75,8 +82,12 @@ fn jsx_safe(s: &str) -> bool {
 /// A `{…}` prop value passes through as an expression only when it's a
 /// number, boolean or null literal; anything else is design data, not code.
 fn literal_expression(v: &str) -> Option<&str> {
+    static DECIMAL: LazyLock<Regex> = LazyLock::new(|| {
+        Regex::new(r"\A[+-]?(?:(?:0|[1-9][0-9]*)(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?\z")
+            .expect("the fixed decimal literal pattern is valid")
+    });
     let inner = v.strip_prefix('{')?.strip_suffix('}')?.trim();
-    let literal = matches!(inner, "true" | "false" | "null") || (!inner.is_empty() && inner.parse::<f64>().is_ok_and(f64::is_finite));
+    let literal = matches!(inner, "true" | "false" | "null") || (DECIMAL.is_match(inner) && inner.parse::<f64>().is_ok_and(f64::is_finite));
     literal.then_some(v)
 }
 
@@ -128,11 +139,14 @@ pub enum CodegenError {
     InvalidPackage(String),
 }
 
-/// A JavaScript identifier (ASCII only): `[A-Za-z_$][A-Za-z0-9_$]*`.
+/// An ECMAScript identifier using Unicode ID_Start/ID_Continue, plus `$` and `_`.
+/// Zero-width non-joiners and joiners are allowed only after the first character.
 fn is_identifier(s: &str) -> bool {
-    let mut chars = s.chars();
-    chars.next().is_some_and(|c| c.is_ascii_alphabetic() || c == '_' || c == '$')
-        && chars.all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '$')
+    static IDENTIFIER: LazyLock<Regex> = LazyLock::new(|| {
+        Regex::new(r"\A[\p{ID_Start}$_][\p{ID_Continue}$_\u{200C}\u{200D}]*\z")
+            .expect("the fixed identifier pattern uses supported Unicode properties")
+    });
+    IDENTIFIER.is_match(s)
 }
 
 /// A JSX element name: a dotted member path (`Form.Row`) or a lowercase
@@ -149,9 +163,9 @@ fn is_component_name(s: &str) -> bool {
 
 /// A JSX attribute name: an identifier that may also contain `-` (`aria-label`).
 fn is_prop_name(s: &str) -> bool {
-    let mut chars = s.chars();
-    chars.next().is_some_and(|c| c.is_ascii_alphabetic() || c == '_' || c == '$')
-        && chars.all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '$' || c == '-')
+    // Hyphens are additional continuation characters only. Reuse the identifier
+    // grammar for validation; the original prop name is emitted unchanged.
+    !s.starts_with('-') && is_identifier(&s.replace('-', "_"))
 }
 
 /// Every component and prop name in the tree can be written into JSX as is.
@@ -375,6 +389,109 @@ mod tests {
             tsx.contains("    <Stepper step={1} ratio={-0.5} open={true} busy={false} value={null} />\n"),
             "{tsx}"
         );
+    }
+
+    #[test]
+    fn screen_leading_zero_numeric_prop_preserves_literal_data() {
+        for value in ["{01}", "{00}", "{08}", "{-01}", "{01.5}", "{01e2}"] {
+            let tsx = screen("S", "@contoso/ds", &Element::new("Button").prop("value", value)).unwrap();
+            assert!(tsx.contains(&format!("    <Button value={{\"{value}\"}} />\n")), "{tsx}");
+        }
+    }
+
+    #[test]
+    fn literal_expression_valid_decimal_boundaries_preserves_expressions() {
+        for value in ["{0}", "{-0}", "{0.5}", "{.5}", "{1.}", "{1e2}", "{1e-2}"] {
+            assert_eq!(literal_expression(value), Some(value), "{value}");
+        }
+    }
+
+    #[test]
+    fn screen_unicode_component_emits_matching_import() {
+        let tsx = screen("S", "@contoso/ds", &Element::new("Écran"));
+        assert_eq!(
+            tsx,
+            Ok("import { Écran } from '@contoso/ds';\n\nexport function S() {\n  return (\n    <Écran />\n  );\n}\n".into())
+        );
+    }
+
+    #[test]
+    fn screen_unicode_prop_preserves_identifier_characters() {
+        for name in ["donnée", "donne\u{0301}e", "a\u{200c}", "a\u{200d}", "a\u{00b7}", "aria-donnée"] {
+            let tsx = screen("S", "@contoso/ds", &Element::new("Button").prop(name, "x"));
+            assert_eq!(
+                tsx,
+                Ok(format!(
+                    "import {{ Button }} from '@contoso/ds';\n\nexport function S() {{\n  return (\n    <Button {name}=\"x\" />\n  );\n}}\n"
+                )),
+                "{name:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn screen_underscore_component_emits_matching_import() {
+        let tsx = screen("S", "@contoso/ds", &Element::new("_Button")).unwrap();
+        assert_eq!(
+            tsx,
+            "import { _Button } from '@contoso/ds';\n\nexport function S() {\n  return (\n    <_Button />\n  );\n}\n"
+        );
+    }
+
+    #[test]
+    fn screen_dollar_component_emits_matching_import() {
+        let tsx = screen("S", "@contoso/ds", &Element::new("$prefix")).unwrap();
+        assert_eq!(
+            tsx,
+            "import { $prefix } from '@contoso/ds';\n\nexport function S() {\n  return (\n    <$prefix />\n  );\n}\n"
+        );
+    }
+
+    #[test]
+    fn screen_nonuppercase_dotted_components_imports_each_root_once() {
+        for root in ["_controls", "$controls", "controls"] {
+            let tree = Element::new("div")
+                .child(Element::new(&format!("{root}.Item")))
+                .child(Element::new(&format!("{root}.Label")));
+            let tsx = screen("S", "@contoso/ds", &tree).unwrap();
+            assert_eq!(
+                tsx,
+                format!(
+                    "import {{ {root} }} from '@contoso/ds';\n\nexport function S() {{\n  return (\n\
+                     \x20   <div>\n      <{root}.Item />\n      <{root}.Label />\n    </div>\n  );\n}}\n"
+                )
+            );
+        }
+    }
+
+    #[test]
+    fn is_identifier_unicode_properties_accepts_ecmascript_names() {
+        // Other_ID_Start and combining/joining continuations are not an alphabetic/alphanumeric test.
+        for name in [
+            "\u{2118}",
+            "\u{212e}",
+            "A\u{0301}",
+            "A\u{0345}",
+            "A\u{200c}",
+            "A\u{200d}",
+            "A\u{00b7}",
+        ] {
+            assert!(is_identifier(name), "{name:?}");
+        }
+    }
+
+    #[test]
+    fn is_identifier_invalid_unicode_positions_rejects_names() {
+        for name in ["\u{0345}A", "\u{200c}A", "\u{200d}A", "\u{0660}A", "A\u{00b2}", "A\u{200b}", "A😀"] {
+            assert!(!is_identifier(name), "{name:?}");
+        }
+    }
+
+    #[test]
+    fn is_prop_name_invalid_unicode_positions_rejects_names() {
+        for name in ["\u{0345}a", "\u{200c}a", "\u{200d}a", "\u{0660}a", "a\u{00b2}", "a\u{200b}", "a😀"] {
+            assert!(!is_prop_name(name), "{name:?}");
+        }
     }
 
     #[test]

@@ -10,4 +10,5 @@ repository.workspace = true
 
 [dependencies]
 cade-core.workspace = true
+regex.workspace = true
 thiserror.workspace = true
