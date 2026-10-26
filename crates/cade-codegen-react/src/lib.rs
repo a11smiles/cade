@@ -190,6 +190,47 @@ pub fn screen(name: &str, package: &str, root: &Element) -> Result<String, Codeg
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn screen_rejects_hostile_prop_names() {
+        let tree = Element::new("Button").prop("onClick={steal} title", "x");
+        assert_eq!(
+            super::screen("S", "@contoso/ds", &tree),
+            Err(CodegenError::InvalidProp("onClick={steal} title".into()))
+        );
+    }
+
+    #[test]
+    fn screen_rejects_hostile_component_names_including_nested() {
+        for name in ["Button onClick={steal}", "", "A..B", "Button>", "1Btn"] {
+            let tree = Element::new("Form").child(Element::new(name));
+            assert_eq!(
+                super::screen("S", "@contoso/ds", &tree),
+                Err(CodegenError::InvalidComponent(name.into()))
+            );
+        }
+    }
+
+    #[test]
+    fn screen_rejects_hostile_screen_and_package_names() {
+        let tree = Element::new("Button");
+        assert!(matches!(
+            super::screen("S() {}; evil", "@contoso/ds", &tree),
+            Err(CodegenError::InvalidScreenName(_))
+        ));
+        assert!(matches!(
+            super::screen("S", "x';evil('", &tree),
+            Err(CodegenError::InvalidPackage(_))
+        ));
+    }
+
+    #[test]
+    fn screen_accepts_dotted_data_and_aria_names() {
+        let tree = Element::new("Menu.Item").prop("data-x", "1").prop("aria-label", "Open");
+        let tsx = screen("S", "@contoso/ds", &tree).unwrap();
+        assert!(tsx.contains("<Menu.Item data-x=\"1\" aria-label=\"Open\" />"));
+    }
+
     #[test]
     fn emits_ds_imports_and_jsx() {
         let tree = Element::new("Stepper.Page")
