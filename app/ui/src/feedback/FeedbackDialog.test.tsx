@@ -401,6 +401,34 @@ describe('FeedbackDialog', () => {
     expect(ipc.call.mock.calls.filter(([cmd]) => cmd === 'submit_feedback')).toHaveLength(0);
   });
 
+  it('FeedbackDialog_IncompleteRequiredFields_ShowsCompletionGuidanceInsteadOfPreviewFailure', async () => {
+    const pending = holdFeedbackRequests();
+    render(<FeedbackDialog onClose={vi.fn()} />);
+
+    expect.soft(screen.queryByText('Complete the required fields to preview your issue.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Submit bug' })).toBeDisabled();
+    const initial = pending[0];
+    if (!initial) throw new Error('The initial feedback did not request a preview');
+    await act(async () => initial.reject({ Message: 'Required fields are incomplete' }));
+
+    expect(screen.getByText('Complete the required fields to preview your issue.')).toBeInTheDocument();
+    expect(screen.queryByText('Couldn’t preview your issue. Your entries are still in this form.')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Retry preview' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Submit bug' })).toBeDisabled();
+  });
+
+  it('FeedbackDialog_ValidCurrentEditPreviewPending_ShowsUpdatingGuidanceAndDisablesSubmit', async () => {
+    render(<FeedbackDialog onClose={vi.fn()} />);
+    await fillBug();
+    await screen.findByLabelText('Issue preview');
+    holdFeedbackRequests();
+
+    await userEvent.type(screen.getByRole('textbox', { name: 'Title' }), ' New');
+
+    expect(screen.getByText('Updating issue preview…')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Submit bug' })).toBeDisabled();
+  });
+
   it('FeedbackDialog_CurrentPreviewRejected_DisablesSubmitAndKeepsEntries', async () => {
     render(<FeedbackDialog onClose={vi.fn()} />);
     await fillBug();
