@@ -181,7 +181,7 @@ impl<P: PromptUser> PermissionHandler for PolicyPermissions<P> {
     async fn handle(&self, _session: SessionId, _request: RequestId, data: PermissionRequestData) -> PermissionResult {
         let decision = match self.policy.read() {
             Ok(p) => decide(&p, &data),
-            Err(_) => Decision::Ask,
+            Err(_) => return PermissionResult::reject(Some("Blocked because organization policy is unavailable".to_string())),
         };
         // Policy always comes first: managed approval can add a prompt, never lift a deny.
         let decision = match decision {
@@ -764,19 +764,70 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn handle_poisoned_policy_lock_falls_back_to_asking() {
-        let user = FakeUser::new(false);
+    async fn handle_poisoned_allow_policy_rejects_without_prompting() {
+        // Unavailable policy must fail closed, not fall back to Ask: user approval
+        // cannot substitute for trustworthy policy evaluation, even for an allow policy.
+        let user = FakeUser::new(true);
         let h = handler("version: 1\ntools: { shell: allow }\n", &user);
-        let lock = h.policy.clone();
-        let _ = std::thread::spawn(move || {
-            let _guard = lock.write().unwrap();
-            panic!("poison the lock");
-        })
-        .join();
+        poison_policy_lock(h.policy.clone()).await;
         assert!(h.policy.is_poisoned());
         let r = run(&h, serde_json::json!({"kind": "shell", "command": "ls"})).await;
-        assert_eq!(r, "reject: Declined by the user");
-        assert_eq!(user.asked().len(), 1);
+        assert_eq!(r, "reject: Blocked because organization policy is unavailable");
+        assert!(user.asked().is_empty());
+        assert!(h.policy.is_poisoned());
+    }
+
+    async fn poison_policy_lock(policy: Arc<RwLock<Policy>>) {
+        tokio::task::spawn_blocking(move || {
+            assert!(
+                std::thread::spawn(move || {
+                    let _guard = policy.write().unwrap();
+                    panic!("synthetic policy lock poisoning");
+                })
+                .join()
+                .is_err()
+            );
+        })
+        .await
+        .unwrap();
+    }
+
+    #[tokio::test]
+    async fn handle_poisoned_deny_policy_managed_approval_rejects_without_prompting() {
+        let user = FakeUser::new(true);
+        let h = handler("version: 1\ntools: { shell: deny }\n", &user);
+        poison_policy_lock(h.policy.clone()).await;
+        assert!(h.policy.is_poisoned());
+
+        let r = run(
+            &h,
+            serde_json::json!({"kind": "shell", "command": "ls", "managedApprovalRequired": true}),
+        )
+        .await;
+
+        assert!(
+            r.starts_with("reject: ") && user.asked().is_empty() && h.policy.is_poisoned(),
+            "unavailable policy must reject without prompting or clearing poison; outcome={r}, prompts={}, poisoned={}",
+            user.asked().len(),
+            h.policy.is_poisoned()
+        );
+    }
+
+    #[tokio::test]
+    async fn handle_poisoned_deny_policy_without_managed_approval_rejects_without_prompting() {
+        let user = FakeUser::new(true);
+        let h = handler("version: 1\ntools: { shell: deny }\n", &user);
+        poison_policy_lock(h.policy.clone()).await;
+        assert!(h.policy.is_poisoned());
+
+        let r = run(&h, serde_json::json!({"kind": "shell", "command": "ls"})).await;
+
+        assert!(
+            r.starts_with("reject: ") && user.asked().is_empty() && h.policy.is_poisoned(),
+            "unavailable policy must reject without prompting or clearing poison; outcome={r}, prompts={}, poisoned={}",
+            user.asked().len(),
+            h.policy.is_poisoned()
+        );
     }
 
     fn change(description: &str, keep: bool) -> Change {

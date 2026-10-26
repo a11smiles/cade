@@ -262,7 +262,7 @@ impl Policy {
                 Switch::Off => deny("telemetry = off"),
             },
             Action::SpendTokens { used, next } => match self.budgets.monthly_tokens {
-                Some(budget) if used.saturating_add(*next) > budget => deny("budgets.monthly_tokens"),
+                Some(budget) if used.checked_add(*next).is_none_or(|total| total > budget) => deny("budgets.monthly_tokens"),
                 _ => Decision::Allow,
             },
         }
@@ -610,6 +610,20 @@ telemetry: off
         assert_eq!(p.decide(&Action::SpendTokens { used: 900, next: 100 }), Decision::Allow);
         assert_eq!(
             p.decide(&Action::SpendTokens { used: 900, next: 101 }),
+            deny("budgets.monthly_tokens")
+        );
+    }
+
+    #[test]
+    fn decide_spend_tokens_maximum_budget_overflow_denies() {
+        let p = Policy {
+            budgets: Budgets {
+                monthly_tokens: Some(u64::MAX),
+            },
+            ..Policy::default()
+        };
+        assert_eq!(
+            p.decide(&Action::SpendTokens { used: u64::MAX, next: 1 }),
             deny("budgets.monthly_tokens")
         );
     }
