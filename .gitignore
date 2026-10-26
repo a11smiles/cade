@@ -8,3 +8,7 @@ app/src-tauri/gen/
 # Microsoft's Azure icon pack is downloaded by each user (see assets/icons/azure/README.md).
 assets/icons/azure/**/*.svg
 assets/icons/azure/**/*.png
+*.tsbuildinfo
+__pycache__/
+app/ui/test-results/
+app/ui/playwright-report/

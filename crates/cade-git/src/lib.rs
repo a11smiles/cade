@@ -80,4 +80,16 @@ mod tests {
         let m = run_commit_message("Added error states to Step 1", "r7", "Claude Sonnet 5.5", 186_000);
         assert!(m.contains("CADE-Copilot-Run: r7"));
     }
+
+    #[test]
+    fn run_commit_message_applied_run_matches_trailer_format() {
+        let m = run_commit_message("Added error states to Step 1", "r7", "Claude Sonnet 5.5", 186_000);
+        assert_eq!(
+            m,
+            "Added error states to Step 1\n\nApplied from Copilot in CADE.\n\n\
+             CADE-Copilot-Run: r7\nCADE-Model: Claude Sonnet 5.5\nCADE-Tokens: 186000\n"
+        );
+        assert!(m.starts_with("Added error states to Step 1\n\n"));
+        assert!(m.contains(&format!("{RUN_TRAILER}: r7\n")));
+    }
 }

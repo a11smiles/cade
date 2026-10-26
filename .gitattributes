@@ -1,0 +1,4 @@
+# Golden files and fixtures are compared byte for byte with generated output, which uses LF.
+# Without this, Git for Windows checks them out with CRLF and every golden test fails.
+crates/*/tests/golden/** text eol=lf
+crates/*/tests/fixtures/** text eol=lf

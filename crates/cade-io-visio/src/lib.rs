@@ -163,4 +163,56 @@ mod tests {
         zip::ZipWriter::new(&mut buf).finish().unwrap();
         assert!(matches!(read_package(Cursor::new(buf.into_inner())), Err(VisioError::NotVisio(_))));
     }
+
+    #[test]
+    fn named_elements_name_u_present_prefers_name_u_over_name() {
+        let got = named_elements(r#"<Masters><Master NameU="Process" Name="Prozess"/></Masters>"#, "Master").unwrap();
+        assert_eq!(got, vec![("Process".to_string(), String::new())]);
+    }
+
+    #[test]
+    fn named_elements_only_name_falls_back_to_name() {
+        let got = named_elements(r#"<Masters><Master Name="Decision"/></Masters>"#, "Master").unwrap();
+        assert_eq!(got, vec![("Decision".to_string(), String::new())]);
+    }
+
+    #[test]
+    fn named_elements_r_id_attribute_returns_relationship_id() {
+        let got = named_elements(r#"<Pages xmlns:r="urn:r"><Page NameU="Appeals" r:id="rId7"/></Pages>"#, "Page").unwrap();
+        assert_eq!(got, vec![("Appeals".to_string(), "rId7".to_string())]);
+    }
+
+    #[test]
+    fn named_elements_prefixed_tag_matches_by_local_name() {
+        let got = named_elements(r#"<v:Pages xmlns:v="urn:v"><v:Page NameU="One"/></v:Pages>"#, "Page").unwrap();
+        assert_eq!(got, vec![("One".to_string(), String::new())]);
+    }
+
+    #[test]
+    fn named_elements_other_tags_are_ignored() {
+        let got = named_elements(r#"<Pages><PageSheet NameU="x"/><Page NameU="A"/><Rel NameU="y"/></Pages>"#, "Page").unwrap();
+        assert_eq!(got, vec![("A".to_string(), String::new())]);
+    }
+
+    #[test]
+    fn named_elements_unnamed_element_returns_empty_name() {
+        let got = named_elements(r#"<Pages><Page ID="0"/></Pages>"#, "Page").unwrap();
+        assert_eq!(got, vec![(String::new(), String::new())]);
+    }
+
+    #[test]
+    fn named_elements_mismatched_end_tag_returns_xml_error() {
+        assert!(matches!(
+            named_elements("<Pages><Page NameU=\"A\"></Master></Pages>", "Page"),
+            Err(VisioError::Xml(_))
+        ));
+    }
+
+    #[test]
+    fn named_elements_bad_entity_returns_xml_error() {
+        assert!(matches!(
+            named_elements(r#"<Pages><Page NameU="A &bogus; B"/></Pages>"#, "Page"),
+            Err(VisioError::Xml(_))
+        ));
+    }
 }

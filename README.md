@@ -2,7 +2,7 @@
 
 CADE is a local, cross-platform design workbench driven by GitHub Copilot. It's meant to replace Figma, Visio and Spark for enterprise teams. You can design apps, images, decks, documents, motion, diagrams, Azure architecture and data models, then ship them as pull requests. Everything runs on your machine with your Copilot seat or your own model key, under your organization's policy.
 
-> **Status: pre-alpha scaffold.** The workspace builds and its tests pass. The full plan is the [backlog](backlog/README.md): 535 items, starting with milestone M1.
+> **Status: pre-alpha scaffold.** The workspace builds and its tests pass. The full plan is the [issue backlog](https://github.com/a11smiles/cade/issues): 535 items, starting with milestone M1.
 
 ## What's here
 
@@ -14,7 +14,6 @@ CADE is a local, cross-platform design workbench driven by GitHub Copilot. It's 
 | `design/system/` | CADE's own design tokens (dark and light) and brand book. Source of `tokens.css` |
 | `design/exports/` | Versioned UI design exports. Never overwritten; see its README |
 | `assets/icons/azure/` | Drop Microsoft's Azure Architecture Icons here (not committed) |
-| `backlog/` | Every requirement as one Markdown file, with priorities and dependencies |
 | `docs/` | Architecture overview and decision records |
 
 ## Build
@@ -23,6 +22,9 @@ CADE is a local, cross-platform design workbench driven by GitHub Copilot. It's 
 cargo test                        # all crates; no webview needed
 pnpm --dir app/ui install
 pnpm --dir app/ui build           # regenerates tokens.css, type-checks, bundles
+pnpm --dir app/ui test            # UI unit tests (Vitest + Testing Library, jsdom)
+pnpm --dir app/ui test:e2e        # UI end-to-end (Playwright, Chromium; mock Tauri IPC)
+cargo test -p cade-app            # Tauri IPC commands (needs the platform webview)
 cargo run -p cade-app             # desktop app (needs the platform webview)
 ```
 

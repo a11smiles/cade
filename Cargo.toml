@@ -59,6 +59,10 @@ zip = { version = "9", default-features = false, features = ["deflate"] }
 regex = "1"
 url = "2"
 
+# test-only
+tempfile = "3.27"
+wiremock = "0.6.5"
+
 [profile.release]
 lto = "thin"
 codegen-units = 1
