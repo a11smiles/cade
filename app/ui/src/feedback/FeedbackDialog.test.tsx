@@ -309,4 +309,32 @@ describe('FeedbackDialog', () => {
     expect(screen.getByRole('button', { name: 'Submit bug' })).toBeDisabled();
     expect(ipc.call).not.toHaveBeenCalled();
   });
+  it('FeedbackDialog_TitleTyped_RequestsOnePreviewPerDistinctEdit', async () => {
+    render(<FeedbackDialog onClose={vi.fn()} />);
+    await waitFor(() => expect(previewCalls().length).toBeGreaterThan(0));
+    const before = previewCalls().length;
+
+    await userEvent.type(screen.getByRole('textbox', { name: 'Title' }), 'ab');
+
+    await waitFor(() => expect(previewCalls().length).toBe(before + 2));
+    expect(previewCalls().map((f) => f.title).slice(-2)).toEqual(['a', 'ab']);
+  });
+
+  it('FeedbackDialog_PreviewsResolveOutOfOrder_ShowsLatestPreview', async () => {
+    const resolvers: ((d: IssueDraft) => void)[] = [];
+    ipc.call.mockImplementation((cmd: string) =>
+      cmd === 'preview_feedback' ? new Promise<IssueDraft>((r) => resolvers.push(r)) : new Promise(() => {}),
+    );
+    render(<FeedbackDialog onClose={vi.fn()} />);
+    await userEvent.type(screen.getByRole('textbox', { name: 'Title' }), 'x');
+    await waitFor(() => expect(resolvers.length).toBeGreaterThanOrEqual(2));
+    const last = resolvers.length - 1;
+
+    resolvers[last]?.({ ...DRAFT, title: 'newer' });
+    await screen.findByText(/newer/);
+    resolvers[0]?.({ ...DRAFT, title: 'stale' });
+
+    await waitFor(() => expect(screen.getByLabelText('Issue preview').textContent).toContain('newer'));
+    expect(screen.queryByText(/stale/)).toBeNull();
+  });
 });
