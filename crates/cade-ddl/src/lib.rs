@@ -155,14 +155,244 @@ pub enum DdlError {
 
 /// Quote an identifier, doubling the dialect's closing quote inside it. PostgreSQL and
 /// Oracle leave plain names (`[A-Za-z_][A-Za-z0-9_]*`) bare so their case folding is
-/// unchanged, and double-quote anything else.
+/// unchanged, and double-quote anything else, including the dialect's reserved words.
 fn q(d: Dialect, ident: &str) -> String {
     match d {
-        Dialect::PostgreSql | Dialect::Oracle if is_plain_ident(ident) => ident.to_string(),
+        Dialect::PostgreSql | Dialect::Oracle if is_plain_ident(ident) && !is_reserved(d, ident) => ident.to_string(),
         Dialect::PostgreSql | Dialect::Oracle => format!("\"{}\"", ident.replace('"', "\"\"")),
         Dialect::SqlServer => format!("[{}]", ident.replace(']', "]]")),
         Dialect::MySql => format!("`{}`", ident.replace('`', "``")),
     }
+}
+
+/// PostgreSQL key words that can't be a bare table or column name: those marked "reserved"
+/// and "reserved (can be function or type)" in the PostgreSQL 17 docs, Appendix C, "SQL Key Words".
+const POSTGRESQL_RESERVED: &[&str] = &[
+    "all",
+    "analyse",
+    "analyze",
+    "and",
+    "any",
+    "array",
+    "as",
+    "asc",
+    "asymmetric",
+    "authorization",
+    "binary",
+    "both",
+    "case",
+    "cast",
+    "check",
+    "collate",
+    "collation",
+    "column",
+    "concurrently",
+    "constraint",
+    "create",
+    "cross",
+    "current_catalog",
+    "current_date",
+    "current_role",
+    "current_schema",
+    "current_time",
+    "current_timestamp",
+    "current_user",
+    "default",
+    "deferrable",
+    "desc",
+    "distinct",
+    "do",
+    "else",
+    "end",
+    "except",
+    "false",
+    "fetch",
+    "for",
+    "foreign",
+    "freeze",
+    "from",
+    "full",
+    "grant",
+    "group",
+    "having",
+    "ilike",
+    "in",
+    "initially",
+    "inner",
+    "intersect",
+    "into",
+    "is",
+    "isnull",
+    "join",
+    "lateral",
+    "leading",
+    "left",
+    "like",
+    "limit",
+    "localtime",
+    "localtimestamp",
+    "natural",
+    "not",
+    "notnull",
+    "null",
+    "offset",
+    "on",
+    "only",
+    "or",
+    "order",
+    "outer",
+    "overlaps",
+    "placing",
+    "primary",
+    "references",
+    "returning",
+    "right",
+    "select",
+    "session_user",
+    "similar",
+    "some",
+    "symmetric",
+    "system_user",
+    "table",
+    "tablesample",
+    "then",
+    "to",
+    "trailing",
+    "true",
+    "union",
+    "unique",
+    "user",
+    "using",
+    "variadic",
+    "verbose",
+    "when",
+    "where",
+    "window",
+    "with",
+];
+
+/// Oracle's reserved words, from the Oracle Database 23ai SQL Language Reference,
+/// Appendix D, "Oracle SQL Reserved Words".
+const ORACLE_RESERVED: &[&str] = &[
+    "access",
+    "add",
+    "all",
+    "alter",
+    "and",
+    "any",
+    "as",
+    "asc",
+    "audit",
+    "between",
+    "by",
+    "char",
+    "check",
+    "cluster",
+    "column",
+    "column_value",
+    "comment",
+    "compress",
+    "connect",
+    "create",
+    "current",
+    "date",
+    "decimal",
+    "default",
+    "delete",
+    "desc",
+    "distinct",
+    "drop",
+    "else",
+    "exclusive",
+    "exists",
+    "file",
+    "float",
+    "for",
+    "from",
+    "grant",
+    "group",
+    "having",
+    "identified",
+    "immediate",
+    "in",
+    "increment",
+    "index",
+    "initial",
+    "insert",
+    "integer",
+    "intersect",
+    "into",
+    "is",
+    "level",
+    "like",
+    "lock",
+    "long",
+    "maxextents",
+    "minus",
+    "mlslabel",
+    "mode",
+    "modify",
+    "nested_table_id",
+    "noaudit",
+    "nocompress",
+    "not",
+    "nowait",
+    "null",
+    "number",
+    "of",
+    "offline",
+    "on",
+    "online",
+    "option",
+    "or",
+    "order",
+    "pctfree",
+    "prior",
+    "public",
+    "raw",
+    "rename",
+    "resource",
+    "revoke",
+    "row",
+    "rowid",
+    "rownum",
+    "rows",
+    "select",
+    "session",
+    "set",
+    "share",
+    "size",
+    "smallint",
+    "start",
+    "successful",
+    "synonym",
+    "sysdate",
+    "table",
+    "then",
+    "to",
+    "trigger",
+    "uid",
+    "union",
+    "unique",
+    "update",
+    "user",
+    "validate",
+    "values",
+    "varchar",
+    "varchar2",
+    "view",
+    "whenever",
+    "where",
+    "with",
+];
+
+fn is_reserved(d: Dialect, ident: &str) -> bool {
+    let words = match d {
+        Dialect::PostgreSql => POSTGRESQL_RESERVED,
+        Dialect::Oracle => ORACLE_RESERVED,
+        Dialect::SqlServer | Dialect::MySql => return false, // always quoted
+    };
+    words.iter().any(|w| w.eq_ignore_ascii_case(ident))
 }
 
 fn is_plain_ident(ident: &str) -> bool {
@@ -268,7 +498,7 @@ fn default_sql(d: Dialect, def: &DefaultValue) -> String {
     }
 }
 
-fn column_sql(d: Dialect, f: &Field, model: &Model) -> Result<String, DdlError> {
+fn column_sql(d: Dialect, table: &str, f: &Field, model: &Model) -> Result<String, DdlError> {
     if let Some(DefaultValue::Literal { sql }) = &f.default
         && !is_single_literal(d, sql)
     {
@@ -278,9 +508,19 @@ fn column_sql(d: Dialect, f: &Field, model: &Model) -> Result<String, DdlError> 
         });
     }
     let mut s = format!("{} {}", q(d, &f.name), type_sql(d, &f.ty, model)?);
-    let default = f.default.as_ref().map(|def| format!(" DEFAULT {}", default_sql(d, def)));
-    // Oracle only accepts DEFAULT before inline constraints; the others keep it after.
-    if d == Dialect::Oracle {
+    // SQL Server names its defaults, or it generates `DF__…` names that a down migration
+    // can't drop before the column.
+    let default = f.default.as_ref().map(|def| match d {
+        Dialect::SqlServer => format!(
+            " CONSTRAINT {} DEFAULT {}",
+            q(d, &constraint_name(d, "df", table, &f.name)),
+            default_sql(d, def)
+        ),
+        _ => format!(" DEFAULT {}", default_sql(d, def)),
+    });
+    // Oracle and SQL Server put DEFAULT before NOT NULL and inline constraints; the others after.
+    let default_first = matches!(d, Dialect::Oracle | Dialect::SqlServer);
+    if default_first {
         s.push_str(default.as_deref().unwrap_or_default());
     }
     if f.primary_key {
@@ -288,7 +528,7 @@ fn column_sql(d: Dialect, f: &Field, model: &Model) -> Result<String, DdlError> 
     } else if !f.nullable {
         s.push_str(" NOT NULL");
     }
-    if d != Dialect::Oracle {
+    if !default_first {
         s.push_str(default.as_deref().unwrap_or_default());
     }
     if let Some(r) = &f.references
@@ -335,7 +575,7 @@ fn check_sql(d: Dialect, table: &str, f: &Field, model: &Model) -> Result<Option
 
 /// A column with its inline constraints, as it appears in CREATE TABLE and ALTER TABLE … ADD.
 fn column_def(d: Dialect, table: &str, f: &Field, model: &Model) -> Result<String, DdlError> {
-    let column = column_sql(d, f, model)?;
+    let column = column_sql(d, table, f, model)?;
     Ok(match check_sql(d, table, f, model)? {
         Some(check) => format!("{column} {check}"),
         None => column,
@@ -493,18 +733,30 @@ pub fn migration(d: Dialect, from: &Model, to: &Model) -> Result<Migration, DdlE
                 let column = column_def(d, &entity.table, &field, to)?;
                 let name = q(d, &field.name);
                 let constraint = |prefix| q(d, &constraint_name(d, prefix, &entity.table, &field.name));
-                // One statement each way, so a column and its named constraint come and go together.
-                // SQL Server won't drop a column that a CHECK still uses; Oracle drops single-column
-                // constraints with the column.
+                // One statement each way, so a column and its named constraints come and go together.
+                // SQL Server won't drop a column that a DEFAULT or CHECK still uses; Oracle drops
+                // single-column constraints with the column.
                 let fk = foreign_key_sql(d, &entity.table, &field);
                 up.push(match &fk {
                     Some(fk) => format!("ALTER TABLE {table} {kw} {column}, ADD {fk};"),
                     None => format!("ALTER TABLE {table} {kw} {column};"),
                 });
+                let mut sqlserver_constraints = vec![];
+                if d == Dialect::SqlServer {
+                    if field.default.is_some() {
+                        sqlserver_constraints.push(constraint("df"));
+                    }
+                    if check_sql(d, &entity.table, &field, to)?.is_some() {
+                        sqlserver_constraints.push(constraint("ck"));
+                    }
+                }
                 down.push(if fk.is_some() {
                     format!("ALTER TABLE {table} DROP FOREIGN KEY {}, DROP COLUMN {name};", constraint("fk"))
-                } else if d == Dialect::SqlServer && check_sql(d, &entity.table, &field, to)?.is_some() {
-                    format!("ALTER TABLE {table} DROP CONSTRAINT {}, COLUMN {name};", constraint("ck"))
+                } else if !sqlserver_constraints.is_empty() {
+                    format!(
+                        "ALTER TABLE {table} DROP CONSTRAINT {}, COLUMN {name};",
+                        sqlserver_constraints.join(", ")
+                    )
                 } else {
                     format!("ALTER TABLE {table} DROP COLUMN {name};")
                 });
@@ -604,7 +856,7 @@ mod tests {
     #[test]
     fn other_dialects_quote_and_map_types() {
         let s = schema_sql(Dialect::SqlServer, &v7()).unwrap();
-        assert!(s.contains("[id] uniqueidentifier PRIMARY KEY DEFAULT newsequentialid()"));
+        assert!(s.contains("[id] uniqueidentifier CONSTRAINT [df_claims_id] DEFAULT newsequentialid() PRIMARY KEY"));
         let s = schema_sql(Dialect::MySql, &v7()).unwrap();
         assert!(s.contains("`incident_type` enum('auto', 'property')"));
         let s = schema_sql(Dialect::Oracle, &v7()).unwrap();
@@ -676,7 +928,52 @@ mod tests {
     #[test]
     fn q_each_dialect_uses_its_identifier_quoting() {
         let got: Vec<String> = ALL.iter().map(|d| q(*d, "order")).collect();
-        assert_eq!(got, ["order", "[order]", "`order`", "order"]);
+        assert_eq!(got, ["\"order\"", "[order]", "`order`", "\"order\""]);
+    }
+
+    #[test]
+    fn q_reserved_word_in_any_case_is_quoted() {
+        for word in ["select", "SELECT", "Group", "user"] {
+            assert_eq!(q(Dialect::PostgreSql, word), format!("\"{word}\""), "postgresql {word}");
+            assert_eq!(q(Dialect::Oracle, word), format!("\"{word}\""), "oracle {word}");
+        }
+    }
+
+    #[test]
+    fn q_reserved_word_is_quoted_only_in_dialects_that_reserve_it() {
+        // `limit` and `window` are reserved in PostgreSQL only; `level` and `number` in Oracle only.
+        assert_eq!(q(Dialect::PostgreSql, "limit"), "\"limit\"");
+        assert_eq!(q(Dialect::Oracle, "limit"), "limit");
+        assert_eq!(q(Dialect::PostgreSql, "window"), "\"window\"");
+        assert_eq!(q(Dialect::Oracle, "window"), "window");
+        assert_eq!(q(Dialect::Oracle, "level"), "\"level\"");
+        assert_eq!(q(Dialect::PostgreSql, "level"), "level");
+        assert_eq!(q(Dialect::Oracle, "number"), "\"number\"");
+        assert_eq!(q(Dialect::PostgreSql, "number"), "number");
+    }
+
+    #[test]
+    fn q_name_containing_reserved_word_stays_unquoted() {
+        for d in [Dialect::PostgreSql, Dialect::Oracle] {
+            for name in ["orders", "user_id", "selected", "group_name"] {
+                assert_eq!(q(d, name), name, "{d:?} {name}");
+            }
+        }
+    }
+
+    #[test]
+    fn create_table_reserved_table_and_column_names_are_quoted_per_dialect() {
+        let e = entity("order", vec![Field::new("user", FieldType::CiText).nullable()]);
+        let got: Vec<String> = ALL.iter().map(|d| create_table(*d, &e, &Model::default()).unwrap()).collect();
+        assert_eq!(
+            got,
+            [
+                "CREATE TABLE s.\"order\" (\n  \"user\" citext\n);",
+                "CREATE TABLE [s].[order] (\n  [user] nvarchar(320) COLLATE Latin1_General_CI_AS\n);",
+                "CREATE TABLE `s`.`order` (\n  `user` varchar(320)\n);",
+                "CREATE TABLE s.\"order\" (\n  \"user\" varchar2(320)\n);",
+            ]
+        );
     }
 
     #[test]
@@ -796,23 +1093,79 @@ mod tests {
     #[test]
     fn column_sql_nullable_column_has_no_not_null() {
         let f = Field::new("bio", FieldType::Text).nullable();
-        assert_eq!(column_sql(Dialect::PostgreSql, &f, &Model::default()).unwrap(), "bio text");
+        assert_eq!(column_sql(Dialect::PostgreSql, "t", &f, &Model::default()).unwrap(), "bio text");
     }
 
     #[test]
     fn column_sql_primary_key_omits_not_null_and_adds_default() {
         let f = Field::new("id", FieldType::Uuid).pk();
         assert_eq!(
-            column_sql(Dialect::SqlServer, &f, &Model::default()).unwrap(),
-            "[id] uniqueidentifier PRIMARY KEY DEFAULT newsequentialid()"
+            column_sql(Dialect::SqlServer, "t", &f, &Model::default()).unwrap(),
+            "[id] uniqueidentifier CONSTRAINT [df_t_id] DEFAULT newsequentialid() PRIMARY KEY"
         );
+    }
+
+    #[test]
+    fn column_sql_sqlserver_default_is_named_and_precedes_not_null() {
+        let f = Field::new("rank", FieldType::Int).default(DefaultValue::Literal { sql: "0".into() });
+        assert_eq!(
+            column_sql(Dialect::SqlServer, "scores", &f, &Model::default()).unwrap(),
+            "[rank] int CONSTRAINT [df_scores_rank] DEFAULT 0 NOT NULL"
+        );
+    }
+
+    #[test]
+    fn column_sql_sqlserver_default_name_escapes_table() {
+        let f = Field::new("c", FieldType::Int)
+            .nullable()
+            .default(DefaultValue::Literal { sql: "0".into() });
+        assert_eq!(
+            column_sql(Dialect::SqlServer, "a]b", &f, &Model::default()).unwrap(),
+            "[c] int CONSTRAINT [df_a]]b_c] DEFAULT 0"
+        );
+    }
+
+    #[test]
+    fn column_sql_sqlserver_column_without_default_has_no_default_constraint() {
+        let f = Field::new("rank", FieldType::Int);
+        assert_eq!(
+            column_sql(Dialect::SqlServer, "scores", &f, &Model::default()).unwrap(),
+            "[rank] int NOT NULL"
+        );
+    }
+
+    #[test]
+    fn migration_add_default_field_sqlserver_drops_named_default_with_column() {
+        let from = kind_model(&["a"]);
+        let mut to = from.clone();
+        to.entities[0]
+            .fields
+            .push(Field::new("n", FieldType::Int).default(DefaultValue::Literal { sql: "0".into() }));
+        let m = migration(Dialect::SqlServer, &from, &to).unwrap();
+        assert_eq!(m.up, "ALTER TABLE [s].[t] ADD [n] int CONSTRAINT [df_t_n] DEFAULT 0 NOT NULL;\n");
+        assert_eq!(m.down, "ALTER TABLE [s].[t] DROP CONSTRAINT [df_t_n], COLUMN [n];\n");
+    }
+
+    #[test]
+    fn migration_add_enum_field_with_default_sqlserver_drops_default_and_check_with_column() {
+        let from = kind_model(&["a"]);
+        let mut to = from.clone();
+        to.entities[0]
+            .fields
+            .push(kind_field().default(DefaultValue::Text { value: "a".into() }));
+        let m = migration(Dialect::SqlServer, &from, &to).unwrap();
+        assert_eq!(
+            m.up,
+            "ALTER TABLE [s].[t] ADD [k] nvarchar(32) CONSTRAINT [df_t_k] DEFAULT 'a' NOT NULL CONSTRAINT [ck_t_k] CHECK ([k] IN ('a'));\n"
+        );
+        assert_eq!(m.down, "ALTER TABLE [s].[t] DROP CONSTRAINT [df_t_k], [ck_t_k], COLUMN [k];\n");
     }
 
     #[test]
     fn column_sql_reference_quotes_target_table_and_column() {
         let f = Field::new("user_id", FieldType::Uuid).nullable().references("app", "users", "id");
         assert_eq!(
-            column_sql(Dialect::SqlServer, &f, &Model::default()).unwrap(),
+            column_sql(Dialect::SqlServer, "t", &f, &Model::default()).unwrap(),
             "[user_id] uniqueidentifier REFERENCES [app].[users]([id])"
         );
     }
@@ -821,7 +1174,10 @@ mod tests {
     fn column_sql_mysql_reference_is_not_inline() {
         // InnoDB parses an inline REFERENCES and ignores it; MySQL gets a table-level FOREIGN KEY instead.
         let f = Field::new("user_id", FieldType::Uuid).nullable().references("app", "users", "id");
-        assert_eq!(column_sql(Dialect::MySql, &f, &Model::default()).unwrap(), "`user_id` char(36)");
+        assert_eq!(
+            column_sql(Dialect::MySql, "t", &f, &Model::default()).unwrap(),
+            "`user_id` char(36)"
+        );
     }
 
     #[test]
@@ -896,12 +1252,12 @@ mod tests {
     #[test]
     fn column_sql_text_default_with_quote_is_escaped_per_dialect() {
         let f = Field::new("c", FieldType::CiText).default(DefaultValue::Text { value: "a'b\\c".into() });
-        let got: Vec<String> = ALL.iter().map(|d| column_sql(*d, &f, &Model::default()).unwrap()).collect();
+        let got: Vec<String> = ALL.iter().map(|d| column_sql(*d, "t", &f, &Model::default()).unwrap()).collect();
         assert_eq!(
             got,
             [
                 "c citext NOT NULL DEFAULT 'a''b\\c'",
-                "[c] nvarchar(320) COLLATE Latin1_General_CI_AS NOT NULL DEFAULT 'a''b\\c'",
+                "[c] nvarchar(320) COLLATE Latin1_General_CI_AS CONSTRAINT [df_t_c] DEFAULT 'a''b\\c' NOT NULL",
                 "`c` varchar(320) NOT NULL DEFAULT 'a''b\\\\c'",
                 "c varchar2(320) DEFAULT 'a''b\\c' NOT NULL",
             ]
@@ -913,7 +1269,7 @@ mod tests {
         for sql in ["'x'); DROP TABLE t; --", "0; DROP TABLE t", "'it's'", "now()", "'a\\'"] {
             let f = Field::new("c", FieldType::Text).default(DefaultValue::Literal { sql: sql.into() });
             assert_eq!(
-                column_sql(Dialect::MySql, &f, &Model::default()),
+                column_sql(Dialect::MySql, "t", &f, &Model::default()),
                 Err(DdlError::UnsafeDefault {
                     field: "c".into(),
                     sql: sql.into()
@@ -929,7 +1285,7 @@ mod tests {
             let f = Field::new("c", FieldType::Text).default(DefaultValue::Literal { sql: sql.into() });
             for d in ALL {
                 assert_eq!(
-                    column_sql(d, &f, &Model::default())
+                    column_sql(d, "t", &f, &Model::default())
                         .unwrap()
                         .split(" DEFAULT ")
                         .nth(1)
@@ -956,7 +1312,7 @@ mod tests {
             got,
             [
                 "CREATE TABLE s.\"a]b\"\"c`d\" (\n  c citext DEFAULT 'x''y'\n);",
-                "CREATE TABLE [s].[a]]b\"c`d] (\n  [c] nvarchar(320) COLLATE Latin1_General_CI_AS DEFAULT 'x''y'\n);",
+                "CREATE TABLE [s].[a]]b\"c`d] (\n  [c] nvarchar(320) COLLATE Latin1_General_CI_AS CONSTRAINT [df_a]]b\"c`d_c] DEFAULT 'x''y'\n);",
                 "CREATE TABLE `s`.`a]b\"c``d` (\n  `c` varchar(320) DEFAULT 'x''y'\n);",
                 "CREATE TABLE s.\"a]b\"\"c`d\" (\n  c varchar2(320) DEFAULT 'x''y'\n);",
             ]
@@ -1067,7 +1423,7 @@ mod tests {
     fn column_sql_oracle_default_precedes_primary_key() {
         let f = Field::new("id", FieldType::Uuid).pk();
         assert_eq!(
-            column_sql(Dialect::Oracle, &f, &Model::default()).unwrap(),
+            column_sql(Dialect::Oracle, "t", &f, &Model::default()).unwrap(),
             "id raw(16) DEFAULT sys_guid() PRIMARY KEY"
         );
     }
@@ -1078,26 +1434,19 @@ mod tests {
             .default(DefaultValue::Literal { sql: "0".into() })
             .references("s", "ranks", "id");
         assert_eq!(
-            column_sql(Dialect::Oracle, &f, &Model::default()).unwrap(),
+            column_sql(Dialect::Oracle, "t", &f, &Model::default()).unwrap(),
             "rank number(10) DEFAULT 0 NOT NULL REFERENCES s.ranks(id)"
         );
     }
 
     #[test]
-    fn column_sql_other_dialects_keep_default_after_not_null() {
+    fn column_sql_postgresql_and_mysql_keep_default_after_not_null() {
         let f = Field::new("rank", FieldType::Int).default(DefaultValue::Literal { sql: "0".into() });
-        let got: Vec<String> = [Dialect::PostgreSql, Dialect::SqlServer, Dialect::MySql]
+        let got: Vec<String> = [Dialect::PostgreSql, Dialect::MySql]
             .iter()
-            .map(|d| column_sql(*d, &f, &Model::default()).unwrap())
+            .map(|d| column_sql(*d, "t", &f, &Model::default()).unwrap())
             .collect();
-        assert_eq!(
-            got,
-            [
-                "rank int NOT NULL DEFAULT 0",
-                "[rank] int NOT NULL DEFAULT 0",
-                "`rank` int NOT NULL DEFAULT 0"
-            ]
-        );
+        assert_eq!(got, ["rank int NOT NULL DEFAULT 0", "`rank` int NOT NULL DEFAULT 0"]);
     }
 
     #[test]

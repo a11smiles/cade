@@ -57,13 +57,13 @@ Status uses `success`, `danger` and `policy`. Tones are always told apart by ico
 ## Iconography
 
 - Outline icons on a 24px grid with a 1.8px stroke, round caps and joins, drawn in `currentColor`. The set ships as the `Icon` component.
-- **Sparkle** always means Copilot and **shield** always means an organization rule. Neither is used for anything else.
+- **Sparkle** always means Copilot and **shield** always means an organization rule. Neither is used for anything else. The one exception is the CADE logo, which is itself a sparkle: CADE is Copilot's design environment.
 - No emoji, no filled glyph icons except play, and no third-party brand marks in CADE's own UI.
 - Azure architecture diagrams use Microsoft's official Azure Architecture Icons, loaded from the user's `assets/icons/azure/` folder. They are content, not CADE iconography.
 
 ## Logo
 
-The CADE mark is a violet rounded square (`accent`) holding a white brush stroke, with an amber (`policy-solid`) dot at its tip: Copilot does the drawing, inside the lines the organization sets. See the Logos group. Use the mark at 20–36px in the top bar and the full lockup with the "CADE" wordmark in Geist 700 on first run.
+The CADE mark is a four-point sparkle glowing from violet to cyan on a deep navy rounded square. It is the app icon, and the same artwork appears everywhere CADE shows its logo. The source is `app/src-tauri/icons/app-icon.png` (1254 px); the desktop icon set is generated from it with `tauri icon`, and the UI uses `app/ui/src/assets/cade-mark.png` through the `Mark` component. Use the mark at 20–36px in the top bar and the full lockup with the "CADE" wordmark in Geist 700 on first run. Never redraw, recolor or crop it; it keeps its own colors in both themes. Design exports from before v0002 still show the earlier brush-stroke mark.
 
 ## Components
 

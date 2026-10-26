@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '../components/Button';
 import { Icon } from '../components/Icon';
 import { call, inTauri } from '../ipc';
@@ -6,18 +6,73 @@ import { FORMS, type Feedback, type FeedbackKind, type IssueDraft } from './type
 import './feedback.css';
 
 const KINDS: FeedbackKind[] = ['bug', 'feature-request', 'comment'];
+const blankAnswers = (kind: FeedbackKind) => FORMS[kind].questions.map(() => '');
+const FOCUSABLE = 'button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])';
+
+/** Modal focus: move focus in on open, keep Tab inside, close on Escape, and give focus back to the opener. */
+function useModalFocus(onClose: () => void) {
+  const root = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const dialog = root.current;
+    (dialog?.querySelector<HTMLElement>(FOCUSABLE) ?? dialog)?.focus();
+    return () => opener?.focus();
+  }, []);
+
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      const dialog = root.current;
+      if (!dialog) return;
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose();
+        return;
+      }
+      if (e.key !== 'Tab') return;
+      const items = Array.from(dialog.querySelectorAll<HTMLElement>(FOCUSABLE));
+      const first = items[0];
+      const last = items[items.length - 1];
+      const active = document.activeElement;
+      if (!first || !last) {
+        e.preventDefault();
+        dialog.focus();
+      } else if (!dialog.contains(active)) {
+        e.preventDefault();
+        (e.shiftKey ? last : first).focus();
+      } else if (e.shiftKey && active === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [onClose]);
+
+  return root;
+}
 
 /** Help › Send feedback. Builds the issue in Rust (redacted), previews it, then submits as the user. */
 export function FeedbackDialog({ onClose }: { onClose: () => void }) {
   const [kind, setKind] = useState<FeedbackKind>('bug');
   const [title, setTitle] = useState('');
-  const [answers, setAnswers] = useState<string[]>([]);
-  const [env, setEnv] = useState({ version: true, os: true, gpu: true, policy: true, logs: false });
+  // One blank answer per question from the first render, so text typed before any effect runs is kept.
+  const [answers, setAnswers] = useState<string[]>(() => blankAnswers('bug'));
+  const [env, setEnv] = useState({ version: true, os: true, gpu: true, policy: true });
   const [preview, setPreview] = useState<IssueDraft | null>(null);
   const [status, setStatus] = useState<{ kind: 'idle' | 'sending' | 'sent' | 'error'; text?: string }>({ kind: 'idle' });
+  const dialogRef = useModalFocus(onClose);
 
   const form = FORMS[kind];
-  useEffect(() => setAnswers(form.questions.map(() => '')), [kind]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function chooseKind(next: FeedbackKind) {
+    if (next === kind) return;
+    setKind(next);
+    setAnswers(blankAnswers(next));
+  }
 
   const feedback: Feedback = useMemo(
     () => ({
@@ -35,15 +90,18 @@ export function FeedbackDialog({ onClose }: { onClose: () => void }) {
     [kind, title, answers, env, form],
   );
 
+  // Key the preview on content, not identity: React can re-run a pending `setAnswers` updater while
+  // it rebases updates, which returns an equal but new array. Keyed on identity, each re-run started
+  // another IPC call whose response re-rendered again, an endless loop.
   const feedbackKey = JSON.stringify(feedback);
   useEffect(() => {
     if (!inTauri) return;
-    let current = true;
+    let latest = true;
     call<IssueDraft>('preview_feedback', { feedback: JSON.parse(feedbackKey) as Feedback })
-      .then((draft) => current && setPreview(draft))
-      .catch(() => current && setPreview(null));
+      .then((draft) => latest && setPreview(draft))
+      .catch(() => latest && setPreview(null));
     return () => {
-      current = false;
+      latest = false;
     };
   }, [feedbackKey]);
 
@@ -61,7 +119,7 @@ export function FeedbackDialog({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fb-scrim">
-      <section role="dialog" aria-modal="true" aria-labelledby="fb-title" className="fb">
+      <section ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="fb-title" className="fb" tabIndex={-1}>
         <header className="fb-head">
           <h1 id="fb-title">Send feedback</h1>
           <span className="fb-muted">Creates a GitHub issue from your account</span>
@@ -82,7 +140,7 @@ export function FeedbackDialog({ onClose }: { onClose: () => void }) {
               <div className="fb-form">
                 <div className="fb-kinds" role="radiogroup" aria-label="Feedback type">
                   {KINDS.map((k) => (
-                    <button key={k} role="radio" aria-checked={k === kind} className="fb-kind" onClick={() => setKind(k)}>
+                    <button key={k} role="radio" aria-checked={k === kind} className="fb-kind" onClick={() => chooseKind(k)}>
                       <span className="t-title">{FORMS[k].name}</span>
                       <span className="fb-muted">{FORMS[k].hint}</span>
                     </button>
@@ -101,12 +159,19 @@ export function FeedbackDialog({ onClose }: { onClose: () => void }) {
               </div>
               <aside className="fb-side" aria-label="What GitHub will receive">
                 <span className="t-section-label fb-muted">WHAT GITHUB WILL RECEIVE</span>
-                {(['version', 'os', 'gpu', 'policy', 'logs'] as const).map((k) => (
+                {(['version', 'os', 'gpu', 'policy'] as const).map((k) => (
                   <label key={k} className="fb-check">
                     <input type="checkbox" checked={env[k]} onChange={() => setEnv((e) => ({ ...e, [k]: !e[k] }))} />
-                    {{ version: 'CADE version', os: 'Operating system', gpu: 'GPU and renderer', policy: 'Policy version', logs: 'Recent logs, scrubbed' }[k]}
+                    {{ version: 'CADE version', os: 'Operating system', gpu: 'GPU and renderer', policy: 'Policy version' }[k]}
                   </label>
                 ))}
+                {/* CADE keeps no local logs yet (FOUND-014), so nothing can be attached; enable this once it does. */}
+                <label className="fb-check">
+                  <input type="checkbox" checked={false} disabled aria-describedby="fb-logs-unavailable" />
+                  Recent logs, scrubbed
+                </label>
+                {/* TODO(copy): "Not available yet" isn't in the design export; needs approved wording. */}
+                <span id="fb-logs-unavailable" className="fb-muted fb-check-note">Not available yet</span>
                 <div className="fb-safe">Never sent unless you attach it: designs, prompts, Copilot threads, file paths and project names.</div>
                 {preview && <pre className="fb-preview" aria-label="Issue preview">{preview.title}{'\n\n'}{preview.body}</pre>}
               </aside>

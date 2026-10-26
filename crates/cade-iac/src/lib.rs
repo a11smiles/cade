@@ -211,6 +211,9 @@ fn bicep_resource(r: &Resource) -> String {
                     bq(sn),
                     bq(name)
                 ));
+                s.push_str(&format!(
+                    "\nresource {sym}PeDns 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2023-11-01' = {{\n  parent: {sym}Pe\n  name: 'default'\n  properties: {{\n    privateDnsZoneConfigs: [\n      {{\n        name: 'privatelink-vaultcore-azure-net'\n        properties: {{\n          privateDnsZoneId: vaultDnsZone.id\n        }}\n      }}\n    ]\n  }}\n}}\n"
+                ));
             }
             s
         }
@@ -275,7 +278,7 @@ fn tf_resource(r: &Resource) -> String {
             );
             if let Some(sn) = private_endpoint_subnet {
                 s.push_str(&format!(
-                    "\nresource \"azurerm_private_endpoint\" \"{id}\" {{\n  name                = {}\n  location            = var.location\n  resource_group_name = var.resource_group_name\n  subnet_id           = {}\n\n  private_service_connection {{\n    name                           = {}\n    private_connection_resource_id = azurerm_key_vault.{id}.id\n    subresource_names              = [\"vault\"]\n    is_manual_connection           = false\n  }}\n}}\n",
+                    "\nresource \"azurerm_private_endpoint\" \"{id}\" {{\n  name                = {}\n  location            = var.location\n  resource_group_name = var.resource_group_name\n  subnet_id           = {}\n\n  private_service_connection {{\n    name                           = {}\n    private_connection_resource_id = azurerm_key_vault.{id}.id\n    subresource_names              = [\"vault\"]\n    is_manual_connection           = false\n  }}\n\n  private_dns_zone_group {{\n    name                 = \"default\"\n    private_dns_zone_ids = [azurerm_private_dns_zone.vault.id]\n  }}\n}}\n",
                     tq(&format!("pe-{name}")),
                     tq(sn),
                     tq(name)
@@ -289,6 +292,66 @@ fn tf_resource(r: &Resource) -> String {
             tq(redundancy)
         ),
     }
+}
+
+/// The virtual network a subnet resource ID belongs to: the ID up to `/subnets/`
+/// (matched without case, as Azure resource IDs are).
+fn vnet_id(subnet: &str) -> Option<&str> {
+    let at = subnet.to_ascii_lowercase().rfind("/subnets/")?;
+    (at > 0).then(|| &subnet[..at])
+}
+
+/// The `privatelink.vaultcore.azure.net` zone and one link per virtual network
+/// that holds a Key Vault private endpoint, so vault names resolve privately.
+/// Empty when no vault has a private endpoint.
+fn vault_dns(design: &Design, target: Target) -> String {
+    let subnets: Vec<&str> = design
+        .resources
+        .iter()
+        .filter_map(|r| match r {
+            Resource::KeyVault {
+                private_endpoint_subnet: Some(sn),
+                ..
+            } => Some(sn.as_str()),
+            _ => None,
+        })
+        .collect();
+    if subnets.is_empty() {
+        return String::new();
+    }
+    let mut vnets: Vec<&str> = Vec::new();
+    for v in subnets.iter().filter_map(|sn| vnet_id(sn)) {
+        if !vnets.iter().any(|seen| seen.eq_ignore_ascii_case(v)) {
+            vnets.push(v);
+        }
+    }
+    let mut names: Vec<String> = Vec::new();
+    for v in &vnets {
+        let base = format!("link-{}", v.rsplit('/').next().unwrap_or(v));
+        let taken = names.iter().filter(|n| **n == base || n.starts_with(&format!("{base}-"))).count();
+        names.push(if taken == 0 { base } else { format!("{base}-{}", taken + 1) });
+    }
+
+    let mut s = match target {
+        Target::Bicep => "resource vaultDnsZone 'Microsoft.Network/privateDnsZones@2024-06-01' = {\n  name: 'privatelink.vaultcore.azure.net'\n  location: 'global'\n}\n\n".to_string(),
+        Target::Terraform => "resource \"azurerm_private_dns_zone\" \"vault\" {\n  name                = \"privatelink.vaultcore.azure.net\"\n  resource_group_name = var.resource_group_name\n}\n\n".to_string(),
+    };
+    for (i, (v, name)) in vnets.iter().zip(&names).enumerate() {
+        let n = i + 1;
+        s.push_str(&match target {
+            Target::Bicep => format!(
+                "resource vaultDnsLink{n} 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2024-06-01' = {{\n  parent: vaultDnsZone\n  name: {}\n  location: 'global'\n  properties: {{\n    registrationEnabled: false\n    virtualNetwork: {{ id: {} }}\n  }}\n}}\n\n",
+                bq(name),
+                bq(v)
+            ),
+            Target::Terraform => format!(
+                "resource \"azurerm_private_dns_zone_virtual_network_link\" \"vault_{n}\" {{\n  name                  = {}\n  resource_group_name   = var.resource_group_name\n  private_dns_zone_name = azurerm_private_dns_zone.vault.name\n  virtual_network_id    = {}\n  registration_enabled  = false\n}}\n\n",
+                tq(name),
+                tq(v)
+            ),
+        });
+    }
+    s
 }
 
 /// The whole design for `target`. Bicep deploys at resource-group scope (the
@@ -317,6 +380,7 @@ pub fn generate(design: &Design, target: Target) -> String {
         s.push_str(&emit(r));
         s.push('\n');
     }
+    s.push_str(&vault_dns(design, target));
     s
 }
 
@@ -679,7 +743,7 @@ mod tests {
         };
         let b = bicep_resource(&r);
         assert!(
-            b.ends_with(&format!(
+            b.contains(&format!(
                 "}}\n\nresource kvXPe 'Microsoft.Network/privateEndpoints@2023-11-01' = {{\n  name: 'pe-kv-x'\n  location: location\n  properties: {{\n    subnet: {{ id: '{SUBNET}' }}\n    privateLinkServiceConnections: [\n      {{\n        name: 'kv-x'\n        properties: {{\n          privateLinkServiceId: kvX.id\n          groupIds: [ 'vault' ]\n        }}\n      }}\n    ]\n  }}\n}}\n"
             )),
             "{b}"
@@ -695,7 +759,7 @@ mod tests {
         let t = tf_resource(&r);
         assert!(
             t.ends_with(&format!(
-                "}}\n\nresource \"azurerm_private_endpoint\" \"kv_x\" {{\n  name                = \"pe-kv-x\"\n  location            = var.location\n  resource_group_name = var.resource_group_name\n  subnet_id           = \"{SUBNET}\"\n\n  private_service_connection {{\n    name                           = \"kv-x\"\n    private_connection_resource_id = azurerm_key_vault.kv_x.id\n    subresource_names              = [\"vault\"]\n    is_manual_connection           = false\n  }}\n}}\n"
+                "}}\n\nresource \"azurerm_private_endpoint\" \"kv_x\" {{\n  name                = \"pe-kv-x\"\n  location            = var.location\n  resource_group_name = var.resource_group_name\n  subnet_id           = \"{SUBNET}\"\n\n  private_service_connection {{\n    name                           = \"kv-x\"\n    private_connection_resource_id = azurerm_key_vault.kv_x.id\n    subresource_names              = [\"vault\"]\n    is_manual_connection           = false\n  }}\n\n  private_dns_zone_group {{\n    name                 = \"default\"\n    private_dns_zone_ids = [azurerm_private_dns_zone.vault.id]\n  }}\n}}\n"
             )),
             "{t}"
         );
@@ -722,6 +786,117 @@ mod tests {
             "{t}"
         );
         assert!(t.contains("provider \"azurerm\" {\n  features {}\n}\n"), "{t}");
+    }
+
+    const VNET_A: &str = "/subscriptions/sub/resourceGroups/rg-net/providers/Microsoft.Network/virtualNetworks/vnet-a";
+    const VNET_B: &str = "/subscriptions/sub/resourceGroups/rg-hub/providers/Microsoft.Network/virtualNetworks/vnet-b";
+
+    fn vault(name: &str, subnet: Option<String>) -> Resource {
+        Resource::KeyVault {
+            name: name.into(),
+            private_endpoint_subnet: subnet,
+        }
+    }
+
+    #[test]
+    fn vnet_id_subnet_resource_id_returns_its_virtual_network() {
+        assert_eq!(vnet_id(&format!("{VNET_A}/subnets/snet-data")), Some(VNET_A));
+        assert_eq!(vnet_id(&format!("{VNET_A}/SUBNETS/snet-data")), Some(VNET_A));
+    }
+
+    #[test]
+    fn vnet_id_value_without_subnets_segment_returns_none() {
+        assert_eq!(vnet_id(VNET_A), None);
+        assert_eq!(vnet_id("snet-data"), None);
+        assert_eq!(vnet_id("/subnets/snet-data"), None);
+    }
+
+    #[test]
+    fn bicep_resource_key_vault_with_subnet_emits_dns_zone_group() {
+        let b = bicep_resource(&vault("kv-x", Some(SUBNET.into())));
+        assert!(
+            b.ends_with(
+                "}\n\nresource kvXPeDns 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2023-11-01' = {\n  parent: kvXPe\n  name: 'default'\n  properties: {\n    privateDnsZoneConfigs: [\n      {\n        name: 'privatelink-vaultcore-azure-net'\n        properties: {\n          privateDnsZoneId: vaultDnsZone.id\n        }\n      }\n    ]\n  }\n}\n"
+            ),
+            "{b}"
+        );
+    }
+
+    #[test]
+    fn tf_resource_key_vault_with_subnet_emits_dns_zone_group() {
+        let t = tf_resource(&vault("kv-x", Some(SUBNET.into())));
+        assert!(
+            t.contains(
+                "    is_manual_connection           = false\n  }\n\n  private_dns_zone_group {\n    name                 = \"default\"\n    private_dns_zone_ids = [azurerm_private_dns_zone.vault.id]\n  }\n}\n"
+            ),
+            "{t}"
+        );
+    }
+
+    fn two_vnets() -> Design {
+        design(vec![
+            vault("kv-a", Some(format!("{VNET_A}/subnets/snet-1"))),
+            vault("kv-b", Some(format!("{VNET_A}/subnets/snet-2"))),
+            vault("kv-c", Some(format!("{VNET_B}/subnets/snet-1"))),
+            vault("kv-public", None),
+        ])
+    }
+
+    #[test]
+    fn vault_dns_bicep_emits_one_zone_and_one_link_per_virtual_network() {
+        assert_eq!(
+            vault_dns(&two_vnets(), Target::Bicep),
+            format!(
+                "resource vaultDnsZone 'Microsoft.Network/privateDnsZones@2024-06-01' = {{\n  name: 'privatelink.vaultcore.azure.net'\n  location: 'global'\n}}\n\nresource vaultDnsLink1 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2024-06-01' = {{\n  parent: vaultDnsZone\n  name: 'link-vnet-a'\n  location: 'global'\n  properties: {{\n    registrationEnabled: false\n    virtualNetwork: {{ id: '{VNET_A}' }}\n  }}\n}}\n\nresource vaultDnsLink2 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2024-06-01' = {{\n  parent: vaultDnsZone\n  name: 'link-vnet-b'\n  location: 'global'\n  properties: {{\n    registrationEnabled: false\n    virtualNetwork: {{ id: '{VNET_B}' }}\n  }}\n}}\n\n"
+            )
+        );
+    }
+
+    #[test]
+    fn vault_dns_terraform_emits_one_zone_and_one_link_per_virtual_network() {
+        assert_eq!(
+            vault_dns(&two_vnets(), Target::Terraform),
+            format!(
+                "resource \"azurerm_private_dns_zone\" \"vault\" {{\n  name                = \"privatelink.vaultcore.azure.net\"\n  resource_group_name = var.resource_group_name\n}}\n\nresource \"azurerm_private_dns_zone_virtual_network_link\" \"vault_1\" {{\n  name                  = \"link-vnet-a\"\n  resource_group_name   = var.resource_group_name\n  private_dns_zone_name = azurerm_private_dns_zone.vault.name\n  virtual_network_id    = \"{VNET_A}\"\n  registration_enabled  = false\n}}\n\nresource \"azurerm_private_dns_zone_virtual_network_link\" \"vault_2\" {{\n  name                  = \"link-vnet-b\"\n  resource_group_name   = var.resource_group_name\n  private_dns_zone_name = azurerm_private_dns_zone.vault.name\n  virtual_network_id    = \"{VNET_B}\"\n  registration_enabled  = false\n}}\n\n"
+            )
+        );
+    }
+
+    #[test]
+    fn vault_dns_same_vnet_name_in_two_groups_gets_distinct_link_names() {
+        let other = VNET_B.replace("vnet-b", "vnet-a");
+        let d = design(vec![
+            vault("kv-a", Some(format!("{VNET_A}/subnets/s"))),
+            vault("kv-b", Some(format!("{other}/subnets/s"))),
+        ]);
+        let b = vault_dns(&d, Target::Bicep);
+        assert!(b.contains("  name: 'link-vnet-a'\n"), "{b}");
+        assert!(b.contains("  name: 'link-vnet-a-2'\n"), "{b}");
+    }
+
+    #[test]
+    fn vault_dns_endpoint_subnet_without_vnet_emits_zone_but_no_link() {
+        let d = design(vec![vault("kv-a", Some("snet-data".into()))]);
+        let t = vault_dns(&d, Target::Terraform);
+        assert!(t.contains("resource \"azurerm_private_dns_zone\" \"vault\""), "{t}");
+        assert!(!t.contains("virtual_network_link"), "{t}");
+    }
+
+    #[test]
+    fn vault_dns_no_private_endpoint_emits_nothing() {
+        let d = design(vec![vault("kv-public", None), app(true, false, Some(SUBNET), &[])]);
+        assert_eq!(vault_dns(&d, Target::Bicep), "");
+        assert_eq!(vault_dns(&d, Target::Terraform), "");
+    }
+
+    #[test]
+    fn generate_key_vault_endpoint_includes_vault_dns() {
+        let d = design(vec![vault("kv-a", Some(format!("{VNET_A}/subnets/s")))]);
+        for target in [Target::Bicep, Target::Terraform] {
+            let g = generate(&d, target);
+            assert!(g.ends_with(&vault_dns(&d, target)), "{g}");
+            assert!(g.contains("privatelink.vaultcore.azure.net"), "{g}");
+        }
     }
 
     #[test]
