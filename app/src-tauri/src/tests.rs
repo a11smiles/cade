@@ -20,14 +20,27 @@ fn window(app: &tauri::App<MockRuntime>) -> WebviewWindow<MockRuntime> {
         .expect("mock window builds")
 }
 
+/// The app's own origin, which the ACL allows to call app commands. Tauri serves it as
+/// `http://tauri.localhost` on Windows and Android and `tauri://localhost` elsewhere
+/// (as in the `tauri::test` docs); any other origin is remote and rejected.
+const LOCAL_ORIGIN: &str = if cfg!(any(windows, target_os = "android")) {
+    "http://tauri.localhost"
+} else {
+    "tauri://localhost"
+};
+
 fn invoke(window: &WebviewWindow<MockRuntime>, cmd: &str, args: Value) -> Result<Value, Value> {
+    invoke_from(window, LOCAL_ORIGIN, cmd, args)
+}
+
+fn invoke_from(window: &WebviewWindow<MockRuntime>, origin: &str, cmd: &str, args: Value) -> Result<Value, Value> {
     get_ipc_response(
         window,
         InvokeRequest {
             cmd: cmd.into(),
             callback: CallbackFn(0),
             error: CallbackFn(1),
-            url: "tauri://localhost".parse().expect("valid url"),
+            url: origin.parse().expect("valid url"),
             body: InvokeBody::Json(args),
             headers: Default::default(),
             invoke_key: INVOKE_KEY.to_string(),
@@ -115,7 +128,12 @@ fn check_shell_missing_command_argument_returns_error() {
     let app = app();
     let w = window(&app);
 
-    assert!(invoke(&w, "check_shell", json!({})).is_err());
+    assert_eq!(
+        invoke(&w, "check_shell", json!({})),
+        Err(json!(
+            "invalid args `command` for command `check_shell`: command check_shell missing required key command"
+        ))
+    );
 }
 
 #[test]
@@ -154,7 +172,12 @@ fn preview_feedback_unknown_kind_returns_error() {
     let mut args = bug("Canvas freezes", "It froze.");
     args["feedback"]["kind"] = json!("rant");
 
-    assert!(invoke(&w, "preview_feedback", args).is_err());
+    assert_eq!(
+        invoke(&w, "preview_feedback", args),
+        Err(json!(
+            "invalid args `feedback` for command `preview_feedback`: unknown variant `rant`, expected one of `bug`, `feature-request`, `comment`"
+        ))
+    );
 }
 
 #[test]
@@ -172,5 +195,19 @@ fn with_commands_unregistered_command_is_rejected() {
     let app = app();
     let w = window(&app);
 
-    assert!(invoke(&w, "delete_everything", json!({})).is_err());
+    assert_eq!(
+        invoke(&w, "delete_everything", json!({})),
+        Err(json!("Command delete_everything not found"))
+    );
+}
+
+#[test]
+fn with_commands_remote_origin_is_not_allowed() {
+    let app = app();
+    let w = window(&app);
+
+    assert_eq!(
+        invoke_from(&w, "https://example.com", "check_shell", json!({ "command": "ls" })),
+        Err(json!("check_shell not allowed. Plugin not found"))
+    );
 }
