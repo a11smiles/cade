@@ -5,6 +5,19 @@
 //! the project's real design-system components (never look-alikes). The
 //! reverse direction (parse TSX edits back onto the canvas) is APP backlog.
 
+/// Why a screen could not be generated.
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+pub enum CodegenError {
+    #[error("invalid component name: {0:?}")]
+    InvalidComponentName(String),
+    #[error("invalid prop name: {0:?}")]
+    InvalidPropName(String),
+    #[error("invalid screen name: {0:?}")]
+    InvalidScreenName(String),
+    #[error("invalid package name: {0:?}")]
+    InvalidPackageName(String),
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Element {
     pub component: String,
@@ -80,6 +93,33 @@ fn literal_expression(v: &str) -> Option<&str> {
     literal.then_some(v)
 }
 
+fn is_identifier(s: &str, allow_hyphen: bool) -> bool {
+    let mut chars = s.chars();
+    chars.next().is_some_and(|c| c.is_ascii_alphabetic() || c == '_' || c == '$')
+        && chars.all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '$' || (allow_hyphen && c == '-'))
+}
+
+fn valid_component(name: &str) -> bool {
+    name.split('.').all(|part| is_identifier(part, false))
+}
+
+fn valid_package(name: &str) -> bool {
+    !name.is_empty()
+        && !name
+            .chars()
+            .any(|c| matches!(c, '\'' | '\\' | '`') || c.is_control() || c.is_whitespace())
+}
+
+fn validate(e: &Element) -> Result<(), CodegenError> {
+    if !valid_component(&e.component) {
+        return Err(CodegenError::InvalidComponentName(e.component.clone()));
+    }
+    if let Some((k, _)) = e.props.iter().find(|(k, _)| !is_identifier(k, true)) {
+        return Err(CodegenError::InvalidPropName(k.clone()));
+    }
+    e.children.iter().try_for_each(validate)
+}
+
 fn prop(k: &str, v: &str) -> String {
     if let Some(expr) = literal_expression(v) {
         format!(" {k}={expr}")
@@ -116,21 +156,73 @@ fn render(e: &Element, depth: usize, out: &mut String) {
 }
 
 /// Emit a screen component that imports from `package`.
-pub fn screen(name: &str, package: &str, root: &Element) -> String {
+pub fn screen(name: &str, package: &str, root: &Element) -> Result<String, CodegenError> {
+    if !is_identifier(name, false) {
+        return Err(CodegenError::InvalidScreenName(name.into()));
+    }
+    if !valid_package(package) {
+        return Err(CodegenError::InvalidPackageName(package.into()));
+    }
+    validate(root)?;
     let mut imports = vec![];
     collect(root, &mut imports);
     imports.sort();
     let mut body = String::new();
     render(root, 2, &mut body);
-    format!(
+    Ok(format!(
         "import {{ {} }} from '{package}';\n\nexport function {name}() {{\n  return (\n{body}  );\n}}\n",
         imports.join(", ")
-    )
+    ))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn screen(name: &str, package: &str, root: &Element) -> String {
+        super::screen(name, package, root).unwrap()
+    }
+
+    #[test]
+    fn screen_rejects_hostile_prop_names() {
+        let tree = Element::new("Button").prop("onClick={steal} title", "x");
+        assert_eq!(
+            super::screen("S", "@contoso/ds", &tree),
+            Err(CodegenError::InvalidPropName("onClick={steal} title".into()))
+        );
+    }
+
+    #[test]
+    fn screen_rejects_hostile_component_names_including_nested() {
+        for name in ["Button onClick={steal}", "", "A..B", "Button>", "1Btn"] {
+            let tree = Element::new("Form").child(Element::new(name));
+            assert_eq!(
+                super::screen("S", "@contoso/ds", &tree),
+                Err(CodegenError::InvalidComponentName(name.into()))
+            );
+        }
+    }
+
+    #[test]
+    fn screen_rejects_hostile_screen_and_package_names() {
+        let tree = Element::new("Button");
+        assert!(matches!(
+            super::screen("S() {}; evil", "@contoso/ds", &tree),
+            Err(CodegenError::InvalidScreenName(_))
+        ));
+        assert!(matches!(
+            super::screen("S", "x';evil('", &tree),
+            Err(CodegenError::InvalidPackageName(_))
+        ));
+    }
+
+    #[test]
+    fn screen_accepts_dotted_data_and_aria_names() {
+        let tree = Element::new("Menu.Item").prop("data-x", "1").prop("aria-label", "Open");
+        let tsx = screen("S", "@contoso/ds", &tree);
+        assert!(tsx.contains("<Menu.Item data-x=\"1\" aria-label=\"Open\" />"));
+    }
+
     #[test]
     fn emits_ds_imports_and_jsx() {
         let tree = Element::new("Stepper.Page")
