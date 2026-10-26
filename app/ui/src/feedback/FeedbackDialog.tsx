@@ -171,8 +171,9 @@ export function FeedbackDialog({ onClose }: { onClose: () => void }) {
   const { current, retry } = useFeedbackPreview(feedback);
   const preview = current?.status === 'ready' ? current.draft : undefined;
 
-  const canSend = inTauri && current?.status === 'ready' && title.trim() !== '' &&
+  const uiHasRequiredFields = title.trim() !== '' &&
     form.questions.every((q) => !q.required || (answers[q.id] ?? '').trim() !== '');
+  const canSend = inTauri && current?.status === 'ready' && uiHasRequiredFields;
 
   async function send() {
     if (!canSend || current?.status !== 'ready' || status.kind === 'sending') return;
@@ -265,7 +266,13 @@ export function FeedbackDialog({ onClose }: { onClose: () => void }) {
                 </label>
                 <span id="fb-logs-unavailable" className="fb-muted fb-check-note">Recent logs are not available. No logs will be sent.</span>
                 <div className="fb-safe">Never sent unless you attach it: designs, prompts, Copilot threads, file paths and project names.</div>
-                {inTauri && current?.status === 'failed' && (
+                {inTauri && !uiHasRequiredFields && (
+                  <span className="fb-muted">Complete the required fields to preview your issue.</span>
+                )}
+                {inTauri && uiHasRequiredFields && (!current || current.status === 'pending') && (
+                  <span className="fb-muted" role="status">Updating issue preview…</span>
+                )}
+                {inTauri && uiHasRequiredFields && current?.status === 'failed' && (
                   <>
                     <span className="fb-error" role="alert">Couldn’t preview your issue. Your entries are still in this form.</span>
                     <Button onClick={retry}>Retry preview</Button>
