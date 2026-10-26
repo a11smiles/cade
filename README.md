@@ -1,8 +1,33 @@
 # CADE — Copilot ADE
 
-CADE is a local, cross-platform design workbench driven by GitHub Copilot. It's meant to replace Figma, Visio and Spark for enterprise teams. You can design apps, images, decks, documents, motion, diagrams, Azure architecture and data models, then ship them as pull requests. Everything runs on your machine with your Copilot seat or your own model key, under your organization's policy.
+[![CI](https://github.com/a11smiles/cade/actions/workflows/ci.yml/badge.svg)](https://github.com/a11smiles/cade/actions/workflows/ci.yml)
 
-> **Status: pre-alpha scaffold.** The workspace builds and its tests pass. The full plan is the [issue backlog](https://github.com/a11smiles/cade/issues): 535 items, starting with milestone M1.
+CADE is a local, cross-platform design workbench driven by GitHub Copilot. The project aims to support Copilot-assisted design workflows; this repository is a pre-alpha scaffold, not a finished replacement for Figma, Visio, or Spark.
+
+> **Status: pre-alpha scaffold.** The app and crate functionality are partial. See the source-build guidance below and follow development in the [issue backlog](https://github.com/a11smiles/cade/issues).
+
+## Project types and format mappings
+
+The project model defines eight output types. The exporter crate maps them to the formats below; these mappings do not imply that each format has a complete end-to-end exporter.
+
+| Project type | Formats mapped in code |
+|---|---|
+| App | PNG, SVG, PDF |
+| Image | PNG, SVG, PDF |
+| Deck | PPTX, PDF, PNG |
+| Document | PDF, DOCX, Markdown |
+| Motion | MP4, GIF, Lottie, CSS |
+| Diagram | VSDX, SVG, PDF, PNG, Mermaid |
+| Azure architecture | Bicep, Terraform, SVG, PNG |
+| Data model | SQL, SVG, PNG |
+
+## Screenshots
+
+Static previews captured from the `Main` screen in design export `v0001-2026-10-25`; these show the design canvas, not running CADE app behavior.
+
+![Static dark-theme preview of the Main screen from design export v0001-2026-10-25, showing the Claims Portal intake-flow canvas and Copilot panel](assets/readme/cade-workspace-dark.png)
+
+![Static light-theme preview of the Main screen from design export v0001-2026-10-25, showing the Claims Portal intake-flow canvas and Copilot panel](assets/readme/cade-workspace-light.png)
 
 ## What's here
 
@@ -28,7 +53,7 @@ cargo test -p cade-app            # Tauri IPC commands (needs the platform webvi
 cargo run -p cade-app             # desktop app (needs the platform webview)
 ```
 
-Linux needs `libwebkit2gtk-4.1-dev`, `librsvg2-dev` and `libsecret-1-dev`.
+Linux needs `libwebkit2gtk-4.1-dev`, `libayatana-appindicator3-dev`, `librsvg2-dev`, `libsecret-1-dev` and `libfontconfig1-dev`.
 
 ## Starting points already in code
 
