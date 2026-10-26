@@ -24,7 +24,7 @@ jobs:
       - name: Clippy
         run: cargo clippy --workspace --exclude cade-app --all-targets -- -D warnings
       - name: Test
-        run: cargo test --workspace --exclude cade-app
+        run: cargo test --workspace --exclude cade-app --no-fail-fast
   app:
     name: App (${{ matrix.os }})
     needs: crates
