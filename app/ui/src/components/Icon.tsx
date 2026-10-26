@@ -1,3 +1,5 @@
+import markUrl from '../assets/cade-mark.png';
+
 const PATHS = {
   sparkle: 'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z',
   shield: 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z',
@@ -20,12 +22,7 @@ export function Icon({ name, size = 16, label }: { name: IconName; size?: number
   );
 }
 
+/** The CADE sparkle logo, the same artwork as the app icon (`app/src-tauri/icons/app-icon.png`). */
 export function Mark({ size = 26 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 26 26" aria-hidden="true">
-      <rect x="1" y="1" width="24" height="24" rx="7" fill="#6B57F0" />
-      <path d="M8 18c2-1 3-4 5-7s4-3 5-2-1 3-3 5-5 3-7 4z" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinejoin="round" />
-      <circle cx="8" cy="18" r="1.6" fill="#F0B44C" />
-    </svg>
-  );
+  return <img src={markUrl} width={size} height={size} alt="" aria-hidden="true" draggable={false} />;
 }

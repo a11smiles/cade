@@ -76,6 +76,21 @@ resource kvClaimsPe 'Microsoft.Network/privateEndpoints@2023-11-01' = {
   }
 }
 
+resource kvClaimsPeDns 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2023-11-01' = {
+  parent: kvClaimsPe
+  name: 'default'
+  properties: {
+    privateDnsZoneConfigs: [
+      {
+        name: 'privatelink-vaultcore-azure-net'
+        properties: {
+          privateDnsZoneId: vaultDnsZone.id
+        }
+      }
+    ]
+  }
+}
+
 resource stclaimsphotos 'Microsoft.Storage/storageAccounts@2023-05-01' = {
   name: 'stclaimsphotos'
   location: location
@@ -84,6 +99,21 @@ resource stclaimsphotos 'Microsoft.Storage/storageAccounts@2023-05-01' = {
   properties: {
     allowBlobPublicAccess: false
     minimumTlsVersion: 'TLS1_2'
+  }
+}
+
+resource vaultDnsZone 'Microsoft.Network/privateDnsZones@2024-06-01' = {
+  name: 'privatelink.vaultcore.azure.net'
+  location: 'global'
+}
+
+resource vaultDnsLink1 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2024-06-01' = {
+  parent: vaultDnsZone
+  name: 'link-vnet-claims'
+  location: 'global'
+  properties: {
+    registrationEnabled: false
+    virtualNetwork: { id: '/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-claims-net/providers/Microsoft.Network/virtualNetworks/vnet-claims' }
   }
 }
 

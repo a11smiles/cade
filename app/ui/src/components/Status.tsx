@@ -5,8 +5,8 @@ import './components.css';
 export type OutputKind = 'app' | 'image' | 'deck' | 'document' | 'motion' | 'diagram' | 'architecture' | 'data';
 const LABEL: Record<OutputKind, string> = { app: 'App', image: 'Image', deck: 'Deck', document: 'Document', motion: 'Motion', diagram: 'Diagram', architecture: 'Architecture', data: 'Data model' };
 
-export function TypeTag({ kind }: { kind: OutputKind }) {
-  return <span className="c-tag" style={{ background: `var(--tag-${kind})`, color: `var(--tag-${kind}-text)` }}>{LABEL[kind]}</span>;
+export function TypeTag({ kind, id }: { kind: OutputKind; id?: string }) {
+  return <span id={id} className="c-tag" style={{ background: `var(--tag-${kind})`, color: `var(--tag-${kind}-text)` }}>{LABEL[kind]}</span>;
 }
 
 export function StatusPill({ tone = 'neutral', icon, children }: { tone?: 'policy' | 'success' | 'danger' | 'accent' | 'neutral'; icon?: IconName; children: ReactNode }) {
