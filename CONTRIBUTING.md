@@ -26,6 +26,7 @@ cargo run -p cade-app
 
 ## Rules of the road
 
+- Participation is governed by the [Code of Conduct](CODE_OF_CONDUCT.md).
 - One backlog item per pull request where possible. Put the id in the PR title.
 - Every future code commit must reference an actual backlog issue number in its commit message. Keep code commits and PRs scoped to identified backlog work; do not bundle unrelated work.
 - Link existing code history through issue evidence comments with commit SHA links; never rewrite history merely to add attribution. A commit alone does not establish issue completion.
@@ -37,4 +38,10 @@ cargo run -p cade-app
 
 ## Feedback without code
 
-Use the issue forms (bug, feature request, comment), or Help › Send feedback inside CADE.
+Choose the issue form that best fits your feedback:
+
+- **Bug:** Something is broken or wrong.
+- **Feature request:** A capability or change CADE should add.
+- **Comment or question:** Praise, questions, or general feedback. Comment submissions are triaged weekly and may be converted to Discussions.
+
+You can also use Help › Send feedback inside CADE.
