@@ -35,4 +35,10 @@ cargo run -p cade-app
 
 ## Feedback without code
 
-Use the issue forms (bug, feature request, comment), or Help › Send feedback inside CADE.
+Choose the issue form that best fits your feedback:
+
+- **Bug:** Something is broken or wrong.
+- **Feature request:** A capability or change CADE should add.
+- **Comment or question:** Praise, questions, or general feedback. Comment submissions are triaged weekly and may be converted to Discussions.
+
+You can also use Help › Send feedback inside CADE.
