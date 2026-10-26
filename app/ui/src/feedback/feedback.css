@@ -13,6 +13,8 @@
 .fb-kind { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: var(--radius-xl); border: 1px solid var(--border); background: var(--bg-raised); text-align: left; cursor: pointer; }
 .fb-kind[aria-checked="true"] { border: 1.5px solid var(--accent-selection); background: var(--accent-soft); }
 .fb-check { display: flex; align-items: center; gap: 10px; font-size: 12px; }
+.fb-check:has(input:disabled) { color: var(--text-muted); }
+.fb-check-note { margin-top: calc(-1 * var(--space-2)); padding-left: var(--space-6); }
 .fb-safe { padding: 12px; border-radius: var(--radius-lg); background: var(--success); color: var(--success-text); font-size: 12px; }
 .fb-preview { margin: 0; padding: 12px; border-radius: var(--radius-lg); background: var(--bg-raised); font: 400 11px/16px var(--font-mono); white-space: pre-wrap; max-height: 220px; overflow: auto; }
 .fb-error { color: var(--danger-text); font-size: 12px; }

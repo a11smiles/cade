@@ -36,6 +36,39 @@ test.describe('Feedback outside the desktop app', () => {
     await expect(page.getByRole('dialog')).toHaveCount(0);
   });
 
+  test('Feedback_KeyboardOnly_FocusStaysInsideAndEscapeReturnsToOpener', async ({ page }) => {
+    await page.goto('/');
+    const opener = page.getByRole('button', { name: 'Send feedback' });
+
+    await opener.focus();
+    await page.keyboard.press('Enter');
+    const dialog = page.getByRole('dialog', { name: 'Send feedback' });
+    await expect(dialog.getByRole('button', { name: 'Close' })).toBeFocused();
+
+    for (let i = 0; i < 20; i++) {
+      await page.keyboard.press('Tab');
+      expect(await dialog.evaluate((el) => el.contains(document.activeElement))).toBe(true);
+    }
+    for (let i = 0; i < 5; i++) {
+      await page.keyboard.press('Shift+Tab');
+      expect(await dialog.evaluate((el) => el.contains(document.activeElement))).toBe(true);
+    }
+
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(opener).toBeFocused();
+  });
+
+  test('Feedback_LogsOption_IsDisabledAndSaysItIsUnavailable', async ({ page }) => {
+    const dialog = await openFeedback(page);
+
+    const logs = dialog.getByRole('checkbox', { name: /Recent logs, scrubbed/ });
+
+    await expect(logs).toBeDisabled();
+    await expect(logs).not.toBeChecked();
+    await expect(logs).toHaveAccessibleDescription('Not available yet');
+  });
+
   test('Feedback_Opened_FitsTheWindow', async ({ page }) => {
     const dialog = await openFeedback(page);
 
@@ -51,6 +84,18 @@ test.describe('Feedback outside the desktop app', () => {
 });
 
 test.describe('Feedback in the desktop app (mock IPC)', () => {
+  test('Feedback_TypedRightAfterOpening_KeepsEveryAnswer', async ({ page }) => {
+    await mockTauri(page);
+    for (let i = 0; i < 15; i++) {
+      const dialog = await openFeedback(page);
+      await fillBug(page);
+
+      await expect(dialog.getByRole('textbox', { name: /What happened\?/ })).toHaveValue('It froze.', { timeout: 1000 });
+      await expect(dialog.getByRole('textbox', { name: /Steps to reproduce/ })).toHaveValue('Open a big file.', { timeout: 1000 });
+      await expect(dialog.getByRole('button', { name: 'Submit bug' })).toBeEnabled({ timeout: 1000 });
+    }
+  });
+
   test('Feedback_FormEdited_PreviewShowsWhatGitHubWillReceive', async ({ page }) => {
     await mockTauri(page);
     const dialog = await openFeedback(page);
