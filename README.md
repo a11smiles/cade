@@ -1,57 +1,123 @@
 # CADE — Copilot ADE
 
-CADE is a local, cross-platform design workbench driven by GitHub Copilot. It's meant to replace Figma, Visio and Spark for enterprise teams. You can design apps, images, decks, documents, motion, diagrams, Azure architecture and data models, then ship them as pull requests. Everything runs on your machine with your Copilot seat or your own model key, under your organization's policy.
+[![CI](https://github.com/a11smiles/cade/actions/workflows/ci.yml/badge.svg)](https://github.com/a11smiles/cade/actions/workflows/ci.yml)
 
-> **Status: pre-alpha scaffold.** The workspace builds and its tests pass. The full plan is the [issue backlog](https://github.com/a11smiles/cade/issues): 535 items, starting with milestone M1.
+CADE is a local, cross-platform desktop workbench for GitHub Copilot-assisted
+design work. Its project types cover apps, images, decks, documents, motion,
+diagrams, Azure architecture and data models. Projects and the workbench run
+locally; Copilot and other configured model requests use their respective
+services.
 
-## What's here
+> **Status: early development / pre-alpha.** The repository contains an evolving
+> desktop scaffold and working pieces of the underlying crates, not a finished
+> or production-ready design product. The project is versioned `0.1.0`. CI
+> checks the crates, UI and desktop app on supported platforms, but does not
+> publish installers. There are currently no prebuilt downloads.
+
+## Design references
+
+These screenshots were rendered from the latest design export,
+[`v0001-2026-10-25`](design/exports/v0001-2026-10-25/README.md). Click either
+image to open the exact design-canvas source file.
+
+[![CADE Main workspace in dark theme](assets/screenshots/main-dark.png)](design/exports/v0001-2026-10-25/Main.dc.html)
+
+[![CADE Main workspace in light theme](assets/screenshots/main-light.png)](design/exports/v0001-2026-10-25/Main.light.dc.html)
+
+## Install
+
+There are no published packages to install yet. Check
+[GitHub Releases](https://github.com/a11smiles/cade/releases) for future
+downloads. The configured package targets are:
+
+| Platform | Package formats | Packaging guidance |
+|---|---|---|
+| macOS | `.dmg`, `.app` | [Tauri macOS bundles](https://v2.tauri.app/distribute/macos-application-bundle/) |
+| Windows | `.msi`, NSIS installer | [Tauri Windows installers](https://v2.tauri.app/distribute/windows-installer/) |
+| Linux | `.deb`, `.rpm`, `.AppImage` | [Tauri Linux packages](https://v2.tauri.app/distribute/linux/) |
+
+These are configured build targets, not available downloads. See
+[`tauri.conf.json`](app/src-tauri/tauri.conf.json) for the project's target
+configuration.
+
+## Build from source
+
+Use a checkout of this repository. The project pins Rust in
+[`rust-toolchain.toml`](rust-toolchain.toml); the UI uses Node.js 22 and pnpm
+12.15.0. Install the relevant [Tauri platform prerequisites](https://v2.tauri.app/start/prerequisites/)
+first. On Linux, CADE's CI installs `libwebkit2gtk-4.1-dev`,
+`libayatana-appindicator3-dev`, `librsvg2-dev`, `libsecret-1-dev` and
+`libfontconfig1-dev`.
+
+From the repository root, build the UI and desktop app:
+
+```sh
+pnpm --dir app/ui install --frozen-lockfile
+pnpm --dir app/ui build
+cargo build -p cade-app
+```
+
+These are the UI and app build steps used by the cross-platform CI workflow.
+They build the source application; they do not publish installers.
+
+## Project contents
 
 | Path | What |
 |---|---|
-| `crates/` | 19 Rust crates: document model, CRDT, renderer, Copilot, policy, GitHub, importers, generators |
-| `app/src-tauri/` | Tauri 2 desktop shell (`cade-app`) and its IPC commands |
-| `app/ui/` | React + TypeScript UI: Start screen, theming and the feedback dialog, so far |
-| `design/system/` | CADE's own design tokens (dark and light) and brand book. Source of `tokens.css` |
-| `design/exports/` | Versioned UI design exports. Never overwritten; see its README |
-| `assets/icons/azure/` | Drop Microsoft's Azure Architecture Icons here (not committed) |
+| `crates/` | 19 Rust crates for the document model, CRDT, rendering, Copilot, policy, GitHub integration, importers, exporters and generators |
+| `app/src-tauri/` | Tauri 2 desktop shell (`cade-app`) and IPC commands |
+| `app/ui/` | React + TypeScript desktop UI |
+| `design/system/` | CADE design tokens (dark and light) and brand book; `tokens.json` is the source for `tokens.css` |
+| `design/exports/` | Versioned UI design-canvas exports; old exports are kept unchanged |
+| `assets/icons/azure/` | Location for Microsoft's Azure Architecture Icons; icon assets are not included |
 | `docs/` | Architecture overview and decision records |
 
-## Build
+## Output types
 
-```sh
-cargo test                        # all crates; no webview needed
-pnpm --dir app/ui install
-pnpm --dir app/ui build           # regenerates tokens.css, type-checks, bundles
-pnpm --dir app/ui test            # UI unit tests (Vitest + Testing Library, jsdom)
-pnpm --dir app/ui test:e2e        # UI end-to-end (Playwright, Chromium; mock Tauri IPC)
-cargo test -p cade-app            # Tauri IPC commands (needs the platform webview)
-cargo run -p cade-app             # desktop app (needs the platform webview)
-```
+The project model defines eight output types. The export crate also declares
+the formats associated with each type; these declarations describe the planned
+export menu, not a claim that all end-to-end exporters are complete.
 
-Linux needs `libwebkit2gtk-4.1-dev`, `librsvg2-dev` and `libsecret-1-dev`.
+| Output type | Declared formats |
+|---|---|
+| App, image | PNG, SVG, PDF |
+| Deck | PPTX, PDF, PNG |
+| Document | PDF, DOCX, Markdown |
+| Motion | MP4, GIF, Lottie, CSS |
+| Diagram | VSDX, SVG, PDF, PNG, Mermaid |
+| Azure architecture | Bicep, Terraform, SVG, PNG |
+| Data model | SQL, SVG, PNG |
 
-## Starting points already in code
+## Implemented starting points
 
-| Crate | Working today | Backlog |
-|---|---|---|
-| `cade-core` | Output kinds, nodes, token-bound values, hex colors | CORE |
-| `cade-crdt` | Loro project doc, movable layer tree, snapshot save/open, merge, JSON mirror | CORE |
-| `cade-policy` | Full `policy.yml` schema and decisions for models, BYOK, shell, network, MCP, design systems, shipping, telemetry, token budgets | POLICY |
-| `cade-copilot` | Copilot and BYOK through the Copilot SDK, a policy-enforcing permission handler, change sets, token meter | COPILOT |
-| `cade-github` | Device-flow sign-in, keychain storage, github.com / GHE.com / GHES, issues, duplicate search, PRs | GH, FEED |
-| `cade-feedback` | Bug / feature / comment → labeled, redacted issue matching the issue forms | FEED |
-| `cade-ddl` | DDL for PostgreSQL, SQL Server, MySQL and Oracle; reversible migrations; PII check | DATA |
-| `cade-iac` | Bicep and Terraform (azurerm) for App Service, SQL, Key Vault, Storage; missing-setting check | ARCH |
-| `cade-system` | Bindings, impact tracing and deploy order across Data → App → Architecture | SYS |
-| `cade-io-visio` | `.vsdx` package reader: pages, masters, macro detection | DIAGRAM |
-| `cade-io-pptx`, `-figma`, `-spark` | Package/slide reader, Figma link parsing and endpoints, Spark repo scan | IMPORT |
-| `cade-render`, `-text`, `-layout` | Vello scene from nodes, Parley text layout, Taffy auto layout | CANVAS |
-| `cade-codegen-react` | Design-system TSX emitter | APP |
+These are existing crate capabilities, not a statement that the complete CADE
+application is finished. Most are still part of a broader, unfinished product.
+
+| Crate | Existing code |
+|---|---|
+| `cade-core` | Output kinds, nodes, token-bound values and hex colors |
+| `cade-crdt` | Loro project document, movable layer tree, snapshot save/open, merge and JSON mirror |
+| `cade-policy` | `policy.yml` schema and decisions for models, BYOK, shell, network, MCP, design systems, shipping, telemetry and token budgets |
+| `cade-copilot` | Copilot and BYOK through the Copilot SDK, permission handler, change sets and token meter |
+| `cade-github` | Device-flow sign-in, keychain storage, github.com / GHE.com / GHES, issues, duplicate search and PRs |
+| `cade-feedback` | Bug / feature / comment feedback mapped to labeled, redacted issues |
+| `cade-ddl` | PostgreSQL, SQL Server, MySQL and Oracle DDL; reversible migrations; PII check |
+| `cade-iac` | Bicep and Terraform (azurerm) for App Service, SQL, Key Vault and Storage; missing-setting check |
+| `cade-system` | Bindings, impact tracing and deploy order across Data → App → Architecture |
+| `cade-io-visio` | `.vsdx` package reader for pages, masters and macro detection |
+| `cade-io-pptx`, `cade-io-figma`, `cade-io-spark` | Package/slide reader, Figma link parsing and endpoints, Spark repository scan |
+| `cade-render`, `cade-text`, `cade-layout` | Vello scene from nodes, Parley text layout and Taffy auto layout |
+| `cade-codegen-react` | Design-system TSX emitter |
 
 ## Feedback
 
-Use Help › Send feedback in the app, or the issue forms here (bug, feature request, comment). Either way the issue is filed from your own GitHub account. Set `CADE_FEEDBACK_OWNER` at build time to the GitHub account that owns this repo.
+Use Help → Send feedback in the app, or the
+[GitHub issue forms](https://github.com/a11smiles/cade/issues). Feedback is
+filed from your own GitHub account. Set `CADE_FEEDBACK_OWNER` at build time to
+the GitHub account that owns this repository.
 
-## License
+## License and affiliation
 
-Apache-2.0. CADE is an independent project, not affiliated with GitHub or Microsoft. See [NOTICE](NOTICE).
+CADE is licensed under Apache-2.0; see [NOTICE](NOTICE). CADE is an independent
+project and is not affiliated with, endorsed by, or sponsored by GitHub or
+Microsoft.
