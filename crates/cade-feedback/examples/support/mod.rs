@@ -31,7 +31,8 @@ pub(crate) fn forms() -> Result<String, Box<dyn Error>> {
     let mut forms = BTreeMap::new();
     for kind in [FeedbackKind::Bug, FeedbackKind::FeatureRequest, FeedbackKind::Comment] {
         let yaml = std::fs::read_to_string(root.join(kind.template()))?;
-        let form: serde_json::Value = serde_yaml_ng::from_str(&yaml)?;
+        let mut form: serde_json::Value = serde_yaml_ng::from_str(&yaml)?;
+        form.sort_all_objects();
         let key = serde_json::to_value(kind)?;
         forms.insert(key.as_str().ok_or("feedback kind must serialize as a string")?.to_owned(), form);
     }
