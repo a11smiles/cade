@@ -8,6 +8,8 @@ const ci = !!process.env.CI;
 // (e2e/tauri.ts); the native shell itself is covered by `cargo test -p cade-app`.
 export default defineConfig({
   testDir: 'e2e',
+  globalSetup: './e2e/global-setup.ts',
+  workers: 2,
   fullyParallel: true,
   forbidOnly: ci,
   retries: 0,
