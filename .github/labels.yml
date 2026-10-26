@@ -4,6 +4,9 @@
 - { name: bug,          color: "B42323", description: "Something is broken or wrong" }
 - { name: enhancement,  color: "6B57F0", description: "Feature request" }
 - { name: feedback,     color: "5C6373", description: "Comment, praise, question or idea" }
+- { name: "type:bug",     color: "B42323", description: "Bug report" }
+- { name: "type:feature", color: "6B57F0", description: "Feature request" }
+- { name: "type:comment", color: "5C6373", description: "Comment or question" }
 - { name: needs-triage, color: "F0B44C", description: "Not yet reviewed" }
 - { name: security,     color: "8A1C1C", description: "Security-related" }
 - { name: from-app,     color: "1D7A4D", description: "Filed from inside CADE" }
