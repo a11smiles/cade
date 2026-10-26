@@ -3,5 +3,5 @@ ALTER TABLE [shop].[orders] ADD [placed_at] datetimeoffset NOT NULL DEFAULT sysd
 CREATE TABLE [shop].[shipments] (
   [id] uniqueidentifier PRIMARY KEY DEFAULT newsequentialid(),
   [order_id] uniqueidentifier NOT NULL REFERENCES [shop].[orders]([id]),
-  [method] nvarchar(32) NOT NULL
+  [method] nvarchar(32) NOT NULL CONSTRAINT [ck_shipments_method] CHECK ([method] IN ('ground', 'air'))
 );

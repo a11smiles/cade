@@ -91,6 +91,11 @@ impl Rgba {
     /// Parse `#rgb`, `#rrggbb` or `#rrggbbaa`.
     pub fn from_hex(s: &str) -> Result<Self, CoreError> {
         let h = s.strip_prefix('#').ok_or_else(|| CoreError::BadColor(s.into()))?;
+        // ASCII hex digits only: keeps the byte slicing below on char boundaries,
+        // and rejects the `+` sign `from_str_radix` would otherwise accept.
+        if !h.bytes().all(|b| b.is_ascii_hexdigit()) {
+            return Err(CoreError::BadColor(s.into()));
+        }
         let p = |i: usize, len: usize| -> Result<u8, CoreError> {
             let part = &h[i..i + len];
             let v = u8::from_str_radix(part, 16).map_err(|_| CoreError::BadColor(s.into()))?;
@@ -399,6 +404,20 @@ mod tests {
     fn from_hex_non_hex_digit_returns_bad_color() {
         assert!(matches!(Rgba::from_hex("#gg0000"), Err(CoreError::BadColor(v)) if v == "#gg0000"));
         assert!(matches!(Rgba::from_hex("#00z"), Err(CoreError::BadColor(_))));
+    }
+
+    #[test]
+    fn from_hex_non_ascii_input_returns_bad_color() {
+        for s in ["#aé", "#ééé", "#0fé6e", "#\u{1F600}0"] {
+            assert!(matches!(Rgba::from_hex(s), Err(CoreError::BadColor(v)) if v == s), "{s}");
+        }
+    }
+
+    #[test]
+    fn from_hex_sign_character_returns_bad_color() {
+        for s in ["#+f+f+f", "#-1-1-1", "#+ff", "#+0+0+0+0"] {
+            assert!(matches!(Rgba::from_hex(s), Err(CoreError::BadColor(v)) if v == s), "{s}");
+        }
     }
 
     #[test]

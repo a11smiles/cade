@@ -60,6 +60,9 @@ pub enum GitHubError {
     NotSignedIn,
     #[error("keychain: {0}")]
     Keychain(String),
+    /// GitHub answered successfully but left out a field CADE needs.
+    #[error("GitHub's response had no {0}")]
+    MissingField(&'static str),
 }
 
 pub mod auth {
@@ -186,7 +189,7 @@ impl Client {
             .draft(pr.draft)
             .send()
             .await?;
-        Ok(created.html_url.map(|u| u.to_string()).unwrap_or_default())
+        created.html_url.map(|u| u.to_string()).ok_or(GitHubError::MissingField("html_url"))
     }
 }
 
