@@ -26,6 +26,7 @@ cargo run -p cade-app
 
 ## Rules of the road
 
+- Participation is governed by the [Code of Conduct](CODE_OF_CONDUCT.md).
 - One backlog item per pull request where possible. Put the id in the PR title.
 - Every change keeps `cargo fmt`, `cargo clippy -D warnings`, `cargo test` and `pnpm --dir app/ui test` green.
 - UI values come from design tokens only. Edit `design/system/tokens.json`, never `tokens.css`.
