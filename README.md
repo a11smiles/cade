@@ -26,19 +26,25 @@ image to open the exact design-canvas source file.
 
 ## Install
 
-There are no published packages to install yet. Check
+CADE installers are not currently available for macOS, Windows, or Linux.
+The release inventory checked on October 26, 2026 returned no releases. Check
 [GitHub Releases](https://github.com/a11smiles/cade/releases) for future
-downloads. The configured package targets are:
+availability, not an existing installer. The configured package targets are:
 
 | Platform | Package formats | Packaging guidance |
 |---|---|---|
 | macOS | `.dmg`, `.app` | [Tauri macOS bundles](https://v2.tauri.app/distribute/macos-application-bundle/) |
 | Windows | `.msi`, NSIS installer | [Tauri Windows installers](https://v2.tauri.app/distribute/windows-installer/) |
-| Linux | `.deb`, `.rpm`, `.AppImage` | [Tauri Linux packages](https://v2.tauri.app/distribute/linux/) |
+| Linux | `.deb`, `.rpm`, `.AppImage` | [Tauri Debian packaging](https://v2.tauri.app/distribute/debian/), [RPM packaging](https://v2.tauri.app/distribute/rpm/), [AppImage packaging](https://v2.tauri.app/distribute/appimage/) |
 
 These are configured build targets, not available downloads. See
 [`tauri.conf.json`](app/src-tauri/tauri.conf.json) for the project's target
 configuration.
+
+Framework packaging guidance and source builds are not CADE installers.
+The per-platform package-link criterion in
+[#342](https://github.com/a11smiles/cade/issues/342) remains blocked on actual
+package availability.
 
 ## Build from source
 
@@ -100,12 +106,14 @@ application is finished. Most are still part of a broader, unfinished product.
 | `cade-policy` | `policy.yml` schema and decisions for models, BYOK, shell, network, MCP, design systems, shipping, telemetry and token budgets |
 | `cade-copilot` | Copilot and BYOK through the Copilot SDK, permission handler, change sets and token meter |
 | `cade-github` | Device-flow sign-in, keychain storage, github.com / GHE.com / GHES, issues, duplicate search and PRs |
-| `cade-feedback` | Bug / feature / comment feedback mapped to labeled, redacted issues |
+| `cade-git` | Repository open/init, HEAD inspection and Copilot commit-message formatting; status and full Git/app integration remain unimplemented under #50 and children #596–602 |
+| `cade-feedback` | Canonical form-ID answers with legacy-input migration, YAML-derived forms, Rust-derived TypeScript bindings and labeled, redacted issue drafts |
 | `cade-ddl` | PostgreSQL, SQL Server, MySQL and Oracle DDL; reversible migrations; PII check |
 | `cade-iac` | Bicep and Terraform (azurerm) for App Service, SQL, Key Vault and Storage; missing-setting check |
 | `cade-system` | Bindings, impact tracing and deploy order across Data → App → Architecture |
 | `cade-io-visio` | `.vsdx` package reader for pages, masters and macro detection |
 | `cade-io-pptx`, `cade-io-figma`, `cade-io-spark` | Package/slide reader, Figma link parsing and endpoints, Spark repository scan |
+| `cade-io-export` | Output-format declarations and exporter interface, not completed end-to-end exporters |
 | `cade-render`, `cade-text`, `cade-layout` | Vello scene from nodes, Parley text layout and Taffy auto layout |
 | `cade-codegen-react` | Design-system TSX emitter |
 
