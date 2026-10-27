@@ -19,6 +19,8 @@ pub(super) fn git(dir: &Path, args: &[&str]) -> Vec<u8> {
             "init.templateDir=",
             "-c",
             "core.autocrlf=false",
+            "-c",
+            "maintenance.auto=false",
         ])
         .args(args)
         .current_dir(dir)

@@ -2,6 +2,7 @@
 
 use super::*;
 
+isolated_tests! {
 #[test]
 fn checkout_overlapping_unstaged_edit_denies_before_any_write() {
     let dir = fixture();
@@ -240,4 +241,5 @@ fn checkout_baseline_gitlink_denies_before_any_write() {
     let repo = ProjectRepo::open(dir.path()).unwrap();
 
     deny_default(&repo, dir.path(), &["gitlink", "submodule"]);
+}
 }

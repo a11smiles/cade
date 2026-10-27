@@ -12,6 +12,7 @@ mod failures;
 #[path = "branches/validation.rs"]
 mod validation;
 
+isolated_tests! {
 const REFERENCE: &str = "refs/heads/topic";
 
 fn committer() -> gix::actor::SignatureRef<'static> {
@@ -176,4 +177,5 @@ fn create_branch_non_utf8_repository_and_index_paths_preserves_actual_bytes() {
             .any(|p| p == b"document-\xfe.cade\0")
     );
     assert_eq!(fs::read(native_file).unwrap(), b"dirty native bytes\n");
+}
 }

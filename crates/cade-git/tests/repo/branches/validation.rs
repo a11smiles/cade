@@ -3,6 +3,7 @@
 use super::*;
 use crate::commit::validation::absent_object;
 
+isolated_tests! {
 fn invalid_reference_then_corrected(reference: &str) {
     let dir = committed_repo();
     let target = resolve(dir.path(), "HEAD");
@@ -203,4 +204,5 @@ fn create_branch_invalid_target_preflight_preserves_empty_ref_directory() {
 
     assert_eq!(snapshot(dir.path()), before);
     branch_success(&repo, dir.path(), reference, resolve(dir.path(), "HEAD"));
+}
 }

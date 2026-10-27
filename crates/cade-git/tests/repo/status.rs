@@ -1,6 +1,5 @@
 //! Real index/HEAD/worktree status fixtures using the approved SDK event types.
-//! Run in an isolated Git environment (including the test process, not only CLI
-//! children); the execution lane supplies HOME and disables system/global config.
+//! The shared test harness isolates the test process as well as CLI children.
 
 use super::{ProjectRepo, assert_git_error, committed_repo, git, snapshot};
 use gix::bstr::ByteSlice;
@@ -9,6 +8,7 @@ use gix::status::{Item, index_worktree::iter::Summary};
 use std::fs;
 use std::path::Path;
 
+isolated_tests! {
 fn status(repo: &ProjectRepo) -> Vec<Item> {
     let result = repo.status();
     assert!(result.is_ok(), "status must succeed: {result:?}");
@@ -504,4 +504,5 @@ fn status_tracked_submodule_denies_without_nested_filter_execution() {
         message.to_ascii_lowercase().contains("submodule"),
         "identify the unsupported submodule: {message}"
     );
+}
 }

@@ -2,6 +2,7 @@
 
 use super::*;
 
+isolated_tests! {
 fn duplicate_then_corrected(dir: &Path, target: gix::ObjectId) {
     let repo = ProjectRepo::open(dir).unwrap();
     let before = snapshot(dir);
@@ -228,4 +229,5 @@ fn create_branch_unreadable_target_denies_then_permission_repair_succeeds() {
     assert!(message.to_lowercase().contains("permission") || message.to_lowercase().contains("denied"));
     assert_eq!(snapshot(dir.path()), before);
     branch_success(&repo, dir.path(), REFERENCE, target);
+}
 }
