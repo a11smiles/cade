@@ -40,28 +40,55 @@ See `docs/adr/` for the decisions behind this; the accepted
 ## Delivered capabilities and boundaries
 
 The [README crate table](../README.md#implemented-starting-points) inventories
-existing code. The following decisions describe the bounded remediation reviewed
-through `78616f59817d962636083e430da3efbe56d2a417`, not release readiness.
+existing code. The following sections distinguish implemented remediation from
+bounded approval and pending verification; none establishes release readiness.
 
 ### Git implementation boundary
 
-**Status:** scaffold; #50 / GH-005 remains incomplete under
-[ADR 0004](adr/0004-git-is-history.md).
+**Status:** local open/init/status foundation implemented for #596 / GH-024;
+independent QA and full gates pending. #50 / GH-005 remains incomplete under
+[ADR 0004](adr/0004-git-is-history.md), the unchanged Git-history authority.
 
-`cade-git` provides repository open/init, HEAD inspection and Copilot
-commit-message formatting. Formatting trailers is not creating a commit.
-`cade-app` does not yet depend on this crate. Status is **not implemented**;
-the approved local status contract for #596 is future work, not a delivered API.
-Commit-per-save/run, clone, branch creation, checkout, fetch/push, merge-base,
-authenticated GitHub/GHES transport, LFS and app progress/cancellation integration
-remain undelivered.
+The approved local contract is implemented in
+[`cade-git`](../crates/cade-git/src/lib.rs) in the `issue-596-git-status`
+worktree based on `bf8359846e822fbaf7405e5941c5ae9ef67e4b35`; that SHA identifies
+the base, not a commit containing this implementation. Existing `ProjectRepo`
+and `GitError` remain the API, with
+`ProjectRepo::status(&self) -> Result<Vec<gix::status::Item>, GitError>`.
+Consumers are crate callers/tests, not app IPC; `cade-app` does not depend on
+this crate. There is no new shared status wrapper, serialized format, `.cade`
+or policy schema, dependency, or git2 fallback.
 
-#50 has seven native children: #596 local init/status, #597 commits with existing
-Copilot trailers, #598 branch/checkout/merge-base, #599 authenticated clone/fetch,
-#600 push, #601 configured LFS, and #602 typed cancellable job/IPC integration.
-They preserve the parent obligation, not replace it.
-Later Git documentation must follow implementation and consumer evidence; the
-local contract does not authorize new IPC, transport or LFS contracts.
+- **Open/init:** opening preserves existing metadata and worktree contents,
+  including support for opening bare repositories. Strict init rejects existing
+  repositories and occupied metadata, including `.git` files, directories and
+  dangling symlinks, without mutation; new initialization preserves unrelated
+  files. Missing/nonrepository paths retain `GitError::NotARepo`. Corrupt or
+  unreadable metadata yields actionable `GitError::Git`, not a clean result.
+- **Fresh, combined status:** each request reopens metadata and reads fresh
+  index data, combining HEAD→index and index→worktree differences. Separate
+  `TreeIndex` and `IndexWorktree` SDK events are retained, including two events
+  for one path, with unspecified order and byte-preserving relative paths.
+  Clean, modified, staged, deleted, unborn and conflicted states are represented;
+  conflicts are not resolved. Untracked files are individual entries even when
+  configuration hides them. Rename inference is not promised.
+- **Read-only failure boundaries:** status does not write index stat-cache
+  updates, refs, config or worktree content. Bare status and corrupt/unreadable
+  metadata, index, HEAD or tracked content fail rather than report false-clean.
+  Corrected subsequent requests can recover without automatic repair/reset.
+  Configured external clean/process filters are rejected before execution even
+  when unused; smudge-only commands are not executed. Submodule/gitlink and
+  nested-repository inspection is unsupported, with actionable denial rather
+  than false-clean results or recursive traversal. Production uses gix without
+  subprocess Git, shell or network operations.
+
+HEAD inspection and Copilot commit-message formatting also remain available;
+formatting trailers is not creating a commit. Remaining children are #597 commits
+with existing Copilot trailers, #598 branch/checkout/merge-base, #599 authenticated
+clone/fetch, #600 push, #601 configured LFS, and #602 typed cancellable job/IPC
+integration. Commit-per-save/run and full Git/app integration remain undelivered.
+The local foundation preserves the parent obligation; it does not authorize
+transport, LFS or IPC contracts for later layers.
 
 ### Policy failure boundaries
 
@@ -158,6 +185,18 @@ rendering/publication; browser focus does not prove native accessibility.
 
 ## Acceptance evidence boundaries
 
+For #596, `git596-green-final` records 48 passing integration tests and 3 passing
+unit tests, plus passing focused formatting and Clippy checks, against the
+implementation worktree described above on macOS arm64, nonroot. This verifies
+the exercised local open/init/status scope, not independent QA acceptance,
+full-workspace coverage or full-engine completion. Linux and Windows execution,
+including the Linux-only non-UTF-8 filename fixture, was not performed in this
+verification; local path/permission fixtures do not certify other hosts or ACL
+behavior. Commit creation, branch/checkout/merge-base, authenticated clone/fetch,
+push, LFS and cancellable job/IPC integration remain outside this verified scope.
+Session evidence tracks moving gate status; no overall completion, GitHub/GHES
+transport certification or release approval follows from these results.
+
 Independent QA approved **13 bounded fixes**, not 13 issue closures. Evidence is
 attached to the reviewed commits: policy `1ceb0837b6a2d9ae28f9156770e7b2cf2fb41f3c`
 (2 fixes), generators `b2e34293aa9f91df6b35ca55d69c28191ebadaf1` (6), and feedback
@@ -184,14 +223,15 @@ Neither is an unresolved choice of contact or installation wording.
 
 ## Change history
 
-Approval below was received from the product owner on
+Initial approval below was received from the product owner on
 **2026-10-26 at 17:14:12.058 −07:00**. Earlier feedback implementation details were
 architect resolutions under authorized remediation, not individually attributed
-product-owner choices.
+product-owner choices. Subsequent changes identify their own received times.
 
 | Topic | Earlier state → current decision and rationale | Approval evidence | Status |
 |---|---|---|---|
 | Policy | Overflow saturation and unavailable-policy approval fallback → deny overflow and reject unreadable policy, preserving trusted policy authority. No new recovery mechanism. | “policyMAXoverflowdenyconfigured,no-budgetsame; poisonrejectnoapprovalnoclear newrecoveryoutofscope ADR0003/5.” | Accepted; bounded QA approved |
 | DDL | Truncation-only overlong names → deterministic full-identity suffix for new generation, preserving ordinary output and existing deployments. | “Generatoroverlongdeterministicsuffix newgeneratedcreate/up/downconsistent; noautochangeexistingdeployedconstraints,noDDLserializedchange.” | Accepted; bounded QA approved |
 | Feedback | Heading arrays and handwritten mirrors → keyed map with legacy adapter and generated declarations/metadata. Earlier briefs left labels/copy/version unresolved; the approved contract resolves them, including the named environment-ID correction. | “Feedbackcanonicalkeymap legacyshapeadapter/knownvalidation,Rust-derivedts-rs declarations,YAMLauthority,labelslegacy+requiredtype,version->app_versionmigration; actualsuccessfulcurrentpreview snapshot&focussuccess.” | Accepted; bounded QA approved |
-| Git inventory | Unqualified intended diagram → explicit scaffold boundary; approved local status work is not delivered. | “Gitstatus NOTimplemented yet; don'tclaim” | Current implementation boundary |
+| Git inventory (historical) | Unqualified intended diagram → explicit scaffold boundary while local status was undelivered. Superseded by the implemented local foundation below. | “Gitstatus NOTimplemented yet; don'tclaim” | Superseded |
+| Git local foundation — 2026-10-26 at 18:14:08.215 −07:00 | Scaffold-only inventory → implemented #596 open/strict init/read-only status under the approved `remediation/git-local-contract-brief.md` and ADR 0004. Actual source and `git596-green-stage1` support local delivery, not completion of #50 or acceptance of later layers. | Product-owner handoff: “RecordimplementedGitlocalopen/init/status”; “independentQA/fullgatespending doNOTclaimoverallcomplete.” | Implemented; independent QA/full gates pending |
