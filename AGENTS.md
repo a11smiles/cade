@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Keep this file under 500 words; put role details in
+Keep under 500 words; details in
 [agents](.github/agents/), [skills](.github/skills/) and
 [instructions](.github/instructions/).
 
@@ -8,16 +8,15 @@ Keep this file under 500 words; put role details in
 
 - Route issue planning, implementation and fixes through
   [`application-architect`](.github/agents/application-architect.agent.md);
-  the main assistant must not substitute itself. Only the architect dispatches
-  specialists, selected automatically by responsibility.
+  only the architect dispatches specialists. The main assistant cannot substitute.
 - Follow [team-orchestration](.github/skills/team-orchestration/SKILL.md) for role
   ownership, evidence-backed todos, handoffs and failure recovery.
-- Developer completion means ready for independent `qa-analyst` acceptance and
-  regression checks. Route fixes through the architect back to QA. Completion
-  requires passing checks, QA approval and completed documentation; report
-  blocked/unexecuted checks honestly.
-- Architect and specialists report progress automatically every hour:
-  agent names/roles/states, milestones, results, blockers and next handoffs.
+- Completion requires passing checks, independent `qa-analyst` acceptance/regression
+  approval and completed documentation. Route fixes through the architect back
+  to QA; report blocked/unexecuted checks honestly.
+- Architect and specialists automatically report hourly:
+  names/roles/states, milestones, results, blockers, next handoffs and
+  remaining-time estimates for every outstanding scoped task.
 - Ask before closing issues, pushing, releasing or destructive actions.
 - Use American English everywhere: communication, docs, code, comments, copy.
 - Every agent reads `.coaching/<its role>.md` (if present) before starting
@@ -51,6 +50,8 @@ Keep this file under 500 words; put role details in
 
 ## Testing
 
+- Require passing builds for every commit's exact tree. Build failures take
+  priority; stop unrelated work until fixed.
 - Every behavior change: write/run a one-behavior test; require the expected
   failure first (bugs must reproduce), then minimal production code and a passing
   run; refactor with SOLID/DRY while green. Unexpected initial passes prove
@@ -69,7 +70,8 @@ Keep this file under 500 words; put role details in
   `pnpm --dir app/ui test:e2e` (Playwright). Use pnpm, never npm/yarn.
 - `cargo test -p cade-app` (IPC); `cargo run -p cade-app`.
 
-Trunk-based `main` with stacked PRs: one branch per planned task,
-`issue-NN-<task>`, created from the task it depends on (first from `main`);
-no sibling task branches. No agent attribution. PR titles: imperative,
-`[EPIC-NNN]`-prefixed except bug fixes. Check UI in both themes.
+Trunk-based `main`, stacked PRs: one branch per issue/subissue.
+Parent first; children descend, preferably sequentially. One local `gh stack`
+per parent/children (team-orchestration). Preserve approved grouped history.
+No agent attribution. PR titles: imperative, `[EPIC-NNN]`-prefixed except bug fixes.
+Check UI in both themes.
