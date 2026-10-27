@@ -44,8 +44,11 @@ fn run_isolated(test: impl FnOnce()) {
     let out = Command::new(std::env::current_exe().unwrap())
         .env_clear()
         .envs(
-            std::env::vars_os()
-                .filter(|(key, _)| matches!(key.to_str(), Some("PATH" | "SystemRoot" | "SYSTEMROOT" | "COPILOT_CLI_EXTRACT_DIR"))),
+            // Named lookup honors Windows' case-insensitive environment while
+            // emitting canonical keys for the isolated fixture's Git helper.
+            ["PATH", "SystemRoot", "SYSTEMROOT", "COPILOT_CLI_EXTRACT_DIR"]
+                .into_iter()
+                .filter_map(|key| std::env::var_os(key).map(|value| (key, value))),
         )
         .args(["--exact", name, "--nocapture"])
         .env("CADE_GIT_TEST_CHILD", name)
@@ -84,6 +87,14 @@ fn run_isolated_failed_child_is_reported() {
     }
     let result = std::panic::catch_unwind(|| run_isolated(|| {}));
     assert!(result.is_err(), "a failing child must fail its parent test");
+}
+
+#[test]
+fn run_isolated_executable_search_path_reaches_child() {
+    run_isolated(|| {
+        let path = std::env::var_os("PATH").expect("the isolated child must retain the executable search PATH");
+        assert!(!path.is_empty(), "the executable search PATH must not be empty");
+    });
 }
 
 #[test]
