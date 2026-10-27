@@ -16,3 +16,18 @@ is from SchemaStore/schemastore, licensed under Apache-2.0 (see LICENSE),
 at commit 64cc4a9ee27111df7a6a68eb64451690234a12ba,
 source path src/schemas/json/github-issue-forms.json.
 It is third-party SchemaStore material, not an official GitHub schema.
+
+Geist and Geist Mono fonts
+Copyright 2024 The Geist Project Authors (https://github.com/vercel/geist-font.git)
+Licensed under the SIL Open Font License, Version 1.1 (OFL 1.1).
+Official source: https://github.com/vercel/geist-font, tag 1.4.01,
+commit b193ef74010119759bfb7f71ddf81a3dee238535.
+The unchanged font version 1.401 Latin and Latin Extended WOFF2 assets
+come from the next@15.5.21 pnpm cache, package path
+dist/next-devtools/server/font/. The Next package version is not the font
+version, and its MIT license is not substituted for the fonts' OFL 1.1.
+Canonical full copyright/license: app/ui/public/fonts/OFL.txt.
+Canonical pinned provenance and asset digests:
+app/ui/public/fonts/PROVENANCE.md.
+Production frontend notice destinations: fonts/OFL.txt and
+fonts/PROVENANCE.md; inclusion requires build and artifact verification.

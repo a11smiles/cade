@@ -6,12 +6,146 @@ use cade_git::{GitError, ProjectRepo, run_commit_message};
 use std::path::Path;
 use std::process::Command;
 
+// Keep the ordinary libtest names, attributes and bodies. Each body runs in a
+// fresh process, since changing process-wide Git environment in parallel tests
+// would race and isolating only the fixture's Git CLI does not isolate gix.
+macro_rules! isolated_tests {
+    () => {};
+    ($(#[cfg($cfg:meta)])? #[test] fn $name:ident() $body:block $($rest:tt)*) => {
+        $(#[cfg($cfg)])?
+        #[test]
+        fn $name() {
+            crate::run_isolated(|| $body);
+        }
+        isolated_tests! { $($rest)* }
+    };
+    ($item:item $($rest:tt)*) => {
+        $item
+        isolated_tests! { $($rest)* }
+    };
+}
+
 #[path = "repo/commit.rs"]
 mod commit;
 #[path = "repo/local.rs"]
 mod local;
 #[path = "repo/status.rs"]
 mod status;
+
+fn run_isolated(test: impl FnOnce()) {
+    let thread = std::thread::current();
+    let name = thread.name().expect("libtest names each test thread");
+    if std::env::var("CADE_GIT_TEST_CHILD").as_deref() == Ok(name) {
+        test();
+        return;
+    }
+
+    let home = tempfile::tempdir().unwrap();
+    let config = home.path().join("empty-config");
+    std::fs::write(&config, b"").unwrap();
+    let out = Command::new(std::env::current_exe().unwrap())
+        .env_clear()
+        .envs(
+            // Named lookup honors Windows' case-insensitive environment while
+            // emitting canonical keys for the isolated fixture's Git helper.
+            ["PATH", "SystemRoot", "SYSTEMROOT", "COPILOT_CLI_EXTRACT_DIR"]
+                .into_iter()
+                .filter_map(|key| std::env::var_os(key).map(|value| (key, value))),
+        )
+        .args(["--exact", name, "--nocapture"])
+        .env("CADE_GIT_TEST_CHILD", name)
+        .env("HOME", home.path())
+        .env("USERPROFILE", home.path())
+        .env("XDG_CONFIG_HOME", home.path())
+        .env("TMPDIR", home.path())
+        .env("TEMP", home.path())
+        .env("TMP", home.path())
+        .env("GIT_CONFIG_GLOBAL", &config)
+        .env("GIT_CONFIG_SYSTEM", &config)
+        .env("GIT_CONFIG_NOSYSTEM", "1")
+        .env("GIT_ATTR_NOSYSTEM", "1")
+        .env("GIT_TERMINAL_PROMPT", "0")
+        .output()
+        .unwrap();
+    assert!(
+        out.status.success(),
+        "isolated test {name} failed:\n{}\n{}",
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert!(
+        String::from_utf8_lossy(&out.stdout).contains("1 passed; 0 failed"),
+        "the isolated child must execute exactly the selected test: {}",
+        String::from_utf8_lossy(&out.stdout)
+    );
+}
+
+#[test]
+fn run_isolated_failed_child_is_reported() {
+    let thread = std::thread::current();
+    let name = thread.name().unwrap();
+    if std::env::var("CADE_GIT_TEST_CHILD").as_deref() == Ok(name) {
+        panic!("intentional child assertion failure");
+    }
+    let result = std::panic::catch_unwind(|| run_isolated(|| {}));
+    assert!(result.is_err(), "a failing child must fail its parent test");
+}
+
+#[test]
+fn run_isolated_executable_search_path_reaches_child() {
+    run_isolated(|| {
+        let path = std::env::var_os("PATH").expect("the isolated child must retain the executable search PATH");
+        assert!(!path.is_empty(), "the executable search PATH must not be empty");
+    });
+}
+
+#[test]
+fn run_isolated_ambient_configuration_does_not_reach_fixture() {
+    let home = tempfile::tempdir().unwrap();
+    let config = home.path().join(".gitconfig");
+    std::fs::write(&config, b"[filter \"ambient\"]\n\tclean = false\n\tprocess = false\n").unwrap();
+    let out = Command::new(std::env::current_exe().unwrap())
+        .args(["--exact", "status::status_clean_repository_returns_no_events", "--nocapture"])
+        .env("HOME", home.path())
+        .env("USERPROFILE", home.path())
+        .env("XDG_CONFIG_HOME", home.path())
+        .env("GIT_CONFIG_GLOBAL", &config)
+        .env("GIT_CONFIG_SYSTEM", &config)
+        .env("GIT_CONFIG_NOSYSTEM", "0")
+        .env("GIT_CONFIG_COUNT", "1")
+        .env("GIT_CONFIG_KEY_0", "filter.command.clean")
+        .env("GIT_CONFIG_VALUE_0", "false")
+        .env_remove("CADE_GIT_TEST_CHILD")
+        .output()
+        .unwrap();
+    assert!(
+        out.status.success(),
+        "ambient configuration reached the fixture:\n{}\n{}",
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert!(String::from_utf8_lossy(&out.stdout).contains("1 passed; 0 failed"));
+}
+
+isolated_tests! {
+#[test]
+fn git_fixture_disables_automatic_maintenance() {
+    let dir = committed_repo();
+    // Force a deterministic maintenance task, in the foreground so the oracle
+    // does not depend on winning the snapshot/background-writer race from CI.
+    git(dir.path(), &["config", "maintenance.auto", "true"]);
+    git(dir.path(), &["config", "maintenance.autoDetach", "false"]);
+    git(dir.path(), &["config", "maintenance.loose-objects.enabled", "true"]);
+    git(dir.path(), &["config", "maintenance.loose-objects.auto", "1"]);
+    let before = snapshot(&dir.path().join(".git/objects/pack"));
+    git(dir.path(), &["commit", "-q", "--allow-empty", "-m", "No fixture maintenance"]);
+    assert_eq!(snapshot(&dir.path().join(".git/objects/pack")), before);
+    assert_eq!(
+        git(dir.path(), &["config", "--type=bool", "--default=true", "--get", "maintenance.auto"]),
+        b"false\n",
+        "fixture commands must not launch background writers after returning"
+    );
+}
 
 fn git(dir: &Path, args: &[&str]) -> Vec<u8> {
     let out = Command::new("git")
@@ -28,6 +162,8 @@ fn git(dir: &Path, args: &[&str]) -> Vec<u8> {
             "init.templateDir=",
             "-c",
             "core.autocrlf=false",
+            "-c",
+            "maintenance.auto=false",
         ])
         .args(args)
         .current_dir(dir)
@@ -177,4 +313,5 @@ fn assert_git_error<T>(result: Result<T, GitError>) -> String {
         Err(other) => panic!("expected Git error, got {other}"),
         Ok(_) => panic!("expected Git error, got success"),
     }
+}
 }

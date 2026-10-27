@@ -3,6 +3,7 @@
 
 use super::*;
 
+isolated_tests! {
 fn invalid_then_corrected(dir: &Path, reference: &str, invalid: &gix::objs::Commit, valid: &gix::objs::Commit) {
     let repo = ProjectRepo::open(dir).unwrap();
     let before = without_objects(dir);
@@ -193,4 +194,5 @@ fn commit_duplicate_tree_header_denies_then_corrected_header_succeeds() {
     let mut invalid = valid.clone();
     invalid.extra_headers.push(("tree".into(), valid.tree.to_string().into()));
     invalid_then_corrected(dir.path(), REFERENCE, &invalid, &valid);
+}
 }

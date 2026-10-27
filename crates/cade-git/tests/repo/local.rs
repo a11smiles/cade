@@ -3,6 +3,7 @@
 use super::{GitError, ProjectRepo, assert_git_error, committed_repo, git, snapshot};
 use std::fs;
 
+isolated_tests! {
 #[test]
 fn init_unrelated_files_preserves_contents() {
     let dir = tempfile::tempdir().unwrap();
@@ -131,4 +132,5 @@ fn open_unreadable_config_returns_git_error_and_recovers() {
     assert_eq!(denied.unwrap_err().kind(), std::io::ErrorKind::PermissionDenied);
     assert_git_error(result);
     assert!(ProjectRepo::open(dir.path()).is_ok());
+}
 }

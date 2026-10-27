@@ -13,6 +13,7 @@ mod failures;
 #[path = "commit/validation.rs"]
 mod validation;
 
+isolated_tests! {
 const REFERENCE: &str = "refs/heads/main";
 
 fn resolve(dir: &Path, revision: &str) -> gix::ObjectId {
@@ -26,6 +27,11 @@ fn sdk(dir: &Path) -> gix::Repository {
 
 // This immutable tree deliberately differs from both the index and worktree.
 fn request(dir: &Path, parents: &[gix::ObjectId]) -> gix::objs::Commit {
+    assert_eq!(
+        std::env::var("CADE_GIT_TEST_CHILD").ok().as_deref(),
+        std::thread::current().name(),
+        "commit fixtures must execute in their selected isolated child"
+    );
     let repo = sdk(dir);
     let selected = repo.write_blob(b"selected document bytes\n").unwrap().detach();
     let original = repo.write_blob(b"original\n").unwrap().detach();
@@ -339,4 +345,5 @@ fn commit_merge_parents_preserves_supplied_order() {
         git(dir.path(), &["show", "-s", "--format=%P", &id.to_string()]),
         format!("{parent} {second_id}\n").into_bytes()
     );
+}
 }
