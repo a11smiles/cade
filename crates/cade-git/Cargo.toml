@@ -10,7 +10,6 @@ repository.workspace = true
 
 [dependencies]
 gix.workspace = true
-thiserror.workspace = true
-
-[dev-dependencies]
+git2.workspace = true
 tempfile.workspace = true
+thiserror.workspace = true

@@ -16,3 +16,54 @@ is from SchemaStore/schemastore, licensed under Apache-2.0 (see LICENSE),
 at commit 64cc4a9ee27111df7a6a68eb64451690234a12ba,
 source path src/schemas/json/github-issue-forms.json.
 It is third-party SchemaStore material, not an official GitHub schema.
+
+Checkout SDK and native dependencies
+------------------------------------
+
+cade-git uses git2 only for existing-worktree checkout; its other delivered
+Git operations use gitoxide (gix). The checkout dependency is pinned to
+git2 0.21.0 with default features disabled, without HTTPS or SSH features.
+
+The added Cargo.lock packages and their installed source notices are:
+
+- git2 0.21.0 and libgit2-sys 0.18.8+1.9.7, from rust-lang/git2-rs:
+  Cargo.toml declares MIT OR Apache-2.0. See each package's LICENSE-MIT
+  and LICENSE-APACHE. Both LICENSE-MIT files state:
+  Copyright (c) 2014 Alex Crichton
+- libz-sys 1.1.30, from rust-lang/libz-sys:
+  Cargo.toml declares MIT OR Apache-2.0. See LICENSE-MIT and
+  LICENSE-APACHE. LICENSE-MIT states:
+  Copyright (c) 2014 Alex Crichton
+  Copyright (c) 2020 Josh Triplett
+
+The Rust binding licenses do not replace the native library licenses.
+The captured macOS checkout build compiled vendored libgit2 1.9.7 and
+linked it statically. Its source is included in libgit2-sys under libgit2/:
+
+  libgit2 is Copyright (C) the libgit2 contributors,
+  unless otherwise stated. See the AUTHORS file for details.
+
+libgit2/COPYING supplies GNU GPL version 2 with a linking exception and
+separate notices for bundled components. The installed build.rs selects
+bundled llhttp (MIT), xdiff (LGPL-2.1-or-later, per deps/xdiff/xdiff.h),
+PCRE2 (PCRE2 Licence, including its BSD terms), SHA1 collision detection
+(MIT), and built-in RFC 6234 SHA256 code (the IETF Trust notice in COPYING).
+For their full terms and other component-specific notices, retain the
+upstream COPYING and source notices; do not treat every bundled file as
+covered only by the Rust bindings' MIT OR Apache-2.0 declaration.
+The bundled wildmatch acknowledgment in COPYING is:
+This product includes software developed by Rich Salz.
+
+libz-sys supplies the zlib binding; the captured macOS build links system
+zlib (-lz), not a newly built bundled zlib archive. The installed
+libz-sys source also carries stock zlib under src/zlib/; its LICENSE is
+the zlib license and states:
+ (C) 1995-2026 Jean-loup Gailly and Mark Adler
+This source notice does not identify the version of the system library
+linked on a particular machine.
+
+The captured native link output also names macOS iconv, Security and
+CoreFoundation. These build observations are not an inventory of shipped
+installers or a guarantee of other platforms' native linkage.
+This attribution inventory is not a substitute for upstream license texts,
+an exhaustive distribution review, or legal/release certification.

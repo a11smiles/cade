@@ -106,7 +106,7 @@ application is finished. Most are still part of a broader, unfinished product.
 | `cade-policy` | `policy.yml` schema and decisions for models, BYOK, shell, network, MCP, design systems, shipping, telemetry and token budgets |
 | `cade-copilot` | Copilot and BYOK through the Copilot SDK, permission handler, change sets and token meter |
 | `cade-github` | Device-flow sign-in, keychain storage, github.com / GHE.com / GHES, issues, duplicate search and PRs |
-| `cade-git` | Local repository open/strict init, read-only HEAD/index/worktree status, HEAD inspection and commits from explicit immutable SDK trees with caller-supplied parents/metadata and guarded branch updates; strict local branch creation and read-only explicit-commit merge-base queries (#598 Stage A, independent QA pending); existing Copilot message/trailer helper; checkout, save/run integration, transport, push, LFS and app jobs remain undelivered under #50; Windows/Linux verification remains open |
+| `cade-git` | gix-backed local open/strict init, read-only status, HEAD inspection, explicit immutable-tree commits with guarded branch updates, strict branch creation and merge-base queries; Copilot message/trailer helper; existing-worktree checkout through a checkout-only git2/libgit2 fallback with private-index/reference guards and other-worktree branch-occupancy checks. Stage A branch/ancestry has bounded QA approval; checkout implementation is not full #598 acceptance. Save/run integration, transport, push, LFS and progress/cancellable app jobs remain undelivered under #50; Windows/Linux verification remains open |
 | `cade-feedback` | Canonical form-ID answers with legacy-input migration, YAML-derived forms, Rust-derived TypeScript bindings and labeled, redacted issue drafts |
 | `cade-ddl` | PostgreSQL, SQL Server, MySQL and Oracle DDL; reversible migrations; PII check |
 | `cade-iac` | Bicep and Terraform (azurerm) for App Service, SQL, Key Vault and Storage; missing-setting check |
@@ -116,6 +116,13 @@ application is finished. Most are still part of a broader, unfinished product.
 | `cade-io-export` | Output-format declarations and exporter interface, not completed end-to-end exporters |
 | `cade-render`, `cade-text`, `cade-layout` | Vello scene from nodes, Parley text layout and Taffy auto layout |
 | `cade-codegen-react` | Design-system TSX emitter |
+
+The Git checkout fallback pins `git2 =0.21.0` with default features disabled;
+other delivered Git operations remain on gix. This introduces native libgit2,
+not subprocess Git or a pure-Rust checkout path. See the
+[checkout safety and partial-failure boundary](docs/ARCHITECTURE.md#existing-worktree-checkout--stage-b)
+and [dependency attribution](NOTICE). These local capabilities do not complete
+#598 or #50.
 
 ## Feedback
 

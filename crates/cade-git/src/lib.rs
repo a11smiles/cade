@@ -2,18 +2,20 @@
 //!
 //! Every CADE project is a git repository. A save is a commit, a Copilot
 //! run is a commit tagged with its run id, and History is the commit log.
-//! This crate uses gitoxide (pure Rust), so no git binary is required.
+//! This crate uses gitoxide, with a checkout-only git2 fallback; no git binary
+//! is required by production operations.
 //!
 //! Implemented here: open/init, reading HEAD, read-only local status, commits
 //! from explicitly supplied SDK trees, parents and metadata, local branch
-//! creation and explicit-commit merge-base queries.
+//! creation, explicit-commit merge-base queries and safe local checkout.
 //! Status rejects executable clean/process filters and unsupported submodule
-//! or nested-repository inspection. Save/run integration, checkout and
+//! or nested-repository inspection. Save/run integration and
 //! restore-as-new-commit remain CORE/HIST backlog items.
 
 use std::path::{Path, PathBuf};
 
 mod branches;
+mod checkout;
 mod commit;
 
 #[derive(Debug, thiserror::Error)]

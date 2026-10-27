@@ -17,7 +17,7 @@ desktop app invokes all of its capabilities.
 │     │     ├─ cade-text   Parley                                         │
 │     │     └─ cade-layout Taffy                                          │
 │     ├─ cade-crdt    Loro document (.cade) ── cade-core types            │
-│     ├─ cade-git     gitoxide: commit per save / per Copilot run         │
+│     ├─ cade-git     gix; checkout-only git2/libgit2 fallback            │
 │     ├─ cade-copilot GitHub Copilot SDK (Copilot or BYOK providers)      │
 │     │     └─ cade-policy  every tool call checked against policy.yml    │
 │     ├─ cade-github  device flow, PRs, Pages review, issues (feedback)   │
@@ -46,9 +46,10 @@ bounded approval and pending verification; none establishes release readiness.
 ### Git implementation boundary
 
 **Status:** local open/init/status foundation (#596 / GH-024), explicit-tree
-commits (#597 / GH-025), and branch creation/merge-base (#598 / GH-026 Stage A)
-implemented. Stage A independent QA is pending; checkout remains gated and
-undelivered. This is not completion of #598 or #50 / GH-005 under
+commits (#597 / GH-025), branch creation/merge-base (#598 / GH-026 Stage A)
+and existing-worktree checkout (Stage B) are implemented. Stage A has bounded
+independent QA approval; the checkout controls below describe implementation,
+not independent acceptance. This is not completion of #598 or #50 / GH-005 under
 [ADR 0004](adr/0004-git-is-history.md), the unchanged Git-history authority.
 
 The approved local contract is implemented in
@@ -57,7 +58,10 @@ The approved local contract is implemented in
 `ProjectRepo::status(&self) -> Result<Vec<gix::status::Item>, GitError>`.
 Consumers are crate callers/tests, not app IPC; `cade-app` does not depend on
 this crate. There is no new shared status wrapper, serialized format, `.cade`
-or policy schema, dependency, or git2 fallback.
+or policy schema. Open/init/status, HEAD inspection, commits, branch creation
+and ancestry remain on gix. Only checkout adopts the git2/libgit2 fallback
+described below, with the existing workspace `tempfile` dependency for its
+private index.
 
 - **Open/init:** opening preserves existing metadata and worktree contents,
   including support for opening bare repositories. Strict init rejects existing
@@ -79,12 +83,12 @@ or policy schema, dependency, or git2 fallback.
   Configured external clean/process filters are rejected before execution even
   when unused; smudge-only commands are not executed. Submodule/gitlink and
   nested-repository inspection is unsupported, with actionable denial rather
-  than false-clean results or recursive traversal. Production uses gix without
+  than false-clean results or recursive traversal. These operations use gix without
   subprocess Git, shell or network operations.
 
 HEAD inspection and Copilot commit-message formatting also remain available;
 the commit operation below stores supplied messages rather than generating
-attribution. Remaining work includes #598 checkout and full acceptance, #599
+attribution. Remaining work includes full #598 acceptance, #599
 authenticated clone/fetch, #600 push, #601 configured LFS, and #602 typed
 cancellable job/IPC integration. Commit-per-save/run and full Git/app integration
 remain undelivered. These local mechanics preserve the parent obligation; they
@@ -194,14 +198,101 @@ pub fn merge_base(
   worktree files or config. Both methods support bare repositories and detached
   or unborn HEAD when their explicit commit inputs meet the requirements.
 
-Stage A uses the pinned gix 0.90.0 with unchanged dependencies. No checkout
-stub, git2 fallback, wrapper, error variant or app IPC was added. #50 permits a
-narrow future feature-specific fallback for the missing existing-worktree
-checkout capability; that permission is not dependency adoption or delivery.
-Stage B checkout remains gated on SDK-owned private-index/continuous real-index
-lock and guarded-reference safety proof, followed by production authorization.
-ADR 0004 remains accepted and unchanged; this is not permission to replace
-gitoxide generally.
+Stage A uses gix 0.90.0; the checkout-only dependency added in Stage B does not
+replace these implementations or add a wrapper, error variant or app IPC.
+
+#### Existing-worktree checkout — Stage B
+
+**Decision and rationale.** Under #50's explicit feature-specific fallback
+allowance, checkout uses exact `git2 =0.21.0` with default features disabled.
+The inspected gix 0.90.0 `Worktree::checkout` performs initial linked-worktree
+checkout, rejecting main worktrees and existing indexes; it does not supply
+this existing-worktree branch switch. This is a narrow SDK capability gap,
+not a replacement for gitoxide or a change to accepted ADR 0004. No HTTP/SSH
+features or transport operations are adopted. Checkout uses SDK APIs, not
+subprocess Git, shell commands or a custom lock protocol.
+
+The public method in [`checkout.rs`](../crates/cade-git/src/checkout.rs) reuses
+`ProjectRepo`, `GitError` and the existing SDK actor type:
+
+```rust
+pub fn checkout(
+    &self,
+    reference: &str,
+    committer: gix::actor::SignatureRef<'_>,
+) -> Result<(), GitError>;
+```
+
+- **Explicit target and fresh validation:** switching requires a worktree and
+  an existing direct full `refs/heads/...` branch targeting a decodable commit.
+  Bare repositories, missing/symbolic targets and invalid target/baseline
+  objects are denied. Detached and unborn HEAD are supported. Configuration
+  and index are read freshly, and supplied actor metadata is checked for
+  lossless SDK representation rather than replaced with global identity.
+  Native paths are not converted to lossy strings.
+- **Other-worktree branch occupancy:** SDK enumeration includes the main and
+  linked/sibling worktrees. Deny a switch when another worktree's symbolic
+  HEAD names the target branch; exclude the caller's own canonical metadata
+  identity and a bare main repository without a worktree. Unreadable
+  registrations/HEAD fail closed. Inspect before acquiring guards and rescan
+  under the held target-branch guard immediately before native mutation.
+  The caller's already-current branch retains its existing validated no-op.
+  Switch or detach the owning worktree before explicitly retrying a denial.
+  This detects observed occupancy; it does not lock every worktree's HEAD
+  or guarantee global atomicity against noncooperating writers.
+- **Private SDK index, continuous real-index exclusion:** acquire the gix
+  real-index update lock before reading its bytes. Load an operation-owned
+  temporary index through libgit2 and attach it with `Repository::set_index`.
+  Safe checkout updates that private index; its SDK-written bytes are prepared
+  in the held real-index lock, without a handwritten index codec or a second
+  attempt by libgit2 to lock the real index. A born HEAD requires its existing
+  index so missing bytes cannot silently discard staged selections.
+- **Two reference transactions and publication order:** one git2 transaction
+  locks and publishes HEAD; a separate, uncommitted transaction holds
+  deduplicated current/target branch guards. Revalidate initial reference
+  observations under those locks. After successful SDK checkout and index-byte
+  preparation, publish HEAD **before** committing the real index. Keep branch
+  guards alive through both publications and the real-index lock continuously
+  held through final index publication. Identical-value reference edits are
+  not used as guards.
+- **Safe overlap checks and latched veto:** SDK tree/index comparisons reject
+  overlapping staged selections, including ancestor/descendant paths. Safe
+  checkout disables ignored-file overwrite, conflict allowance, untracked or
+  ignored removal and recreation of missing files. Prewrite conflict
+  notifications latch a veto that prevents HEAD/index publication even if the
+  binding returns `Ok`. `dry_run()` is not used as a conflict-safety proof.
+  Unrelated safe staged, unstaged, untracked and ignored edits are preserved;
+  no force, reset or stash is performed.
+- **Explicit unsafe-state denials:** configured executable clean/smudge/process
+  filters, gitlinks/submodules, nested repository traversal, unmerged indexes
+  and unresolved merge/rebase/cherry-pick/revert/sequencer operations are
+  rejected, not executed or silently ignored. Known metadata, reference-lock,
+  index-lock and content obstructions are checked before content changes.
+- **Partial failure and corrected retry:** this is not a globally atomic
+  transaction. HEAD publication releases its own lock; branch/index guards
+  do not protect against noncooperating direct file or HEAD writes. Late SDK
+  object-read or filesystem failures can leave partial worktree changes
+  before HEAD/index publication. A separate final index
+  publication failure can leave changed HEAD/worktree with the old real index.
+  Errors report possible partial state, never success or universal rollback.
+  Cleanup is limited to operation-owned resources: user files are not
+  automatically restored. Inspect HEAD, index and worktree, explicitly correct
+  the obstruction/state, then retry; an unchanged partial-state retry may
+  safely refuse.
+
+**Native dependency boundary.** The lockfile resolves `git2 0.21.0`,
+`libgit2-sys 0.18.8+1.9.7` and `libz-sys 1.1.30`. The captured macOS build uses
+vendored, statically linked native libgit2 1.9.7 and system zlib, not a pure-Rust
+checkout implementation. Vendoring is the observed build result, not a
+manifest guarantee for every platform. [NOTICE](../NOTICE) distinguishes Rust
+binding licenses from native and bundled-component notices; it is an inventory,
+not blanket license or release clearance.
+
+This synchronous crate method adds no app consumer, IPC, serialized type,
+`.cade` format or policy schema. Progress, cancellation and #602's original
+500-ms/write-safety criteria are not delivered by this implementation.
+Save/run integration, authenticated transport, push, configured LFS and
+host/platform acceptance retain their separate obligations.
 
 ### Policy failure boundaries
 
@@ -299,7 +390,7 @@ rendering/publication; browser focus does not prove native accessibility.
 ## Acceptance evidence boundaries
 
 The local Git fixtures cover open/init/status, actual stored initial and
-parented commits, branch creation and explicit-commit ancestry.
+parented commits, branch creation, explicit-commit ancestry and checkout.
 The [commit probes](../crates/cade-git/tests/repo/commit.rs)
 inspect selected trees, parents, stored bytes and trailers, with separate
 validation, preservation, lock, stale-tip and retry cases.
@@ -307,16 +398,26 @@ The [branch probes](../crates/cade-git/tests/repo/branches.rs) cover strict
 creation, supplied actors, competing creators and corrected retries;
 [ancestry probes](../crates/cade-git/tests/repo/merge_base.rs) cover unique,
 multiple-best, unrelated and invalid/incomplete histories with preservation.
-Git CLI use in these tests builds fixtures or independently inspects results;
-it is not the production implementation. Stage A independent QA remains
-pending; developer red/green results and focused checks are not acceptance.
-The two Stage A Linux-only raw-byte fixtures remain unexecuted, not passed.
+The [checkout probes](../crates/cade-git/tests/repo/checkout.rs) exercise
+content preservation, unsafe-state denials, reference/index locks, actor
+validation and corrected retries. Git CLI use in these tests builds fixtures
+or independently inspects results; it is not the production implementation.
+Private `cfg(test)` checkout observers support boundary probes; they are not
+public API or runtime telemetry. Native object-read failure after an earlier
+worktree write and late real-index publication failure are distinct proof
+boundaries, not interchangeable evidence of an OS worktree-write failure.
+Stage A received bounded independent QA approval and exact-commit core gates
+at `bb8460ac012c668310fecb85d7b27adc7ea69fc0`. That evidence does not certify
+the subsequent checkout implementation. External SDK capability experiments,
+developer red/green results and focused checks do not substitute for production
+QA and exact-candidate workspace gates. Linux-only raw-byte fixtures require
+actual Linux execution, not a pass inferred from macOS exclusion.
 Local repository evidence does not establish actual save/run integration,
-hosted GitHub/GHES authentication, checkout/transport/LFS/job delivery,
+hosted GitHub/GHES authentication, full checkout acceptance, transport/LFS/jobs,
 all-platform behavior or release readiness. In particular, nonroot macOS
 permission fixtures do not certify Linux permissions or Windows ACL behavior.
 Independent QA and exact-commit full-workspace gate evidence must be assessed
-separately; earlier #597 gates do not certify Stage A changes. Moving gate
+separately; earlier gates do not certify later changes. Moving gate
 results and test counts are not maintained in this architecture record.
 
 Independent QA approved **13 bounded fixes**, not 13 issue closures. Evidence is
@@ -358,4 +459,6 @@ product-owner choices. Subsequent changes identify their own received times.
 | Git inventory (historical) | Unqualified intended diagram → explicit scaffold boundary while local status was undelivered. Superseded by the implemented local foundation below. | “Gitstatus NOTimplemented yet; don'tclaim” | Superseded |
 | Git local foundation — 2026-10-26 at 18:14:08.215 −07:00 | Scaffold-only inventory → implemented #596 open/strict init/read-only status under the approved `remediation/git-local-contract-brief.md` and ADR 0004. The earlier inventory left commit creation undelivered; the commit entry below supersedes that boundary. | Product-owner handoff: “RecordimplementedGitlocalopen/init/status”; “independentQA/fullgatespending doNOTclaimoverallcomplete.” | Implemented; inventory extended below |
 | Git local commits — 2026-10-26 at 19:10:45.332 −07:00 | Status-only inventory → implemented #597 explicit immutable-tree commits under the approved `remediation/git-commit-contract-brief.md`, checked against source. Reuse SDK input and strict atomic expected-tip publication; preserve caller bytes and unrelated state without mutable-index selection. ADR 0004 remains unchanged; local mechanics do not establish save/run integration or completion of #50. | Product-owner handoff: “existingSDKCommit input notcustomwrapper”; “callerfullrefs/heads ref+parents expectedtip strictatomic CAS noderef+SDKindexholdlock noindexrewrite”; “no allengineclaim.” | Implemented local contract; not an acceptance or closure ruling |
-| Git branches/ancestry — handoff received 2026-10-26 at 20:20:14.247 −07:00 | Earlier inventory excluded all #598 operations → implemented Stage A `create_branch`/`merge_base` under `remediation/git-branches-contract-brief.md`, checked against source. Checkout remains gated; #50's narrow future fallback permission is recorded without dependency adoption or ADR modification. Also correct #597's missing-only preflight description to its delivered full observed-reference preflight, retaining race/rollback limits. | Current handoff: “Document only actual StageA capabilities and remaining checkout/transport/LFS/jobs/platform gaps.” “Accepted ADR0004 unchanged; #50 permits a narrow future fallback but it is not delivered.” | Implemented Stage A; independent QA pending; neither #598 nor #50 complete |
+| Git branches/ancestry — handoff received 2026-10-26 at 20:20:14.247 −07:00 | Earlier inventory excluded all #598 operations → implemented Stage A `create_branch`/`merge_base` under `remediation/git-branches-contract-brief.md`, checked against source. At that handoff checkout was gated and QA outstanding; those historical boundaries are superseded below. Also corrected #597's missing-only preflight description to its delivered full observed-reference preflight, retaining race/rollback limits. | Earlier handoff: “Document only actual StageA capabilities and remaining checkout/transport/LFS/jobs/platform gaps.” “Accepted ADR0004 unchanged; #50 permits a narrow future fallback but it is not delivered.” | Historical inventory; authorization and acceptance boundaries updated below |
+| Git checkout — authorization received 2026-10-26 at 21:39:43.371 −07:00; implementation handoff received 22:05:43.606 −07:00 | Stage A bounded QA and named-commit gates accepted; prospective fallback → actual checkout-only git2 adoption for the identified gix main-worktree switch gap. The updated Stage B decision supersedes the earlier index-before-HEAD proposal: publish HEAD, then real index, with separate branch guards and continuous real-index exclusion. Late partial failure and corrected explicit retry replace any universal rollback or unchanged-retry inference. Other operations stay on gix; ADR 0004 is unchanged under #50's existing allowance. | Architect authorization in `remediation/git-branches-contract-brief.md`, preserved in the decision receipt: “Architect now authorizes Rust to add exact git2 `=0.21.0` with default features disabled and promote existing workspace tempfile for this checkout-only fallback, then implement the already-approved checkout signature test-first.” Current handoff: “StageBdecision (explicitlysupersedesoldindex-beforeHEADproposal)”. | Authorized and implemented mechanism; implementation inventory is not Stage B QA approval or completion of #598/#50 |
+| Git checkout occupancy — handoff received 2026-10-26 at 22:33:42.869 −07:00 | Earlier handoff left other-worktree denial unimplemented → implemented SDK occupancy checks including main/sibling worktrees, excluding own identity and bare main, with an under-target-guard rescan before mutation. Own-current no-op is unchanged. This supersedes the earlier omission, not the existing noncooperating-writer limit. | Product-owner handoff: “Finalactualdecisions:SDKworktreeoccupancyguardincludesmain/siblings,excludesownandbaremain, rescansunderheldtargetguard beforemutating; owncurrentnoopunchanged.” | Authorized and implemented; independent checkout QA pending, not full #598/#50/platform/#602 acceptance |
