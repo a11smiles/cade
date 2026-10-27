@@ -96,6 +96,14 @@ fn bindings_and_forms_autocrlf_checkout_preserves_generated_bytes() {
             "app/ui/src/feedback/forms.generated.ts",
             support::forms().expect("hosted YAML generates form metadata").into_bytes(),
         ),
+        (
+            "app/ui/public/fonts/OFL.txt",
+            std::fs::read(root.join("app/ui/public/fonts/OFL.txt")).expect("read canonical font license"),
+        ),
+        (
+            "app/ui/public/fonts/PROVENANCE.md",
+            std::fs::read(root.join("app/ui/public/fonts/PROVENANCE.md")).expect("read canonical font provenance"),
+        ),
     ];
     let control_path = "unprotected-control.txt";
     let control_lf = b"first line\nsecond line\n";
@@ -131,6 +139,8 @@ fn bindings_and_forms_autocrlf_checkout_preserves_generated_bytes() {
         "--",
         artifacts[0].0,
         artifacts[1].0,
+        artifacts[2].0,
+        artifacts[3].0,
         control_path,
     ]);
     let control = std::fs::read(repo.join(control_path)).expect("read checked-out control");
