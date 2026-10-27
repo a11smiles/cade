@@ -18,3 +18,4 @@ ts-rs.workspace = true
 [dev-dependencies]
 jsonschema.workspace = true
 serde_json.workspace = true
+tempfile.workspace = true
