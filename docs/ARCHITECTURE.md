@@ -45,15 +45,13 @@ bounded approval and pending verification; none establishes release readiness.
 
 ### Git implementation boundary
 
-**Status:** local open/init/status foundation implemented for #596 / GH-024;
-independent QA and full gates pending. #50 / GH-005 remains incomplete under
+**Status:** local open/init/status foundation (#596 / GH-024) and explicit-tree
+commits (#597 / GH-025) implemented. This is not completion of #50 / GH-005 under
 [ADR 0004](adr/0004-git-is-history.md), the unchanged Git-history authority.
 
 The approved local contract is implemented in
-[`cade-git`](../crates/cade-git/src/lib.rs) in the `issue-596-git-status`
-worktree based on `bf8359846e822fbaf7405e5941c5ae9ef67e4b35`; that SHA identifies
-the base, not a commit containing this implementation. Existing `ProjectRepo`
-and `GitError` remain the API, with
+[`cade-git`](../crates/cade-git/src/lib.rs). Existing `ProjectRepo` and
+`GitError` remain the API, with
 `ProjectRepo::status(&self) -> Result<Vec<gix::status::Item>, GitError>`.
 Consumers are crate callers/tests, not app IPC; `cade-app` does not depend on
 this crate. There is no new shared status wrapper, serialized format, `.cade`
@@ -83,12 +81,59 @@ or policy schema, dependency, or git2 fallback.
   subprocess Git, shell or network operations.
 
 HEAD inspection and Copilot commit-message formatting also remain available;
-formatting trailers is not creating a commit. Remaining children are #597 commits
-with existing Copilot trailers, #598 branch/checkout/merge-base, #599 authenticated
-clone/fetch, #600 push, #601 configured LFS, and #602 typed cancellable job/IPC
-integration. Commit-per-save/run and full Git/app integration remain undelivered.
-The local foundation preserves the parent obligation; it does not authorize
-transport, LFS or IPC contracts for later layers.
+the commit operation below stores supplied messages rather than generating
+attribution. Remaining children are #598 branch/checkout/merge-base, #599
+authenticated clone/fetch, #600 push, #601 configured LFS, and #602 typed
+cancellable job/IPC integration. Commit-per-save/run and full Git/app integration
+remain undelivered. These local mechanics preserve the parent obligation; they
+do not authorize transport, LFS or IPC contracts for later layers.
+
+#### Explicit immutable-tree commits
+
+The public method is implemented in the private
+[`commit.rs`](../crates/cade-git/src/commit.rs) module:
+`ProjectRepo::commit(&self, reference: &str, commit: &gix::objs::Commit) -> Result<gix::ObjectId, GitError>`.
+It reuses the SDK commit type, not a custom request wrapper.
+
+- **Caller-selected content:** the supplied tree identifies already-stored
+  immutable content; supplied parents retain their order, with the first parent
+  serving as the expected branch tip. The method does not stage paths, select
+  from the mutable index or infer worktree content. It validates the selected
+  tree and parents for availability, object kind and decoding, and validates
+  identities/header structure before publishing.
+- **Strict branch publication:** callers supply a valid full `refs/heads/`
+  reference, not `HEAD`, a short name or a tag. A parentless initial commit
+  requires `MustNotExist`; a parented commit requires a direct ref matching its
+  first parent through `MustExistAndMatch`. SDK atomic compare-and-swap
+  publication uses `with_deref(false)`: changed, deleted or symbolic targets
+  cannot be overwritten or silently retargeted. The weaker
+  `ExistingMustMatch` condition is not used.
+- **Preservation and locks:** an SDK index resource lock is held without
+  writing or replacing the index; initial repositories without an index remain
+  supported. Worktree content, config, other refs and HEAD attachment are
+  preserved. Intended effects are the target ref and normal object/reflog
+  additions, using the supplied committer rather than global identity. No hooks,
+  external filters, signing executables, subprocess Git or network are invoked.
+- **Exact SDK bytes:** stored commit bytes match SDK serialization of the
+  unchanged valid input, including metadata and message bytes; empty messages
+  are allowed. Applied-run callers use the existing `run_commit_message` for
+  `CADE-Copilot-Run`, `CADE-Model` and `CADE-Tokens`; ordinary commits receive
+  no fabricated attribution. The SDK's multiline-header decoder retains a
+  terminating newline, so decoded-field checks compare against decoding those
+  expected bytes. This is a storage-test distinction, not a production encoding
+  change or permission to trim metadata.
+- **Failures and explicit recovery:** invalid input, permissions, lock
+  obstructions and stale tips return actionable `GitError::Git`. Corrected
+  requests may be retried explicitly; there is no automatic retry or force
+  update. Repeating a successfully published request fails without duplicating
+  history or moving the branch backward. Failed ref transactions may leave an
+  unreachable immutable object; failure is reported without deleting objects
+  or another writer's locks. The missing-branch preflight preserves a preexisting
+  empty ref directory in the already-missing-target case only; it does not
+  guarantee directory preservation after concurrent deletion.
+
+This implements local commit mechanics under ADR 0004, not a new history
+store, `.cade` format, save UI or app/job API.
 
 ### Policy failure boundaries
 
@@ -185,17 +230,17 @@ rendering/publication; browser focus does not prove native accessibility.
 
 ## Acceptance evidence boundaries
 
-For #596, `git596-green-final` records 48 passing integration tests and 3 passing
-unit tests, plus passing focused formatting and Clippy checks, against the
-implementation worktree described above on macOS arm64, nonroot. This verifies
-the exercised local open/init/status scope, not independent QA acceptance,
-full-workspace coverage or full-engine completion. Linux and Windows execution,
-including the Linux-only non-UTF-8 filename fixture, was not performed in this
-verification; local path/permission fixtures do not certify other hosts or ACL
-behavior. Commit creation, branch/checkout/merge-base, authenticated clone/fetch,
-push, LFS and cancellable job/IPC integration remain outside this verified scope.
-Session evidence tracks moving gate status; no overall completion, GitHub/GHES
-transport certification or release approval follows from these results.
+The local Git fixtures cover open/init/status and actual stored initial and
+parented commits. The [commit probes](../crates/cade-git/tests/repo/commit.rs)
+inspect selected trees, parents, stored bytes and trailers, with separate
+validation, preservation, lock, stale-tip and retry cases. Git CLI use in these
+tests builds fixtures or independently inspects results; it is not the production
+implementation. Local repository evidence does not establish actual save/run
+integration, hosted GitHub/GHES authentication, branch/transport/LFS/job delivery,
+all-platform behavior or release readiness. In particular, nonroot macOS
+permission fixtures do not certify Linux permissions or Windows ACL behavior.
+Independent QA and full-workspace gate evidence must be assessed separately;
+moving gate status and test counts are not maintained in this architecture record.
 
 Independent QA approved **13 bounded fixes**, not 13 issue closures. Evidence is
 attached to the reviewed commits: policy `1ceb0837b6a2d9ae28f9156770e7b2cf2fb41f3c`
@@ -234,4 +279,5 @@ product-owner choices. Subsequent changes identify their own received times.
 | DDL | Truncation-only overlong names → deterministic full-identity suffix for new generation, preserving ordinary output and existing deployments. | “Generatoroverlongdeterministicsuffix newgeneratedcreate/up/downconsistent; noautochangeexistingdeployedconstraints,noDDLserializedchange.” | Accepted; bounded QA approved |
 | Feedback | Heading arrays and handwritten mirrors → keyed map with legacy adapter and generated declarations/metadata. Earlier briefs left labels/copy/version unresolved; the approved contract resolves them, including the named environment-ID correction. | “Feedbackcanonicalkeymap legacyshapeadapter/knownvalidation,Rust-derivedts-rs declarations,YAMLauthority,labelslegacy+requiredtype,version->app_versionmigration; actualsuccessfulcurrentpreview snapshot&focussuccess.” | Accepted; bounded QA approved |
 | Git inventory (historical) | Unqualified intended diagram → explicit scaffold boundary while local status was undelivered. Superseded by the implemented local foundation below. | “Gitstatus NOTimplemented yet; don'tclaim” | Superseded |
-| Git local foundation — 2026-10-26 at 18:14:08.215 −07:00 | Scaffold-only inventory → implemented #596 open/strict init/read-only status under the approved `remediation/git-local-contract-brief.md` and ADR 0004. Actual source and `git596-green-stage1` support local delivery, not completion of #50 or acceptance of later layers. | Product-owner handoff: “RecordimplementedGitlocalopen/init/status”; “independentQA/fullgatespending doNOTclaimoverallcomplete.” | Implemented; independent QA/full gates pending |
+| Git local foundation — 2026-10-26 at 18:14:08.215 −07:00 | Scaffold-only inventory → implemented #596 open/strict init/read-only status under the approved `remediation/git-local-contract-brief.md` and ADR 0004. The earlier inventory left commit creation undelivered; the commit entry below supersedes that boundary. | Product-owner handoff: “RecordimplementedGitlocalopen/init/status”; “independentQA/fullgatespending doNOTclaimoverallcomplete.” | Implemented; inventory extended below |
+| Git local commits — 2026-10-26 at 19:10:45.332 −07:00 | Status-only inventory → implemented #597 explicit immutable-tree commits under the approved `remediation/git-commit-contract-brief.md`, checked against source. Reuse SDK input and strict atomic expected-tip publication; preserve caller bytes and unrelated state without mutable-index selection. ADR 0004 remains unchanged; local mechanics do not establish save/run integration or completion of #50. | Product-owner handoff: “existingSDKCommit input notcustomwrapper”; “callerfullrefs/heads ref+parents expectedtip strictatomic CAS noderef+SDKindexholdlock noindexrewrite”; “no allengineclaim.” | Implemented local contract; not an acceptance or closure ruling |

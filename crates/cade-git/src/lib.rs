@@ -4,12 +4,15 @@
 //! run is a commit tagged with its run id, and History is the commit log.
 //! This crate uses gitoxide (pure Rust), so no git binary is required.
 //!
-//! Implemented here: open/init, reading HEAD and read-only local status.
+//! Implemented here: open/init, reading HEAD, read-only local status and commits
+//! from explicitly supplied SDK trees, parents and metadata.
 //! Status rejects executable clean/process filters and unsupported submodule
-//! or nested-repository inspection. Commit-per-save, run trailers, branching
-//! and restore-as-new-commit are CORE/HIST backlog items.
+//! or nested-repository inspection. Save/run integration, branching and
+//! restore-as-new-commit remain CORE/HIST backlog items.
 
 use std::path::{Path, PathBuf};
+
+mod commit;
 
 #[derive(Debug, thiserror::Error)]
 pub enum GitError {

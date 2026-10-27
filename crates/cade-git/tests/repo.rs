@@ -6,6 +6,8 @@ use cade_git::{GitError, ProjectRepo, run_commit_message};
 use std::path::Path;
 use std::process::Command;
 
+#[path = "repo/commit.rs"]
+mod commit;
 #[path = "repo/local.rs"]
 mod local;
 #[path = "repo/status.rs"]

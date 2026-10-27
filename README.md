@@ -106,7 +106,7 @@ application is finished. Most are still part of a broader, unfinished product.
 | `cade-policy` | `policy.yml` schema and decisions for models, BYOK, shell, network, MCP, design systems, shipping, telemetry and token budgets |
 | `cade-copilot` | Copilot and BYOK through the Copilot SDK, permission handler, change sets and token meter |
 | `cade-github` | Device-flow sign-in, keychain storage, github.com / GHE.com / GHES, issues, duplicate search and PRs |
-| `cade-git` | Local repository open/strict init, read-only HEAD/index/worktree status, HEAD inspection and Copilot commit-message formatting; #596 independent QA/full gates pending; commits, branch/checkout/merge-base, transport, push, LFS and app jobs remain under #50 / #597–602 |
+| `cade-git` | Local repository open/strict init, read-only HEAD/index/worktree status, HEAD inspection and commits from explicit immutable SDK trees with caller-supplied parents/metadata and guarded branch updates; existing Copilot message/trailer helper; save/run integration and #598–602 branch operations, transport, push, LFS and app jobs remain outside this local scope under #50 |
 | `cade-feedback` | Canonical form-ID answers with legacy-input migration, YAML-derived forms, Rust-derived TypeScript bindings and labeled, redacted issue drafts |
 | `cade-ddl` | PostgreSQL, SQL Server, MySQL and Oracle DDL; reversible migrations; PII check |
 | `cade-iac` | Bicep and Terraform (azurerm) for App Service, SQL, Key Vault and Storage; missing-setting check |
