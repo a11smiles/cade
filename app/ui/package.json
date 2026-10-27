@@ -7,7 +7,7 @@
   "scripts": {
     "tokens": "node ../../scripts/sync-tokens.mjs",
     "dev": "pnpm tokens && vite",
-    "build": "pnpm tokens && tsc -b && vite build",
+    "build": "pnpm tokens && tsc -b && vite build && node ../../scripts/check-font-notices.mjs",
     "typecheck": "tsc -b --noEmit && tsc -p e2e",
     "test": "vitest run",
     "test:watch": "vitest",
