@@ -10,9 +10,15 @@
 
 use regex::Regex;
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 use std::sync::LazyLock;
+use ts_rs::TS;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+mod answers;
+mod forms;
+
+/// The hosted issue form used to collect and label this feedback.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "kebab-case")]
 pub enum FeedbackKind {
     Bug,
@@ -23,11 +29,7 @@ pub enum FeedbackKind {
 impl FeedbackKind {
     /// Labels applied on creation. They match `.github/labels.yml`.
     pub fn labels(self) -> &'static [&'static str] {
-        match self {
-            FeedbackKind::Bug => &["bug", "needs-triage"],
-            FeedbackKind::FeatureRequest => &["enhancement"],
-            FeedbackKind::Comment => &["feedback"],
-        }
+        forms::labels(self)
     }
 
     /// The issue form this kind mirrors.
@@ -41,65 +43,71 @@ impl FeedbackKind {
 
     /// Headings of the answers this kind's issue form marks `required: true`, in form order.
     pub fn required_headings(self) -> &'static [&'static str] {
-        match self {
-            FeedbackKind::Bug => &["What happened?", "Steps to reproduce"],
-            FeedbackKind::FeatureRequest => &["What problem would this solve?", "What would you like CADE to do?"],
-            FeedbackKind::Comment => &["Your comment"],
-        }
+        forms::required_headings(self)
     }
 
     /// Title prefix used by the issue forms.
     pub fn title_prefix(self) -> &'static str {
-        match self {
-            FeedbackKind::Bug => "[Bug] ",
-            FeedbackKind::FeatureRequest => "[Feature] ",
-            FeedbackKind::Comment => "[Comment] ",
-        }
+        forms::text(&forms::form(self)["title"])
     }
 }
 
-/// One answered question from the form, in display order.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+/// One legacy heading/text answer, retained for migration of older feedback.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
 pub struct Answer {
     pub heading: String,
     pub text: String,
 }
 
 /// Environment details. Each is included only if the user leaves it checked.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, TS)]
 pub struct Environment {
+    #[serde(alias = "version")]
+    #[ts(optional = nullable)]
     pub app_version: Option<String>,
+    #[ts(optional = nullable)]
     pub os: Option<String>,
+    #[ts(optional = nullable)]
     pub gpu: Option<String>,
+    #[ts(optional = nullable)]
     pub policy_version: Option<String>,
     /// Already-scrubbed log tail. Off by default.
+    #[ts(optional = nullable)]
     pub logs: Option<String>,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+/// Approved form answers and opt-in details, validated and redacted before sending.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
 pub struct Feedback {
     pub kind: FeedbackKind,
     pub title: String,
-    pub answers: Vec<Answer>,
+    /// Canonical hosted-form IDs. Legacy heading/text arrays migrate on input.
+    #[serde(deserialize_with = "answers::deserialize")]
+    pub answers: BTreeMap<String, String>,
     pub environment: Environment,
     /// Asset URL of an uploaded screenshot the user approved.
+    #[ts(optional = nullable)]
     pub screenshot_url: Option<String>,
 }
 
 /// What `cade-github` sends to `POST /repos/{owner}/{repo}/issues`.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
 pub struct IssueDraft {
     pub title: String,
     pub body: String,
     pub labels: Vec<String>,
 }
 
+/// An actionable validation failure; no issue is publishable until it is resolved.
 #[derive(Debug, thiserror::Error, PartialEq)]
 pub enum FeedbackError {
     #[error("a title is required")]
     MissingTitle,
     #[error("\"{0}\" is required")]
     MissingAnswer(String),
+    /// The caller supplied a field outside the selected form.
+    #[error("invalid answer: {0}")]
+    InvalidAnswer(String),
     #[error("title is longer than 256 characters")]
     TitleTooLong,
     #[error("a screenshot must be an https URL")]
@@ -113,11 +121,24 @@ impl Feedback {
         if title.is_empty() {
             return Err(FeedbackError::MissingTitle);
         }
-        for heading in self.kind.required_headings() {
-            let answered = self.answers.iter().any(|a| a.heading == *heading && !a.text.trim().is_empty());
-            if !answered {
-                return Err(FeedbackError::MissingAnswer((*heading).into()));
+        for field in forms::fields(self.kind) {
+            if field["validations"]["required"].as_bool() == Some(true)
+                && !self
+                    .answers
+                    .get(forms::text(&field["id"]))
+                    .is_some_and(|text| !text.trim().is_empty())
+            {
+                return Err(FeedbackError::MissingAnswer(forms::text(&field["attributes"]["label"]).into()));
             }
+        }
+        if self
+            .answers
+            .keys()
+            .any(|id| !forms::fields(self.kind).any(|field| field["id"].as_str() == Some(id.as_str())))
+        {
+            return Err(FeedbackError::InvalidAnswer(
+                "use only the field IDs in the selected feedback form".into(),
+            ));
         }
         let screenshot = match &self.screenshot_url {
             Some(url) if !url.get(..8).is_some_and(|scheme| scheme.eq_ignore_ascii_case("https://")) => {
@@ -132,11 +153,11 @@ impl Feedback {
         }
 
         let mut body = String::new();
-        for a in &self.answers {
-            body.push_str(&format!("### {}\n\n", a.heading));
-            let t = a.text.trim();
+        for field in forms::fields(self.kind) {
+            body.push_str(&format!("### {}\n\n", forms::text(&field["attributes"]["label"])));
+            let t = answers::canonical(field, self.answers.get(forms::text(&field["id"])).map_or("", String::as_str))?;
             body.push_str(if t.is_empty() { "_No response_" } else { "" });
-            body.push_str(&redact(t));
+            body.push_str(&redact(&t));
             body.push_str("\n\n");
         }
         if let Some(url) = screenshot {
@@ -215,20 +236,14 @@ mod tests {
         Feedback {
             kind: FeedbackKind::Bug,
             title: "Contrast check times out".into(),
-            answers: vec![
-                Answer {
-                    heading: "What happened?".into(),
-                    text: "Run stopped at step 3 in /Users/jdavis/design/claims".into(),
-                },
-                Answer {
-                    heading: "Steps to reproduce".into(),
-                    text: "1. Open\n2. Ask".into(),
-                },
-                Answer {
-                    heading: "What did you expect?".into(),
-                    text: "".into(),
-                },
-            ],
+            answers: BTreeMap::from([
+                (
+                    "what-happened".into(),
+                    "Run stopped at step 3 in /Users/jdavis/design/claims".into(),
+                ),
+                ("steps".into(), "1. Open\n2. Ask".into()),
+                ("expected".into(), "".into()),
+            ]),
             environment: Environment {
                 app_version: Some("0.9.0".into()),
                 os: Some("macOS 26.1".into()),
@@ -242,7 +257,7 @@ mod tests {
     fn builds_a_labeled_issue() {
         let i = bug().to_issue().unwrap();
         assert_eq!(i.title, "[Bug] Contrast check times out");
-        assert_eq!(i.labels, vec!["bug", "needs-triage"]);
+        assert_eq!(i.labels, vec!["bug", "needs-triage", "type:bug"]);
         assert!(i.body.contains("### Steps to reproduce"));
         assert!(i.body.contains("_No response_"));
         assert!(i.body.contains("**CADE version:** 0.9.0"));
@@ -266,24 +281,21 @@ mod tests {
         f.title = "  ".into();
         assert_eq!(f.to_issue(), Err(FeedbackError::MissingTitle));
         let mut f = bug();
-        f.answers[0].text.clear();
+        f.answers.get_mut("what-happened").unwrap().clear();
         assert!(matches!(f.to_issue(), Err(FeedbackError::MissingAnswer(_))));
     }
 
     #[test]
     fn each_kind_maps_to_a_template_and_labels() {
         assert_eq!(FeedbackKind::FeatureRequest.template(), "feature_request.yml");
-        assert_eq!(FeedbackKind::Comment.labels(), &["feedback"]);
+        assert_eq!(FeedbackKind::Comment.labels(), &["feedback", "type:comment"]);
     }
 
     fn comment(title: &str, text: &str) -> Feedback {
         Feedback {
             kind: FeedbackKind::Comment,
             title: title.into(),
-            answers: vec![Answer {
-                heading: "Your comment".into(),
-                text: text.into(),
-            }],
+            answers: BTreeMap::from([("comment".into(), text.into())]),
             environment: Environment::default(),
             screenshot_url: None,
         }
@@ -291,8 +303,11 @@ mod tests {
 
     #[test]
     fn labels_bug_and_feature_request_match_issue_forms() {
-        assert_eq!(FeedbackKind::Bug.labels(), &["bug", "needs-triage"]);
-        assert_eq!(FeedbackKind::FeatureRequest.labels(), &["enhancement"]);
+        assert_eq!(FeedbackKind::Bug.labels(), &["bug", "needs-triage", "type:bug"]);
+        assert_eq!(
+            FeedbackKind::FeatureRequest.labels(),
+            &["enhancement", "needs-triage", "type:feature"]
+        );
     }
 
     #[test]
@@ -315,8 +330,13 @@ mod tests {
             i,
             IssueDraft {
                 title: "[Comment] Love the canvas".into(),
-                body: "### Your comment\n\nFast on 10k layers.\n\n<sub>Sent from CADE (Help › Send feedback).</sub>\n".into(),
-                labels: vec!["feedback".into()],
+                body: "### Your comment\n\nFast on 10k layers.\n\n\
+                       ### Where in CADE?\n\n_No response_\n\n\
+                       ### Output type\n\n_No response_\n\n\
+                       ### Would you like a reply?\n\n_No response_\n\n\
+                       <sub>Sent from CADE (Help › Send feedback).</sub>\n"
+                    .into(),
+                labels: vec!["feedback".into(), "type:comment".into()],
             }
         );
     }
@@ -325,7 +345,7 @@ mod tests {
     fn to_issue_feature_request_uses_feature_prefix_and_enhancement_label() {
         let i = feature("Needed for motion", "Export Lottie files").to_issue().unwrap();
         assert_eq!(i.title, "[Feature] Export to Lottie");
-        assert_eq!(i.labels, vec!["enhancement"]);
+        assert_eq!(i.labels, vec!["enhancement", "needs-triage", "type:feature"]);
     }
 
     #[test]
@@ -466,16 +486,7 @@ mod tests {
         Feedback {
             kind: FeedbackKind::FeatureRequest,
             title: "Export to Lottie".into(),
-            answers: vec![
-                Answer {
-                    heading: "What problem would this solve?".into(),
-                    text: problem.into(),
-                },
-                Answer {
-                    heading: "What would you like CADE to do?".into(),
-                    text: wish.into(),
-                },
-            ],
+            answers: BTreeMap::from([("problem".into(), problem.into()), ("proposal".into(), wish.into())]),
             environment: Environment::default(),
             screenshot_url: None,
         }
@@ -484,14 +495,14 @@ mod tests {
     #[test]
     fn to_issue_empty_second_required_bug_answer_returns_missing_answer() {
         let mut f = bug();
-        f.answers[1].text = " \n ".into();
+        f.answers.insert("steps".into(), " \n ".into());
         assert_eq!(f.to_issue(), Err(FeedbackError::MissingAnswer("Steps to reproduce".into())));
     }
 
     #[test]
     fn to_issue_required_answer_left_out_returns_missing_answer() {
         let mut f = feature("Handoff to motion", "x");
-        f.answers.pop();
+        f.answers.remove("proposal");
         assert_eq!(
             f.to_issue(),
             Err(FeedbackError::MissingAnswer("What would you like CADE to do?".into()))

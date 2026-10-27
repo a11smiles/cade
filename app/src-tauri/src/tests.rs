@@ -58,10 +58,10 @@ fn bug(title: &str, first_answer: &str) -> Value {
         "feedback": {
             "kind": "bug",
             "title": title,
-            "answers": [
-                { "heading": "What happened?", "text": first_answer },
-                { "heading": "Steps to reproduce", "text": "Open a big file." }
-            ],
+            "answers": {
+                "what-happened": first_answer,
+                "steps": "Open a big file."
+            },
             "environment": { "app_version": "0.1.0", "os": null, "gpu": null, "policy_version": null, "logs": null }
         }
     })

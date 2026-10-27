@@ -1,7 +1,7 @@
 name: Feature request
 description: Something CADE should do.
 title: "[Feature] "
-labels: ["enhancement"]
+labels: ["enhancement", "needs-triage", "type:feature"]
 body:
   - type: textarea
     id: problem
@@ -20,10 +20,20 @@ body:
     attributes:
       label: Which output type?
       multiple: true
-      options: [App, Image, Deck, Document, Motion, Diagram, Architecture, Data model, Not specific]
+      options: [App, Image, Deck, Document, Motion, Diagram, Architecture, Data model, System, Other]
   - type: textarea
     id: alternatives
     attributes:
       label: What do you do today instead?
     validations:
       required: false
+  - type: dropdown
+    id: beneficiaries
+    attributes:
+      label: Who would benefit?
+      options: [individual, team, admin/security]
+  - type: dropdown
+    id: contribute
+    attributes:
+      label: Would you like to contribute?
+      options: ["Yes", "No"]

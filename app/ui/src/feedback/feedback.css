@@ -6,9 +6,11 @@
 .fb-grow { flex: 1; }
 .fb-muted { color: var(--text-muted); font-size: 12px; }
 .fb-close { width: 32px; height: 32px; border-radius: var(--radius-md); border: 1px solid var(--border); background: transparent; color: var(--text-secondary); display: flex; align-items: center; justify-content: center; cursor: pointer; }
-.fb-body { display: flex; min-height: 0; flex-wrap: wrap; }
+.fb-body { display: flex; min-height: 0; overflow: auto; }
 .fb-form { flex: 999 1 520px; min-width: 0; display: flex; flex-direction: column; gap: var(--space-4); padding: 20px 22px; overflow: auto; }
-.fb-side { flex: 1 1 320px; display: flex; flex-direction: column; gap: 10px; padding: 20px; border-left: 1px solid var(--border); background: var(--bg-chrome); }
+.fb-form, .fb-body { scroll-padding-block: var(--space-1); }
+.fb-form #fb-screenshot { scroll-margin-block: var(--space-1); }
+.fb-side { flex: 1 1 320px; min-width: 0; overflow: auto; overflow-wrap: anywhere; display: flex; flex-direction: column; gap: 10px; padding: 20px; border-left: 1px solid var(--border); background: var(--bg-chrome); }
 .fb-kinds { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 .fb-kind { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: var(--radius-xl); border: 1px solid var(--border); background: var(--bg-raised); text-align: left; cursor: pointer; }
 .fb-kind[aria-checked="true"] { border: 1.5px solid var(--accent-selection); background: var(--accent-soft); }
@@ -20,3 +22,10 @@
 .fb-error { color: var(--danger-text); font-size: 12px; }
 .fb-done { display: flex; flex-direction: column; align-items: center; gap: var(--space-3); padding: 48px; color: var(--success-text); }
 .fb-done a { color: var(--accent-text); }
+.fb-head, .fb-foot { flex-shrink: 0; }
+.fb-detail { display: flex; flex-direction: column; gap: var(--space-2); }
+.fb-side > * { flex-shrink: 0; }
+.fb .c-field select { min-height: var(--control-md); padding: var(--space-2) var(--space-3); border-radius: var(--radius-md); border: 1px solid var(--border-strong); background: var(--bg-raised); color: var(--text-primary); font: inherit; }
+.fb .c-field input, .fb .c-field textarea, .fb .c-field select { min-width: 0; width: 100%; }
+.fb :is(input, textarea, select, .fb-kind):disabled { color: var(--text-muted); cursor: not-allowed; }
+.fb-foot .fb-error { min-width: 0; overflow-wrap: anywhere; }

@@ -1,0 +1,77 @@
+[
+  {
+    "name": "valid dropdown",
+    "valid": true,
+    "form": {
+      "name": "Fixture",
+      "description": "Synthetic schema control.",
+      "body": [
+        {
+          "type": "dropdown",
+          "id": "choice",
+          "attributes": {"label": "Choice", "options": ["One", "Two"], "multiple": true},
+          "validations": {"required": false}
+        }
+      ]
+    }
+  },
+  {
+    "name": "missing form name",
+    "valid": false,
+    "error_path": "",
+    "form": {
+      "description": "Synthetic schema control.",
+      "body": [{"type": "input", "attributes": {"label": "Choice"}}]
+    }
+  },
+  {
+    "name": "unsupported control type",
+    "valid": false,
+    "error_path": "/body/0/type",
+    "form": {
+      "name": "Fixture",
+      "description": "Synthetic schema control.",
+      "body": [{"type": "not-a-control", "attributes": {"label": "Choice"}}]
+    }
+  },
+  {
+    "name": "required must be boolean",
+    "valid": false,
+    "error_path": "/body/0/validations/required",
+    "form": {
+      "name": "Fixture",
+      "description": "Synthetic schema control.",
+      "body": [{"type": "input", "attributes": {"label": "Choice"}, "validations": {"required": "true"}}]
+    }
+  },
+  {
+    "name": "empty dropdown options",
+    "valid": false,
+    "error_path": "/body/0/attributes/options",
+    "form": {
+      "name": "Fixture",
+      "description": "Synthetic schema control.",
+      "body": [{"type": "dropdown", "attributes": {"label": "Choice", "options": []}}]
+    }
+  },
+  {
+    "name": "duplicate dropdown options",
+    "valid": false,
+    "error_path": "/body/0/attributes/options",
+    "form": {
+      "name": "Fixture",
+      "description": "Synthetic schema control.",
+      "body": [{"type": "dropdown", "attributes": {"label": "Choice", "options": ["One", "One"]}}]
+    }
+  },
+  {
+    "name": "unknown control attribute",
+    "valid": false,
+    "error_path": "/body/0/attributes",
+    "form": {
+      "name": "Fixture",
+      "description": "Synthetic schema control.",
+      "body": [{"type": "input", "attributes": {"label": "Choice", "unknown": true}}]
+    }
+  }
+]

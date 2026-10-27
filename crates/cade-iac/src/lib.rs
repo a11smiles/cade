@@ -143,8 +143,10 @@ fn tq(s: &str) -> String {
 }
 
 /// A Terraform map key: bare when it's a plain identifier, quoted otherwise.
+/// `for` must be quoted so an object isn't parsed as a for expression.
 fn tf_key(k: &str) -> String {
-    let plain = k.starts_with(|c: char| c.is_ascii_alphabetic() || c == '_')
+    let plain = k != "for"
+        && k.starts_with(|c: char| c.is_ascii_alphabetic() || c == '_')
         && k.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-');
     if plain { k.to_string() } else { tq(k) }
 }
@@ -671,6 +673,30 @@ mod tests {
         let t = tf_resource(&app(false, false, None, &[("my.key", "v"), ("x\" = 1 #", "w")]));
         assert!(t.contains("    \"my.key\" = \"v\"\n"), "{t}");
         assert!(t.contains("    \"x\\\" = 1 #\" = \"w\"\n"), "{t}");
+    }
+
+    #[test]
+    fn tf_resource_for_setting_key_emits_quoted_literal_key() {
+        let t = tf_resource(&app(false, false, None, &[("for", "literal")]));
+        assert!(t.contains("  app_settings = {\n    \"for\" = \"literal\"\n  }\n"), "{t}");
+    }
+
+    #[test]
+    fn tf_key_for_neighbors_preserves_bare_identifiers() {
+        for key in ["For", "FOR", "format", "for_each", "for-key", "_for"] {
+            assert_eq!(tf_key(key), key, "{key}");
+        }
+    }
+
+    #[test]
+    fn tf_key_template_and_backslash_characters_emits_escaped_literal_keys() {
+        for (key, expected) in [
+            ("${var.key}", "\"$${var.key}\""),
+            ("%{if true}", "\"%%{if true}\""),
+            ("path\\key", "\"path\\\\key\""),
+        ] {
+            assert_eq!(tf_key(key), expected, "{key}");
+        }
     }
 
     #[test]

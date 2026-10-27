@@ -60,8 +60,10 @@ appointed representative at an online or offline event.
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported to the maintainer through a private message on GitHub. Reports are
-kept confidential. The maintainer will review and investigate reports, decide
+reported privately by emailing [a11smiles@github.com](mailto:a11smiles@github.com).
+The maintainer's GitHub username is [a11smiles](https://github.com/a11smiles).
+Do not post the report in a public issue. Reports are kept confidential.
+The maintainer will review and investigate reports, decide
 on an appropriate response based on the circumstances, and communicate that
 decision as appropriate. The maintainer will maintain confidentiality with
 regard to the reporter of an incident.

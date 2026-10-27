@@ -1,7 +1,7 @@
-name: Comment
+name: Comment or question
 description: Anything else — praise, questions, ideas.
 title: "[Comment] "
-labels: ["feedback"]
+labels: ["feedback", "type:comment"]
 body:
   - type: textarea
     id: comment
@@ -14,3 +14,14 @@ body:
     attributes:
       label: Where in CADE?
       placeholder: "App › Copilot agent run"
+  - type: dropdown
+    id: output
+    attributes:
+      label: Output type
+      multiple: true
+      options: [App, Image, Deck, Document, Motion, Diagram, Architecture, Data model, System, Other]
+  - type: dropdown
+    id: reply
+    attributes:
+      label: Would you like a reply?
+      options: ["Yes", "No"]
