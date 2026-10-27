@@ -43,6 +43,33 @@ native environment passes. Source builds do not create an available installer.
 - Don't commit Microsoft's Azure icon files (see `assets/icons/azure/README.md`).
 - No telemetry, no network calls outside the ones a backlog item names.
 
+## Branch delivery
+
+Going forward, every issue and subissue has its own `issue-NN-<scope>` branch.
+Create the parent's own branch before its children; every child must descend
+from that parent. Prefer a sequential dependency chain over conflicting sibling
+branches. Complete already-scoped work and preserve previously approved grouped
+branches and commits; this prospective change does not authorize rewriting them.
+
+Use the `gh stack` command/extension for one local stack containing the parent
+and its children. The installed official `github/gh-stack` 0.3.0 supports local
+adoption of existing branches through `init`, ordered bottom-to-top with an
+explicit `--base`. Registration alone proves neither ancestry nor absence of
+merge conflicts. Keep an issue-to-branch map with parent, predecessor/base and
+exact SHAs; retain actual ancestry and merge-conflict-check evidence. An empty
+parent anchor at the pre-child base establishes ancestry, but provides no
+publishable root diff: report that limitation instead of claiming publication
+readiness.
+
+This delivery instruction authorizes local registration only, not stack
+`sync`/`submit`, push-capable `link`, pushing or PR publication. Rebasing rewrites
+history and needs approved scope; do not assume a dry-run mode exists. All
+existing QA, commit, closure and permission gates still apply. The branch map
+and stack are delivery evidence, not independent backlog completion.
+
+See [team-orchestration](.github/skills/team-orchestration/SKILL.md#branch-rule-change-history)
+for the superseded per-task rule and approval history.
+
 ## Requirements and acceptance evidence
 
 Before implementation, define explicit contracts: actors, preconditions, inputs,

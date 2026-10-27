@@ -11,21 +11,21 @@ use std::path::{Path, PathBuf};
 #[path = "commit/failures.rs"]
 mod failures;
 #[path = "commit/validation.rs"]
-mod validation;
+pub(super) mod validation;
 
 const REFERENCE: &str = "refs/heads/main";
 
-fn resolve(dir: &Path, revision: &str) -> gix::ObjectId {
+pub(super) fn resolve(dir: &Path, revision: &str) -> gix::ObjectId {
     let output = git(dir, &["rev-parse", "--verify", revision]);
     gix::ObjectId::from_hex(String::from_utf8(output).unwrap().trim().as_bytes()).unwrap()
 }
 
-fn sdk(dir: &Path) -> gix::Repository {
+pub(super) fn sdk(dir: &Path) -> gix::Repository {
     gix::open_opts(dir, gix::open::Options::isolated()).unwrap()
 }
 
 // This immutable tree deliberately differs from both the index and worktree.
-fn request(dir: &Path, parents: &[gix::ObjectId]) -> gix::objs::Commit {
+pub(super) fn request(dir: &Path, parents: &[gix::ObjectId]) -> gix::objs::Commit {
     let repo = sdk(dir);
     let selected = repo.write_blob(b"selected document bytes\n").unwrap().detach();
     let original = repo.write_blob(b"original\n").unwrap().detach();
@@ -132,7 +132,7 @@ fn protected_state(dir: &Path) -> BTreeMap<PathBuf, (fs::FileType, Vec<u8>)> {
     state
 }
 
-fn dirty_selection(dir: &Path) {
+pub(super) fn dirty_selection(dir: &Path) {
     fs::write(dir.join("tracked.txt"), b"unselected staged tracked bytes\n").unwrap();
     fs::write(dir.join("selected.cade"), b"unselected staged document bytes\n").unwrap();
     fs::write(dir.join("unselected.txt"), b"unselected new staged bytes\n").unwrap();
@@ -142,7 +142,7 @@ fn dirty_selection(dir: &Path) {
     fs::write(dir.join("untracked.txt"), b"unselected untracked bytes\n").unwrap();
 }
 
-fn initial_repo() -> tempfile::TempDir {
+pub(super) fn initial_repo() -> tempfile::TempDir {
     let dir = tempfile::tempdir().unwrap();
     git(dir.path(), &["init", "-q", "-b", "main"]);
     dir

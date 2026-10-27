@@ -4,14 +4,16 @@
 //! run is a commit tagged with its run id, and History is the commit log.
 //! This crate uses gitoxide (pure Rust), so no git binary is required.
 //!
-//! Implemented here: open/init, reading HEAD, read-only local status and commits
-//! from explicitly supplied SDK trees, parents and metadata.
+//! Implemented here: open/init, reading HEAD, read-only local status, commits
+//! from explicitly supplied SDK trees, parents and metadata, local branch
+//! creation and explicit-commit merge-base queries.
 //! Status rejects executable clean/process filters and unsupported submodule
-//! or nested-repository inspection. Save/run integration, branching and
+//! or nested-repository inspection. Save/run integration, checkout and
 //! restore-as-new-commit remain CORE/HIST backlog items.
 
 use std::path::{Path, PathBuf};
 
+mod branches;
 mod commit;
 
 #[derive(Debug, thiserror::Error)]

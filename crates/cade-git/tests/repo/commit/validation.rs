@@ -13,7 +13,7 @@ fn invalid_then_corrected(dir: &Path, reference: &str, invalid: &gix::objs::Comm
     commit_success(&repo, dir, valid);
 }
 
-fn absent_object(dir: &Path) -> gix::ObjectId {
+pub(crate) fn absent_object(dir: &Path) -> gix::ObjectId {
     let id = gix::ObjectId::from_hex(b"1111111111111111111111111111111111111111").unwrap();
     assert!(!sdk(dir).has_object(id), "missing-object fixture must really be absent");
     id

@@ -47,7 +47,7 @@ impl ProjectRepo {
     }
 }
 
-fn validate_branch_reference(reference: &str) -> Result<FullName, GitError> {
+pub(super) fn validate_branch_reference(reference: &str) -> Result<FullName, GitError> {
     if !reference.starts_with("refs/heads/") {
         return Err(GitError::Git(
             "commit requires a fully qualified local branch under refs/heads/".into(),
@@ -93,12 +93,14 @@ fn validate_commit_objects(repo: &gix::Repository, commit: &gix::objs::Commit) -
     Ok(())
 }
 
-fn validate_signature(signature: &gix::actor::Signature) -> Result<(), GitError> {
-    for field in [&signature.name, &signature.email] {
-        if field.trim().is_empty() || field.iter().any(|byte| matches!(byte, b'\0' | b'\r')) {
-            return Err(GitError::Git(
-                "commit identities require nonempty names and emails without NUL or carriage returns".into(),
-            ));
+pub(super) fn validate_signature(signature: &gix::actor::Signature) -> Result<(), GitError> {
+    for (name, field) in [("name", &signature.name), ("email", &signature.email)] {
+        // The SDK retains invalid serialization tokens in its error metadata.
+        // Reject them before serialization without including supplied identity bytes.
+        if field.trim().is_empty() || field.iter().any(|byte| matches!(byte, b'\0' | b'\r' | b'\n' | b'<' | b'>')) {
+            return Err(GitError::Git(format!(
+                "commit identity {name} must be nonempty and contain no NUL, carriage return, newline or angle brackets"
+            )));
         }
     }
     // Time::to_str, used by SDK signature serialization, assumes a representable

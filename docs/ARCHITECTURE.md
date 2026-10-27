@@ -45,8 +45,10 @@ bounded approval and pending verification; none establishes release readiness.
 
 ### Git implementation boundary
 
-**Status:** local open/init/status foundation (#596 / GH-024) and explicit-tree
-commits (#597 / GH-025) implemented. This is not completion of #50 / GH-005 under
+**Status:** local open/init/status foundation (#596 / GH-024), explicit-tree
+commits (#597 / GH-025), and branch creation/merge-base (#598 / GH-026 Stage A)
+implemented. Stage A independent QA is pending; checkout remains gated and
+undelivered. This is not completion of #598 or #50 / GH-005 under
 [ADR 0004](adr/0004-git-is-history.md), the unchanged Git-history authority.
 
 The approved local contract is implemented in
@@ -82,7 +84,7 @@ or policy schema, dependency, or git2 fallback.
 
 HEAD inspection and Copilot commit-message formatting also remain available;
 the commit operation below stores supplied messages rather than generating
-attribution. Remaining children are #598 branch/checkout/merge-base, #599
+attribution. Remaining work includes #598 checkout and full acceptance, #599
 authenticated clone/fetch, #600 push, #601 configured LFS, and #602 typed
 cancellable job/IPC integration. Commit-per-save/run and full Git/app integration
 remain undelivered. These local mechanics preserve the parent obligation; they
@@ -107,7 +109,10 @@ It reuses the SDK commit type, not a custom request wrapper.
   first parent through `MustExistAndMatch`. SDK atomic compare-and-swap
   publication uses `with_deref(false)`: changed, deleted or symbolic targets
   cannot be overwritten or silently retargeted. The weaker
-  `ExistingMustMatch` condition is not used.
+  `ExistingMustMatch` condition is not used. Full observed-reference preflight
+  rejects missing, mismatched or symbolic targets for parented commits and any
+  existing target for initial commits, including packed refs, before locks or
+  object writes. This does not replace the strict under-lock publication check.
 - **Preservation and locks:** an SDK index resource lock is held without
   writing or replacing the index; initial repositories without an index remain
   supported. Worktree content, config, other refs and HEAD attachment are
@@ -128,12 +133,75 @@ It reuses the SDK commit type, not a custom request wrapper.
   update. Repeating a successfully published request fails without duplicating
   history or moving the branch backward. Failed ref transactions may leave an
   unreachable immutable object; failure is reported without deleting objects
-  or another writer's locks. The missing-branch preflight preserves a preexisting
-  empty ref directory in the already-missing-target case only; it does not
-  guarantee directory preservation after concurrent deletion.
+  or another writer's locks. Observed-reference preflight avoids ref-lock
+  rollback pruning preexisting empty directories on those known denials,
+  including stale packed refs. It does not guarantee directory preservation
+  after a post-preflight concurrent deletion or universal rollback across late
+  SDK ref/reflog failures.
 
 This implements local commit mechanics under ADR 0004, not a new history
 store, `.cade` format, save UI or app/job API.
+
+#### Local branch creation and ancestry — Stage A
+
+The public methods are implemented in the private
+[`branches.rs`](../crates/cade-git/src/branches.rs) module on existing
+`ProjectRepo`, using existing `GitError` and SDK types:
+
+```rust
+pub fn create_branch(
+    &self,
+    reference: &str,
+    target: gix::ObjectId,
+    committer: gix::actor::SignatureRef<'_>,
+) -> Result<(), GitError>;
+
+pub fn merge_base(
+    &self,
+    one: gix::ObjectId,
+    two: gix::ObjectId,
+) -> Result<Option<gix::ObjectId>, GitError>;
+```
+
+- **Explicit immutable inputs:** branch creation takes a valid full local
+  `refs/heads/...` name and an available, decodable commit target, not a tag to
+  peel or content inferred from HEAD/index/worktree. Existing private name and
+  identity validation is reused. The supplied reflog actor must validate and
+  round-trip without normalization; identity is not fabricated from global
+  configuration.
+- **Strict creation, no dereferencing:** known invalid inputs and existing
+  loose, packed or symbolic refs are rejected before locks. An identical
+  existing target is also a denial. Publication retains SDK `MustNotExist`
+  with `with_deref(false)`; the SDK's identical-target no-op is detected and
+  rejected rather than reported as creation. Competing creators cannot
+  overwrite each other or both report successful creation.
+- **Preservation and explicit retry:** only the intended branch/reflog creation
+  is authorized; HEAD attachment, worktree, index, config, objects and other
+  refs are preserved. No checkout, hooks, external filters, subprocess Git or
+  network operation is invoked. Locks, permission obstructions and invalid
+  requests yield actionable `GitError::Git`; corrected requests can be retried
+  explicitly on the same handle using freshly reopened metadata. There is no
+  automatic retry, force update or destructive repair. These boundaries do not
+  promise universal rollback for late multi-file SDK failures.
+- **Complete, valid ancestry:** both explicit OIDs and all reachable parent
+  commits must be available and decodable, even for equal inputs. Missing,
+  corrupt or noncommit graph objects are errors, not fabricated absence.
+  Valid unrelated histories return typed `Ok(None)` from SDK absence semantics,
+  without error-string matching. Otherwise the result is one SDK-selected best
+  common ancestor: multiple best bases are not rejected, sorted by a new rule
+  or claimed to be unique.
+- **Read-only queries, independent of HEAD:** merge-base changes no refs, index,
+  worktree files or config. Both methods support bare repositories and detached
+  or unborn HEAD when their explicit commit inputs meet the requirements.
+
+Stage A uses the pinned gix 0.90.0 with unchanged dependencies. No checkout
+stub, git2 fallback, wrapper, error variant or app IPC was added. #50 permits a
+narrow future feature-specific fallback for the missing existing-worktree
+checkout capability; that permission is not dependency adoption or delivery.
+Stage B checkout remains gated on SDK-owned private-index/continuous real-index
+lock and guarded-reference safety proof, followed by production authorization.
+ADR 0004 remains accepted and unchanged; this is not permission to replace
+gitoxide generally.
 
 ### Policy failure boundaries
 
@@ -230,17 +298,26 @@ rendering/publication; browser focus does not prove native accessibility.
 
 ## Acceptance evidence boundaries
 
-The local Git fixtures cover open/init/status and actual stored initial and
-parented commits. The [commit probes](../crates/cade-git/tests/repo/commit.rs)
+The local Git fixtures cover open/init/status, actual stored initial and
+parented commits, branch creation and explicit-commit ancestry.
+The [commit probes](../crates/cade-git/tests/repo/commit.rs)
 inspect selected trees, parents, stored bytes and trailers, with separate
-validation, preservation, lock, stale-tip and retry cases. Git CLI use in these
-tests builds fixtures or independently inspects results; it is not the production
-implementation. Local repository evidence does not establish actual save/run
-integration, hosted GitHub/GHES authentication, branch/transport/LFS/job delivery,
+validation, preservation, lock, stale-tip and retry cases.
+The [branch probes](../crates/cade-git/tests/repo/branches.rs) cover strict
+creation, supplied actors, competing creators and corrected retries;
+[ancestry probes](../crates/cade-git/tests/repo/merge_base.rs) cover unique,
+multiple-best, unrelated and invalid/incomplete histories with preservation.
+Git CLI use in these tests builds fixtures or independently inspects results;
+it is not the production implementation. Stage A independent QA remains
+pending; developer red/green results and focused checks are not acceptance.
+The two Stage A Linux-only raw-byte fixtures remain unexecuted, not passed.
+Local repository evidence does not establish actual save/run integration,
+hosted GitHub/GHES authentication, checkout/transport/LFS/job delivery,
 all-platform behavior or release readiness. In particular, nonroot macOS
 permission fixtures do not certify Linux permissions or Windows ACL behavior.
-Independent QA and full-workspace gate evidence must be assessed separately;
-moving gate status and test counts are not maintained in this architecture record.
+Independent QA and exact-commit full-workspace gate evidence must be assessed
+separately; earlier #597 gates do not certify Stage A changes. Moving gate
+results and test counts are not maintained in this architecture record.
 
 Independent QA approved **13 bounded fixes**, not 13 issue closures. Evidence is
 attached to the reviewed commits: policy `1ceb0837b6a2d9ae28f9156770e7b2cf2fb41f3c`
@@ -281,3 +358,4 @@ product-owner choices. Subsequent changes identify their own received times.
 | Git inventory (historical) | Unqualified intended diagram → explicit scaffold boundary while local status was undelivered. Superseded by the implemented local foundation below. | “Gitstatus NOTimplemented yet; don'tclaim” | Superseded |
 | Git local foundation — 2026-10-26 at 18:14:08.215 −07:00 | Scaffold-only inventory → implemented #596 open/strict init/read-only status under the approved `remediation/git-local-contract-brief.md` and ADR 0004. The earlier inventory left commit creation undelivered; the commit entry below supersedes that boundary. | Product-owner handoff: “RecordimplementedGitlocalopen/init/status”; “independentQA/fullgatespending doNOTclaimoverallcomplete.” | Implemented; inventory extended below |
 | Git local commits — 2026-10-26 at 19:10:45.332 −07:00 | Status-only inventory → implemented #597 explicit immutable-tree commits under the approved `remediation/git-commit-contract-brief.md`, checked against source. Reuse SDK input and strict atomic expected-tip publication; preserve caller bytes and unrelated state without mutable-index selection. ADR 0004 remains unchanged; local mechanics do not establish save/run integration or completion of #50. | Product-owner handoff: “existingSDKCommit input notcustomwrapper”; “callerfullrefs/heads ref+parents expectedtip strictatomic CAS noderef+SDKindexholdlock noindexrewrite”; “no allengineclaim.” | Implemented local contract; not an acceptance or closure ruling |
+| Git branches/ancestry — handoff received 2026-10-26 at 20:20:14.247 −07:00 | Earlier inventory excluded all #598 operations → implemented Stage A `create_branch`/`merge_base` under `remediation/git-branches-contract-brief.md`, checked against source. Checkout remains gated; #50's narrow future fallback permission is recorded without dependency adoption or ADR modification. Also correct #597's missing-only preflight description to its delivered full observed-reference preflight, retaining race/rollback limits. | Current handoff: “Document only actual StageA capabilities and remaining checkout/transport/LFS/jobs/platform gaps.” “Accepted ADR0004 unchanged; #50 permits a narrow future fallback but it is not delivered.” | Implemented Stage A; independent QA pending; neither #598 nor #50 complete |
