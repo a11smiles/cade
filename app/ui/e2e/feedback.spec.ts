@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { FORMS, type Feedback, type IssueDraft } from '../src/feedback/types';
 import { FORMS as FORM_METADATA } from '../src/feedback/forms.generated';
 import { ipcCalls, mockTauri, type IpcCall } from './tauri';
+import { tokenRgb } from './tokens';
 
 type ControlledOutcome = { preview: true } | { ok: string } | { err: { Message: string } };
 
@@ -274,6 +275,89 @@ test.describe('Feedback in the desktop app (mock IPC)', () => {
           expect((await ipcCalls(page, 'preview_feedback')).at(-1)?.args.feedback).toMatchObject({
             environment: { gpu: null, policy_version: null, logs: null },
           });
+        });
+
+        test('FeedbackDialog_PopulatedCommentReplyTab_ShowsCompleteScreenshotUrlOutline', async ({ page }) => {
+          await page.setViewportSize({ width: 1100, height: 700 });
+          await page.emulateMedia({ colorScheme: 'light', forcedColors: 'none', reducedMotion: 'reduce' });
+          const dialog = await openFeedback(page);
+          await dialog.getByRole('radio', { name: new RegExp(`^${FORMS.comment.name}`) }).click();
+          const title = dialog.getByRole('textbox', { name: 'Title', exact: true });
+          await title.fill('Synthetic measurement report');
+          for (const question of FORMS.comment.questions) {
+            const name = new RegExp(question.heading.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+            if (question.type === 'dropdown') {
+              await dialog.getByRole(question.multiple ? 'listbox' : 'combobox', { name })
+                .selectOption(question.multiple ? ['App', 'System', 'Other'] : question.options?.at(-1) ?? '');
+            } else {
+              await dialog.getByRole('textbox', { name }).fill(`Synthetic ${question.id}; measurement only`);
+            }
+          }
+          const screenshot = dialog.getByRole('textbox', { name: /Screenshot URL/ });
+          await screenshot.fill('https://example.invalid/measurement.png');
+          const index = await feedbackRequestIndex(page, 'preview_feedback', {
+            kind: 'comment', screenshot_url: 'https://example.invalid/measurement.png',
+          });
+          const draft = await releasePreview(page, index);
+          await expect(dialog.getByLabel('Issue preview')).toHaveText(`${draft.title}\n\n${draft.body}`);
+
+          // Preserve the designer's capture-scroll setup before actual keyboard entry.
+          await screenshot.focus();
+          await title.scrollIntoViewIfNeeded();
+          await screenshot.scrollIntoViewIfNeeded();
+          await dialog.getByRole('combobox', { name: /Would you like a reply\?/ }).focus();
+          await page.keyboard.press('Tab');
+          // Read immediately: no focus override, corrective scroll, or polling.
+          const geometry = await screenshot.evaluate((element) => {
+            const rect = element.getBoundingClientRect();
+            const style = getComputedStyle(element);
+            const clip = { left: 0, top: 0, right: innerWidth, bottom: innerHeight };
+            for (let ancestor = element.parentElement; ancestor; ancestor = ancestor.parentElement) {
+              const bounds = ancestor.getBoundingClientRect();
+              const ancestorStyle = getComputedStyle(ancestor);
+              if (/auto|scroll|hidden|clip/.test(ancestorStyle.overflowX)) {
+                clip.left = Math.max(clip.left, bounds.left + ancestor.clientLeft);
+                clip.right = Math.min(clip.right, bounds.left + ancestor.clientLeft + ancestor.clientWidth);
+              }
+              if (/auto|scroll|hidden|clip/.test(ancestorStyle.overflowY)) {
+                clip.top = Math.max(clip.top, bounds.top + ancestor.clientTop);
+                clip.bottom = Math.min(clip.bottom, bounds.top + ancestor.clientTop + ancestor.clientHeight);
+              }
+            }
+            const extent = Math.max(0, parseFloat(style.outlineWidth) + parseFloat(style.outlineOffset));
+            const centerHit = document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2);
+            const textRange = document.createRange();
+            textRange.selectNodeContents(element);
+            const textRects = Array.from(textRange.getClientRects()).filter((r) => r.width > 0 && r.height > 0);
+            return {
+              activeId: document.activeElement?.id,
+              focused: document.activeElement === element,
+              focusVisible: element.matches(':focus-visible'),
+              rect: rect.toJSON(),
+              clip,
+              rectVisible: rect.width > 0 && rect.height > 0 && rect.left >= clip.left
+                && rect.right <= clip.right && rect.top >= clip.top && rect.bottom <= clip.bottom,
+              textVisible: textRects.every((r) => r.left >= clip.left && r.right <= clip.right
+                && r.top >= clip.top && r.bottom <= clip.bottom),
+              centerHit: centerHit === element || (centerHit !== null && element.contains(centerHit)),
+              outline: {
+                color: style.outlineColor, width: style.outlineWidth,
+                offset: style.outlineOffset, style: style.outlineStyle,
+              },
+              clippedPixels: {
+                left: Math.max(0, clip.left - (rect.left - extent)),
+                top: Math.max(0, clip.top - (rect.top - extent)),
+                right: Math.max(0, rect.right + extent - clip.right),
+                bottom: Math.max(0, rect.bottom + extent - clip.bottom),
+              },
+            };
+          });
+          expect(geometry).toMatchObject({
+            activeId: 'fb-screenshot', focused: true, focusVisible: true,
+            rectVisible: true, textVisible: true, centerHit: true,
+            outline: { color: tokenRgb('accent-selection', theme), width: '2px', offset: '2px', style: 'solid' },
+          });
+          expect(geometry.clippedPixels, JSON.stringify(geometry)).toEqual({ left: 0, top: 0, right: 0, bottom: 0 });
         });
 
         test('Feedback_ScreenshotUrlEdited_PreviewsTopLevelUrlWithoutSending', async ({ page }) => {
