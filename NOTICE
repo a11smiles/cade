@@ -67,3 +67,46 @@ CoreFoundation. These build observations are not an inventory of shipped
 installers or a guarantee of other platforms' native linkage.
 This attribution inventory is not a substitute for upstream license texts,
 an exhaustive distribution review, or legal/release certification.
+
+Clone/fetch feature dependencies
+-------------------------------
+
+cade-git clone/fetch and cade-github's Git connection use the existing
+gix 0.90.0 SDK with blocking-http-transport-reqwest-native-tls and
+worktree-mutation enabled. This feature change preserves existing resolved
+package versions; it does not add git2 HTTP/SSH transport.
+
+The ten added Cargo.lock packages are listed below. License declarations
+and notice filenames were read from their installed registry sources:
+
+- crossbeam 0.8.5 and crossbeam-queue 0.3.14:
+  MIT OR Apache-2.0; LICENSE-MIT and LICENSE-APACHE in each package.
+  Copyright (c) 2019 The Crossbeam Project Developers
+- dua-core 4.2.0, from Byron/dua-cli:
+  Cargo.toml declares MIT. The installed package contains no LICENSE file;
+  this metadata declaration is not a claim that its full notice was bundled
+  or that a distribution review is complete.
+- gix-credentials 0.42.1, gix-negotiate 0.38.0, gix-prompt 0.19.1 and
+  gix-worktree-state 0.37.0, from GitoxideLabs/gitoxide:
+  MIT OR Apache-2.0; LICENSE-MIT and LICENSE-APACHE in each package.
+- hyper-tls 0.6.0, from hyperium/hyper-tls:
+  Cargo.toml declares MIT/Apache-2.0; LICENSE-MIT and LICENSE-APACHE.
+  Copyright (c) 2017 Sean McArthur
+- io-close 0.3.7, from wufz/io-close:
+  MIT OR Apache-2.0; LICENSE, LICENSE-MIT and LICENSE-APACHE.
+- tokio-native-tls 0.3.1, from tokio-rs/tls:
+  MIT; LICENSE.
+  Copyright (c) 2019 Tokio Contributors
+
+Package availability does not authorize running credential helpers, prompts
+or executables. Production Git connections explicitly disable helper fallback.
+
+The native TLS path reuses native-tls 0.2.18 already in the lockfile; it is
+not an eleventh added package. Its installed source selects Secure Transport
+through security-framework on Apple platforms, SChannel through schannel on
+Windows, and OpenSSL through openssl/openssl-sys on other supported targets.
+These are source-level backend selections, not observed new platform builds,
+an OpenSSL library-version or vendoring claim, or proof of OS trust handling.
+Rust package license declarations do not replace native component terms.
+The local pipe fixtures do not exercise TLS, and no shipped installer or
+cross-platform native-component inventory is certified by this addition.

@@ -17,7 +17,8 @@ desktop app invokes all of its capabilities.
 │     │     ├─ cade-text   Parley                                         │
 │     │     └─ cade-layout Taffy                                          │
 │     ├─ cade-crdt    Loro document (.cade) ── cade-core types            │
-│     ├─ cade-git     gix; checkout-only git2/libgit2 fallback            │
+│     ├─ cade-git     gix; existing-checkout-only git2/libgit2 fallback   │
+│     │     └─ cade-github → cade-policy  clone/fetch network boundary   │
 │     ├─ cade-copilot GitHub Copilot SDK (Copilot or BYOK providers)      │
 │     │     └─ cade-policy  every tool call checked against policy.yml    │
 │     ├─ cade-github  device flow, PRs, Pages review, issues (feedback)   │
@@ -30,7 +31,7 @@ desktop app invokes all of its capabilities.
 ```
 
 - **Local first.** Projects are folders and git repos on the user's machine. Nothing is uploaded except model calls (to Copilot or the user's own provider) and what the user ships (PRs, review pages, issues).
-- **One identity.** GitHub device-flow sign-in gives the token used for Copilot, shipping, review pages and feedback issues.
+- **One identity.** GitHub device-flow sign-in is the intended identity source for Copilot, shipping, review pages and feedback issues. Git clone/fetch require an explicitly supplied token already associated with the selected Host; the existing global keychain entry alone does not establish that association.
 - **Policy everywhere.** `cade-policy` decides before Copilot runs a tool, before BYOK is used, and before anything ships.
 - **Copilot proposes, the user applies.** Agent output is a staged change set. Applying it is one commit with run trailers.
 
@@ -47,9 +48,13 @@ bounded approval and pending verification; none establishes release readiness.
 
 **Status:** local open/init/status foundation (#596 / GH-024), explicit-tree
 commits (#597 / GH-025), branch creation/merge-base (#598 / GH-026 Stage A)
-and existing-worktree checkout (Stage B) are implemented. Stage A has bounded
-independent QA approval; the checkout controls below describe implementation,
-not independent acceptance. This is not completion of #598 or #50 / GH-005 under
+and existing-worktree checkout (Stage B) are implemented. Stage A and checkout
+have bounded independent macOS QA acceptance at
+`ad522fe718182db90861a6c39197b9dab7ca79dc`. Explicit clone/fetch (#599 / GH-027)
+is implemented in the subsequent uncommitted candidate. Two independent QA
+findings have scoped regression greens; independent original-scenario recheck
+and all nine required app/UI/core gates remain outstanding. Neither disposition
+completes #598, #599 or #50 / GH-005 under
 [ADR 0004](adr/0004-git-is-history.md), the unchanged Git-history authority.
 
 The approved local contract is implemented in
@@ -59,7 +64,8 @@ The approved local contract is implemented in
 Consumers are crate callers/tests, not app IPC; `cade-app` does not depend on
 this crate. There is no new shared status wrapper, serialized format, `.cade`
 or policy schema. Open/init/status, HEAD inspection, commits, branch creation
-and ancestry remain on gix. Only checkout adopts the git2/libgit2 fallback
+and ancestry remain on gix, as do clone/fetch and clone's initial checkout.
+Only existing-worktree checkout adopts the git2/libgit2 fallback
 described below, with the existing workspace `tempfile` dependency for its
 private index.
 
@@ -89,10 +95,10 @@ private index.
 HEAD inspection and Copilot commit-message formatting also remain available;
 the commit operation below stores supplied messages rather than generating
 attribution. Remaining work includes full #598 acceptance, #599
-authenticated clone/fetch, #600 push, #601 configured LFS, and #602 typed
+hosted/authentication/platform acceptance, #600 push, #601 configured LFS, and #602 typed
 cancellable job/IPC integration. Commit-per-save/run and full Git/app integration
 remain undelivered. These local mechanics preserve the parent obligation; they
-do not authorize transport, LFS or IPC contracts for later layers.
+do not complete the separately scoped push, LFS or IPC layers.
 
 #### Explicit immutable-tree commits
 
@@ -208,7 +214,7 @@ allowance, checkout uses exact `git2 =0.21.0` with default features disabled.
 The inspected gix 0.90.0 `Worktree::checkout` performs initial linked-worktree
 checkout, rejecting main worktrees and existing indexes; it does not supply
 this existing-worktree branch switch. This is a narrow SDK capability gap,
-not a replacement for gitoxide or a change to accepted ADR 0004. No HTTP/SSH
+not a replacement for gitoxide or a change to accepted ADR 0004. No git2 HTTP/SSH
 features or transport operations are adopted. Checkout uses SDK APIs, not
 subprocess Git, shell commands or a custom lock protocol.
 
@@ -291,8 +297,193 @@ not blanket license or release clearance.
 This synchronous crate method adds no app consumer, IPC, serialized type,
 `.cade` format or policy schema. Progress, cancellation and #602's original
 500-ms/write-safety criteria are not delivered by this implementation.
-Save/run integration, authenticated transport, push, configured LFS and
-host/platform acceptance retain their separate obligations.
+Save/run integration, push, configured LFS and host/platform acceptance retain
+their separate obligations. The following clone/fetch implementation does not
+extend this existing-worktree fallback.
+
+#### Explicit clone and fetch — #599
+
+**Status and ownership.** Implemented under the architect-approved contract,
+within ADRs 0004 and 0005, not a new architecture decision. Git mechanics stay
+in `cade-git`; network construction and destination/credential validation go
+through `cade-github`, with `cade-policy` alone deciding permission. Dependency
+direction is `cade-git -> cade-github -> cade-policy`; Git also directly uses
+the existing policy and secret types. No reverse Git dependency, new auth
+framework, app caller, IPC, `.cade` or policy schema is introduced. Existing
+GitHub API/auth and app feedback consumers are unchanged but require regression
+verification because their crate dependency changes.
+
+The public methods in
+[`cade-github/transport.rs`](../crates/cade-github/src/transport.rs) and
+[`cade-git/transport.rs`](../crates/cade-git/src/transport.rs) reuse existing
+`Host`, `ProjectRepo`, `GitError` and SDK types:
+
+```rust
+impl Host {
+    pub fn validate_git_remote(
+        &self,
+        remote: &url::Url,
+        token: &octocrab::secrecy::SecretString,
+        policy: Option<&cade_policy::Policy>,
+    ) -> Result<(), GitHubError>;
+
+    pub fn git_connection<'remote, 'repo>(
+        &self,
+        remote: &'remote gix::Remote<'repo>,
+        token: &octocrab::secrecy::SecretString,
+        policy: Option<&cade_policy::Policy>,
+    ) -> Result<
+        gix::remote::Connection<
+            'remote, 'static, 'repo,
+            Box<dyn gix::protocol::transport::client::blocking_io::Transport + Send>,
+        >,
+        GitHubError,
+    >;
+}
+
+impl ProjectRepo {
+    pub fn clone<P>(
+        destination: &std::path::Path,
+        remote: &url::Url,
+        host: &cade_github::Host,
+        token: &octocrab::secrecy::SecretString,
+        policy: Option<&cade_policy::Policy>,
+        progress: P,
+        interrupt: &std::sync::atomic::AtomicBool,
+    ) -> Result<Self, GitError>
+    where
+        P: gix::NestedProgress,
+        P::SubProgress: 'static;
+
+    pub fn fetch<P>(
+        &self,
+        remote: &url::Url,
+        host: &cade_github::Host,
+        token: &octocrab::secrecy::SecretString,
+        policy: Option<&cade_policy::Policy>,
+        progress: P,
+        interrupt: &std::sync::atomic::AtomicBool,
+    ) -> Result<gix::remote::fetch::Outcome, GitError>
+    where
+        P: gix::NestedProgress,
+        P::SubProgress: 'static;
+}
+```
+
+- **Shared preflight before side effects:** `Host::validate_git_remote` is
+  zero-I/O and shared by clone before destination creation, fetch before
+  reopening, and `git_connection` before transport construction. The borrowed
+  SDK Remote/Connection needs a repository; clone does not create a temporary
+  repository merely to validate permission. A supplied trustworthy policy must
+  return `Allow` for `Action::AgentNetwork`; missing policy, `Deny` and `Ask`
+  are not permission. No default policy is substituted.
+- **Explicit host and repository:** validate Dotcom, GHE.com tenant labels and
+  configured GHES HTTPS origins, effective ports and base paths. Require exactly
+  owner/repository beneath the selected base, with optional `.git` suffix;
+  components use ASCII letters, digits, `-`, `_` or `.`, excluding empty, `.`
+  and `..`. Reject userinfo, query/fragment, encoded components, endpoint
+  suffixes, other origins/tenants and non-HTTPS schemes, including SSH/file/
+  helpers. No discovery, repository creation or unsolicited endpoint is added.
+- **Credential provenance remains a caller obligation:** a nonempty
+  `SecretString` must already belong to the selected Host. Validation cannot
+  prove that association or remote authorization. No implicit global keychain
+  lookup, reassignment to a new host, refresh or new storage is implemented;
+  actual #262/#263 selected-host/keychain integration remains upstream work.
+  The transient SDK identity uses `x-access-token` and the supplied secret.
+  Its SDK-owned string copy is not a new redacted/zeroizing credential store.
+  The explicit callback returns no helper fallback and has no Store/Erase
+  effects; no credentials are persisted or logged.
+- **Explicit connection options:** pinned gix HTTP/reqwest transport uses
+  protocol V2 and native TLS with certificate and hostname validation enabled.
+  Options are installed on the Connection, not merely its factory. Redirects,
+  proxies (including environment/config proxies), extra headers and verbose
+  tracing are disabled; no repository CA override is supplied. Direct factory
+  calls reject enabled/invalid packet tracing; clone/fetch use an isolated
+  transient tracing-off override. `remote_at_without_url_rewrite` selects the
+  supplied URL. Proxy integration is unsupported. Native-trust selection is
+  implemented configuration, not executed OS-trust or hosted-TLS acceptance.
+- **Fixed diagnostics:** `GitHubError::GitTransport(&'static str)` extends the
+  existing enum; empty tokens retain `NotSignedIn`. Git maps these into existing
+  `GitError::Git` with fixed corrective guidance. New transport paths do not
+  forward raw SDK/provider Display/Debug, URLs, headers or server-controlled
+  error text. Failures identify possible retained state, not false success.
+- **Tracking-only fetch:** reopen isolated metadata/configuration per request;
+  ignore global/system/environment config and includes, reject nondefault
+  namespaces and configured executable clean/process/smudge filters. Use only
+  `+refs/heads/*:refs/remotes/origin/*`, with tags disabled. Inspect mappings,
+  reject symbolic source/observed tracking targets and invalid namespaces,
+  check rejected/type-changing/dereferencing updates, and reread direct
+  advertised OIDs before success. A top-level SDK `Ok` alone is insufficient.
+  Fetch preserves local commits/branches, HEAD, index, worktree, config and
+  existing reflogs; reflog suppression is transient, with no invented actor.
+  No checkout, merge, reset, pruning or automatic retry occurs. Failed transfers
+  may still leave downloaded objects or partially published tracking refs.
+- **Absent-destination clone:** atomically claim one absent directory with an
+  existing writable parent; reject occupied directories (even empty), files
+  and symlinks. Lower-level SDK init/fetch/ref/index/worktree composition avoids
+  high-level clone's generic connector and destructive drop cleanup. There is
+  no recursive cleanup after errors or guarantee excluding arbitrary external
+  writers. Persist only credential-free origin URL, tracking refspec and tag
+  policy, not a resolved configuration containing transient credentials/options.
+- **Actual advertised HEAD and initial checkout:** require a symbolic remote
+  HEAD naming a fetched valid branch with its matching object; do not guess
+  an unrelated default. Empty/unborn, missing/dangling/direct HEAD and corrupt/
+  missing objects yield actionable retained-state errors, not fabricated
+  commits or empty-clone success. Validate the selected tree/blobs and reject
+  gitlinks before checkout writes. Use gix index/worktree checkout with exclusive
+  initial file creation; check collisions, errors, interruption, delayed paths
+  and completed file count, then publish the actual index. Only afterward
+  publish the initial local branch/born HEAD with SDK expected-value,
+  no-dereference edits. Competing local refs are not reset or overwritten.
+  This order applies only to initial clone: #598's existing-worktree git2
+  switch still publishes HEAD before its final real index, and its
+  born-HEAD/missing-index guard remains unchanged.
+- **Partial failure and explicit recovery:** a claim/init failure retains any
+  partial destination; once initialized, errors retain metadata, objects,
+  published refs and partial/user worktree content. An earlier collision or
+  index-write failure does not publish clone's local branch/born HEAD: absent
+  an external writer, HEAD remains unborn, with downloaded objects/tracking
+  refs and foreign/partial worktree bytes retained. Later local-reference
+  publication failure can leave the worktree and index already written,
+  alongside competing or partially published refs. Inspect first. If usable,
+  reopen with `ProjectRepo::open`, correct the cause, explicitly `fetch`, then
+  select a fetched commit and `create_branch` with a valid unused full local
+  ref and supplied actor if needed; explicitly `checkout` the selected existing
+  local branch with a supplied actor after resolving obstructions. Reconcile
+  already-published branches rather than recreating or overwriting them.
+  Retrying clone over the retained occupied destination is not recovery.
+  Checkout/index/reference failures are not rolled back or automatically
+  repaired; no synthetic index or bypass of the missing-index guard is used.
+  Recovery remains subject to normal safety checks and owner correction, not
+  a guarantee that every retained state can immediately be checked out.
+- **Bounded caller progress:** the supplied `NestedProgress` receives fixed
+  client-owned stage names/messages and actual numeric outcomes. Advertisement
+  reports the returned remote-ref count. Pack receive reports the indexed-pack
+  object count, or zero when no pack is received, not unique newly downloaded
+  objects or wire bytes. Tracking verification reports validated mapping count
+  after validation and interruption checks, including unchanged refs rather
+  than only newly written ones. Raw SDK/server task names, sideband messages
+  and error text from advertisement/receive go to SDK `Discard`, not the caller.
+  Initial SDK checkout keeps live file/byte counters through its numeric-only
+  `Count` interface, which cannot emit task names/messages; its surrounding
+  start/completion messages are client-owned. Advertisement/pack totals remain
+  unknown; only known checkout-entry/mapping counts supply maxima. No estimated
+  percentages or invented totals are supplied. Transfer completion follows
+  validation; checkout-stage completion does not imply that subsequent local
+  branch/HEAD publication succeeded.
+- **Separate unsupported guarantees:** no hooks, production Git/SSH subprocess,
+  executable filters, automatic submodules or LFS execution. The original
+  caller interrupt flag reaches receive and initial checkout stages, but
+  the pinned handshake/ls-refs has no interrupt argument; the flag is checked
+  when it returns. Neither 500-ms cancellation, all-or-nothing writes nor
+  universal filesystem rollback is proven. #600 push, #601 configured LFS and
+  #602 typed cancellable jobs retain their entire original scope and criteria.
+
+Root gix features now include `blocking-http-transport-reqwest-native-tls` and
+`worktree-mutation`. Existing resolved SDK versions, including gix 0.90.0,
+remain unchanged; the ten added feature-related packages and native-source
+boundary are listed in [NOTICE](../NOTICE). This is not a new ADR, SDK upgrade,
+git2 transport expansion, installer change or release approval.
 
 ### Policy failure boundaries
 
@@ -407,18 +598,72 @@ public API or runtime telemetry. Native object-read failure after an earlier
 worktree write and late real-index publication failure are distinct proof
 boundaries, not interchangeable evidence of an OS worktree-write failure.
 Stage A received bounded independent QA approval and exact-commit core gates
-at `bb8460ac012c668310fecb85d7b27adc7ea69fc0`. That evidence does not certify
-the subsequent checkout implementation. External SDK capability experiments,
+at `bb8460ac012c668310fecb85d7b27adc7ea69fc0`. The later checkout disposition
+accepted bounded macOS implementation and README/ARCHITECTURE/NOTICE at
+`ad522fe718182db90861a6c39197b9dab7ca79dc`, using saved shared execution of all
+three applicable core gates and independent public-API probes. This is
+independent QA acceptance of shared evidence, not a claim that QA reran the
+gates. Windows/Linux and two Linux-only fixtures remain unexecuted; late
+object/index-publication evidence does not certify OS worktree-write faults.
+External SDK capability experiments,
 developer red/green results and focused checks do not substitute for production
 QA and exact-candidate workspace gates. Linux-only raw-byte fixtures require
 actual Linux execution, not a pass inferred from macOS exclusion.
 Local repository evidence does not establish actual save/run integration,
-hosted GitHub/GHES authentication, full checkout acceptance, transport/LFS/jobs,
+hosted GitHub/GHES authentication, full checkout acceptance, hosted transport/LFS/jobs,
 all-platform behavior or release readiness. In particular, nonroot macOS
 permission fixtures do not certify Linux permissions or Windows ACL behavior.
 Independent QA and exact-commit full-workspace gate evidence must be assessed
-separately; earlier gates do not certify later changes. Moving gate
-results and test counts are not maintained in this architecture record.
+separately; earlier gates do not certify later changes. Full execution logs,
+source-hash inventories and per-test counts remain in the saved evidence;
+the bounded disposition below is not a live gate dashboard.
+
+For #599, public preflight/factory denial and connection-configuration tests
+are distinct from private SDK pipe fixtures. The latter share the production
+receive/ref/checkout composition and exercise actual synthetic protocol,
+objects, tracking refs, advertised HEAD, preservation and explicit recovery;
+they bypass the public HTTPS connection and do not prove hosted authentication
+or TLS. The earlier October 27 fixture recheck recorded 46 new cases and 252
+existing nonnetwork regressions passing on its recorded source. Its last
+fifteen failures were fixture-path corrections, not fifteen product bugs;
+27 original assertion reds and 19 initially-green controls remain distinct.
+That source's formatting/compilation passes and unused-import Clippy failure
+are historical, not verification of the later fix.
+
+Subsequent independent execution-04 ran ten probes: eight passed, two failed
+on caller-visible server text and retained-clone collision recovery; six
+selected connection regressions passed. The two failures were reproduced as
+persistent assertion reds, not setup failures. The October 27, 2026,
+02:39:06–02:43:19 −07:00 scoped receipt for the patched uncommitted source
+over `ad522fe` records:
+
+| Scoped selector | Actual result |
+|---|---|
+| Persistent sideband diagnostic isolation | 1 passed after its preserved assertion red |
+| Persistent collision recovery | 1 passed after its preserved assertion red |
+| Supplied progress, unchanged assertions | 1 passed |
+| Clone boundaries | 9 passed |
+| Fetch boundaries | 7 passed |
+| Transport integration | 10 passed |
+| Existing checkout state | 25 passed |
+| Existing checkout content | 13 passed |
+| Existing checkout denials | 22 passed |
+| Formatting check | Passed, exit 0 |
+| Focused Clippy | Failed, exit 101; compilation/checking output truncated |
+
+Selector counts overlap; they are not a unique-test total or workspace gates.
+The Clippy result is not a pass or a diagnosed behavior failure; its complete
+diagnostic is unavailable. No dependent broad gates ran. Independent recheck
+of the unchanged original QA scenarios remains outstanding, including
+rewind/no-pack and initial-clone index/local-reference failure boundaries.
+Existing-checkout state greens do not prove initial-clone write-fault behavior.
+Mutations, independent acceptance and all nine app/UI/core gates remain
+outstanding, including affected GitHub/feedback regression verification.
+Thirteen earlier Wiremock API regressions failed socket setup under blanket
+network denial and remain unretried. Actual native OS trust, selected-host/
+keychain integration, approved hosted GitHub.com/GHES repositories and
+credentials, and Windows/Linux execution remain unverified or unexecuted.
+No #599–#602 closure or publication is implied.
 
 Independent QA approved **13 bounded fixes**, not 13 issue closures. Evidence is
 attached to the reviewed commits: policy `1ceb0837b6a2d9ae28f9156770e7b2cf2fb41f3c`
@@ -460,5 +705,8 @@ product-owner choices. Subsequent changes identify their own received times.
 | Git local foundation — 2026-10-26 at 18:14:08.215 −07:00 | Scaffold-only inventory → implemented #596 open/strict init/read-only status under the approved `remediation/git-local-contract-brief.md` and ADR 0004. The earlier inventory left commit creation undelivered; the commit entry below supersedes that boundary. | Product-owner handoff: “RecordimplementedGitlocalopen/init/status”; “independentQA/fullgatespending doNOTclaimoverallcomplete.” | Implemented; inventory extended below |
 | Git local commits — 2026-10-26 at 19:10:45.332 −07:00 | Status-only inventory → implemented #597 explicit immutable-tree commits under the approved `remediation/git-commit-contract-brief.md`, checked against source. Reuse SDK input and strict atomic expected-tip publication; preserve caller bytes and unrelated state without mutable-index selection. ADR 0004 remains unchanged; local mechanics do not establish save/run integration or completion of #50. | Product-owner handoff: “existingSDKCommit input notcustomwrapper”; “callerfullrefs/heads ref+parents expectedtip strictatomic CAS noderef+SDKindexholdlock noindexrewrite”; “no allengineclaim.” | Implemented local contract; not an acceptance or closure ruling |
 | Git branches/ancestry — handoff received 2026-10-26 at 20:20:14.247 −07:00 | Earlier inventory excluded all #598 operations → implemented Stage A `create_branch`/`merge_base` under `remediation/git-branches-contract-brief.md`, checked against source. At that handoff checkout was gated and QA outstanding; those historical boundaries are superseded below. Also corrected #597's missing-only preflight description to its delivered full observed-reference preflight, retaining race/rollback limits. | Earlier handoff: “Document only actual StageA capabilities and remaining checkout/transport/LFS/jobs/platform gaps.” “Accepted ADR0004 unchanged; #50 permits a narrow future fallback but it is not delivered.” | Historical inventory; authorization and acceptance boundaries updated below |
-| Git checkout — authorization received 2026-10-26 at 21:39:43.371 −07:00; implementation handoff received 22:05:43.606 −07:00 | Stage A bounded QA and named-commit gates accepted; prospective fallback → actual checkout-only git2 adoption for the identified gix main-worktree switch gap. The updated Stage B decision supersedes the earlier index-before-HEAD proposal: publish HEAD, then real index, with separate branch guards and continuous real-index exclusion. Late partial failure and corrected explicit retry replace any universal rollback or unchanged-retry inference. Other operations stay on gix; ADR 0004 is unchanged under #50's existing allowance. | Architect authorization in `remediation/git-branches-contract-brief.md`, preserved in the decision receipt: “Architect now authorizes Rust to add exact git2 `=0.21.0` with default features disabled and promote existing workspace tempfile for this checkout-only fallback, then implement the already-approved checkout signature test-first.” Current handoff: “StageBdecision (explicitlysupersedesoldindex-beforeHEADproposal)”. | Authorized and implemented mechanism; implementation inventory is not Stage B QA approval or completion of #598/#50 |
-| Git checkout occupancy — handoff received 2026-10-26 at 22:33:42.869 −07:00 | Earlier handoff left other-worktree denial unimplemented → implemented SDK occupancy checks including main/sibling worktrees, excluding own identity and bare main, with an under-target-guard rescan before mutation. Own-current no-op is unchanged. This supersedes the earlier omission, not the existing noncooperating-writer limit. | Product-owner handoff: “Finalactualdecisions:SDKworktreeoccupancyguardincludesmain/siblings,excludesownandbaremain, rescansunderheldtargetguard beforemutating; owncurrentnoopunchanged.” | Authorized and implemented; independent checkout QA pending, not full #598/#50/platform/#602 acceptance |
+| Git checkout — authorization received 2026-10-26 at 21:39:43.371 −07:00; implementation handoff received 22:05:43.606 −07:00 | Stage A bounded QA and named-commit gates accepted; prospective fallback → actual checkout-only git2 adoption for the identified gix main-worktree switch gap. The updated Stage B decision supersedes the earlier index-before-HEAD proposal: publish HEAD, then real index, with separate branch guards and continuous real-index exclusion. Late partial failure and corrected explicit retry replace any universal rollback or unchanged-retry inference. Other operations stay on gix; ADR 0004 is unchanged under #50's existing allowance. | Architect authorization in `remediation/git-branches-contract-brief.md`, preserved in the decision receipt: “Architect now authorizes Rust to add exact git2 `=0.21.0` with default features disabled and promote existing workspace tempfile for this checkout-only fallback, then implement the already-approved checkout signature test-first.” Handoff: “StageBdecision (explicitlysupersedesoldindex-beforeHEADproposal)”. | Historical implementation handoff; its nonacceptance boundary is superseded by bounded QA below |
+| Git checkout occupancy — handoff received 2026-10-26 at 22:33:42.869 −07:00 | Earlier handoff left other-worktree denial unimplemented → implemented SDK occupancy checks including main/sibling worktrees, excluding own identity and bare main, with an under-target-guard rescan before mutation. Own-current no-op is unchanged. This supersedes the earlier omission, not the existing noncooperating-writer limit. | Product-owner handoff: “Finalactualdecisions:SDKworktreeoccupancyguardincludesmain/siblings,excludesownandbaremain, rescansunderheldtargetguard beforemutating; owncurrentnoopunchanged.” | Historical implementation handoff; pending-QA status superseded below, broader acceptance still incomplete |
+| Git checkout acceptance — disposition reconciled 2026-10-27 at 00:55:19.116 −07:00 | Earlier pending/nonindependent wording → bounded independent macOS QA acceptance of implementation and docs at `ad522fe`, based on saved shared core-gate execution and independent probes. Not full #598/#50, Windows/Linux or OS write-fault certification. | `remediation/git598-checkout-commit-disposition.md`; current user instruction: “old598checkout boundedQAaccepted atad522fe”. | Bounded QA accepted at the named commit; not acceptance of subsequent #599 changes |
+| Git clone/fetch — handoff received 2026-10-27 at 00:55:19.116 −07:00 | Undelivered transport inventory → implemented explicit clone/fetch and shared zero-I/O Host preflight before clone init/connection construction. Lower-level gix composition avoids destructive cleanup; isolated tracking-only fetch and explicit retained-state recovery preserve local selection. Initial checkout remains gix, not an expanded git2 fallback. | Architect-approved `remediation/git599-contract-brief.md`; user-authorized scope, not direct product-owner approval of implementation details: “Userauthorizedscope, architectownsbrief.” | Historical implementation handoff; initial-clone order, progress and QA disposition superseded below; #600–#602 scope unchanged |
+| Git clone/fetch correction — received 2026-10-27 at 02:45:17.203 −07:00 | Earlier clone local branch/HEAD-before-checkout order and forwarded SDK progress → initial checkout/index before local branch/born HEAD, with fixed client progress and actual counters; retain numeric-only SDK checkout progress. Preserve partial state and explicit recovery without weakening #598's HEAD-before-final-index order or missing-index guard. Independent findings supersede the earlier blanket pending-QA description. | Architect-approved `remediation/git599-qa-fix-brief.md`: “initial worktree checkout and its index publication precede publishing the clone's local branch/born HEAD.” Current user: “Existing598checkoutHEAD-beforefinalindexcontract andbornHEADmissingindexguard unchanged.” Scoped execution: `remediation/git599-qa-green/receipt.md`. | Implemented; two persistent reds → two greens, supplied progress and six focused selectors pass. Original independent recheck outstanding; Clippy exit 101, not full-gate or issue acceptance |

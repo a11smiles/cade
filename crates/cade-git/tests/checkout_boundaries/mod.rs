@@ -2,16 +2,14 @@
 //! reach its private observer. Every behavior invokes ProjectRepo::checkout.
 
 use super::observer::{self, Phase};
-use crate::{GitError, ProjectRepo};
+use crate::ProjectRepo;
 use std::{cell::RefCell, fs, path::Path, rc::Rc};
 
 #[path = "../repo/checkout/fixtures.rs"]
 mod fixtures;
-#[path = "../repo/support.rs"]
-mod support;
 
+use crate::support::{assert_git_error, committed_repo, git, snapshot};
 use fixtures::{REFERENCE, actor, fixture};
-use support::{assert_git_error, committed_repo, git, snapshot};
 
 mod failures;
 mod guards;

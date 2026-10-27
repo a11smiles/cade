@@ -105,8 +105,8 @@ application is finished. Most are still part of a broader, unfinished product.
 | `cade-crdt` | Loro project document, movable layer tree, snapshot save/open, merge and JSON mirror |
 | `cade-policy` | `policy.yml` schema and decisions for models, BYOK, shell, network, MCP, design systems, shipping, telemetry and token budgets |
 | `cade-copilot` | Copilot and BYOK through the Copilot SDK, permission handler, change sets and token meter |
-| `cade-github` | Device-flow sign-in, keychain storage, github.com / GHE.com / GHES, issues, duplicate search and PRs |
-| `cade-git` | gix-backed local open/strict init, read-only status, HEAD inspection, explicit immutable-tree commits with guarded branch updates, strict branch creation and merge-base queries; Copilot message/trailer helper; existing-worktree checkout through a checkout-only git2/libgit2 fallback with private-index/reference guards and other-worktree branch-occupancy checks. Stage A branch/ancestry has bounded QA approval; checkout implementation is not full #598 acceptance. Save/run integration, transport, push, LFS and progress/cancellable app jobs remain undelivered under #50; Windows/Linux verification remains open |
+| `cade-github` | Device-flow sign-in, keychain storage, github.com / GHE.com / GHES, issues, duplicate search and PRs; shared zero-I/O Git preflight and policy-checked SDK connection factory for an explicit selected-host token. Runtime token/host association and hosted TLS acceptance remain unverified |
+| `cade-git` | gix-backed local open/strict init, read-only status, HEAD inspection, explicit immutable-tree commits, strict branch creation and merge-base; Copilot message/trailer helper; guarded existing-worktree checkout through a checkout-only git2/libgit2 fallback. Branch/ancestry and checkout have bounded macOS QA acceptance at `ad522fe`, not full #598 acceptance. Explicit clone and tracking-only fetch are implemented through cade-github; two independent #599 findings have scoped regression greens, but independent original-scenario recheck and all nine required gates remain outstanding. Save/run integration, push (#600), configured LFS (#601) and cancellable app jobs (#602) remain undelivered; hosted and Windows/Linux verification remain open |
 | `cade-feedback` | Canonical form-ID answers with legacy-input migration, YAML-derived forms, Rust-derived TypeScript bindings and labeled, redacted issue drafts |
 | `cade-ddl` | PostgreSQL, SQL Server, MySQL and Oracle DDL; reversible migrations; PII check |
 | `cade-iac` | Bicep and Terraform (azurerm) for App Service, SQL, Key Vault and Storage; missing-setting check |
@@ -123,6 +123,29 @@ not subprocess Git or a pure-Rust checkout path. See the
 [checkout safety and partial-failure boundary](docs/ARCHITECTURE.md#existing-worktree-checkout--stage-b)
 and [dependency attribution](NOTICE). These local capabilities do not complete
 #598 or #50.
+
+Clone/fetch use the existing gix 0.90.0 SDK with newly enabled blocking
+reqwest/native-TLS and initial-worktree features, not a version upgrade or an
+expanded git2 fallback. Clone claims only an absent destination, retains failed
+partial state without recursive cleanup, and uses the actual advertised HEAD.
+Initial clone writes its worktree and index before publishing its local branch
+and born HEAD; #598's existing-worktree checkout order and missing-index guard
+are unchanged. Earlier collision/index failures do not publish clone's local
+branch/HEAD; later reference failures can retain an already-written worktree
+and index. No automatic rollback or repair is promised.
+Fetch updates only origin tracking refs and objects, preserving local branches,
+HEAD, index and worktree. Recovery is explicit: inspect and reopen retained
+state, correct the cause, fetch, then create/select and check out a branch.
+Caller progress uses fixed client stages and actual advertisement, indexed-pack
+and verified-mapping counts; raw server/SDK advertisement and receive task
+names/messages are discarded. Initial SDK checkout retains numeric-only file
+and byte progress. These counters do not promise cancellation timing or
+all-or-nothing writes.
+The [clone/fetch contract](docs/ARCHITECTURE.md#explicit-clone-and-fetch--599)
+details policy, credentials, unsupported behavior and failure limits. Passing
+private SDK pipe fixtures do not establish a successful public hosted clone,
+native OS trust, selected-host/keychain integration, actual credentials or
+three-platform acceptance.
 
 ## Feedback
 

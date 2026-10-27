@@ -17,6 +17,11 @@ use std::path::{Path, PathBuf};
 mod branches;
 mod checkout;
 mod commit;
+mod transport;
+
+#[cfg(test)]
+#[path = "../tests/repo/support.rs"]
+mod support;
 
 #[derive(Debug, thiserror::Error)]
 pub enum GitError {

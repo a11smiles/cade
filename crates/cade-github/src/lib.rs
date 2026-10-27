@@ -14,6 +14,8 @@
 use octocrab::Octocrab;
 use url::Url;
 
+mod transport;
+
 /// The repository in-app feedback goes to. Set at build time for forks.
 pub const FEEDBACK_REPO: (&str, &str) = match option_env!("CADE_FEEDBACK_OWNER") {
     Some(o) => (o, "cade"),
@@ -63,6 +65,9 @@ pub enum GitHubError {
     /// GitHub answered successfully but left out a field CADE needs.
     #[error("GitHub's response had no {0}")]
     MissingField(&'static str),
+    /// A bounded Git transport failure, without provider-controlled diagnostics.
+    #[error("Git transport: {0}")]
+    GitTransport(&'static str),
 }
 
 pub mod auth {
