@@ -5,6 +5,10 @@
 use cade_git::{GitError, ProjectRepo, run_commit_message};
 use std::process::Command;
 
+#[macro_use]
+#[path = "repo/support.rs"]
+mod support;
+
 #[path = "repo/branches.rs"]
 mod branches;
 #[path = "repo/checkout.rs"]
@@ -19,10 +23,74 @@ mod merge_base;
 mod objects;
 #[path = "repo/status.rs"]
 mod status;
-#[path = "repo/support.rs"]
-mod support;
+use support::{assert_git_error, committed_repo, git, run_isolated, snapshot};
 
-use support::{assert_git_error, committed_repo, git, snapshot};
+#[test]
+fn run_isolated_failed_child_is_reported() {
+    let thread = std::thread::current();
+    let name = thread.name().unwrap();
+    if std::env::var("CADE_GIT_TEST_CHILD").as_deref() == Ok(name) {
+        panic!("intentional child assertion failure");
+    }
+    let result = std::panic::catch_unwind(|| run_isolated(|| {}));
+    assert!(result.is_err(), "a failing child must fail its parent test");
+}
+
+#[test]
+fn run_isolated_executable_search_path_reaches_child() {
+    run_isolated(|| {
+        let path = std::env::var_os("PATH").expect("the isolated child must retain the executable search PATH");
+        assert!(!path.is_empty(), "the executable search PATH must not be empty");
+    });
+}
+
+#[test]
+fn run_isolated_ambient_configuration_does_not_reach_fixture() {
+    let home = tempfile::tempdir().unwrap();
+    let config = home.path().join(".gitconfig");
+    std::fs::write(&config, b"[filter \"ambient\"]\n\tclean = false\n\tprocess = false\n").unwrap();
+    let out = Command::new(std::env::current_exe().unwrap())
+        .args(["--exact", "status::status_clean_repository_returns_no_events", "--nocapture"])
+        .env("HOME", home.path())
+        .env("USERPROFILE", home.path())
+        .env("XDG_CONFIG_HOME", home.path())
+        .env("GIT_CONFIG_GLOBAL", &config)
+        .env("GIT_CONFIG_SYSTEM", &config)
+        .env("GIT_CONFIG_NOSYSTEM", "0")
+        .env("GIT_CONFIG_COUNT", "1")
+        .env("GIT_CONFIG_KEY_0", "filter.command.clean")
+        .env("GIT_CONFIG_VALUE_0", "false")
+        .env_remove("CADE_GIT_TEST_CHILD")
+        .output()
+        .unwrap();
+    assert!(
+        out.status.success(),
+        "ambient configuration reached the fixture:\n{}\n{}",
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert!(String::from_utf8_lossy(&out.stdout).contains("1 passed; 0 failed"));
+}
+
+isolated_tests! {
+#[test]
+fn git_fixture_disables_automatic_maintenance() {
+    let dir = committed_repo();
+    // Force a deterministic maintenance task, in the foreground so the oracle
+    // does not depend on winning the snapshot/background-writer race from CI.
+    git(dir.path(), &["config", "maintenance.auto", "true"]);
+    git(dir.path(), &["config", "maintenance.autoDetach", "false"]);
+    git(dir.path(), &["config", "maintenance.loose-objects.enabled", "true"]);
+    git(dir.path(), &["config", "maintenance.loose-objects.auto", "1"]);
+    let before = snapshot(&dir.path().join(".git/objects/pack"));
+    git(dir.path(), &["commit", "-q", "--allow-empty", "-m", "No fixture maintenance"]);
+    assert_eq!(snapshot(&dir.path().join(".git/objects/pack")), before);
+    assert_eq!(
+        git(dir.path(), &["config", "--type=bool", "--default=true", "--get", "maintenance.auto"]),
+        b"false\n",
+        "fixture commands must not launch background writers after returning"
+    );
+}
 
 #[test]
 fn project_repo_open_plain_directory_returns_not_a_repo_with_path() {
@@ -109,4 +177,5 @@ fn run_commit_message_committed_with_git_is_parsed_as_trailers() {
         String::from_utf8(out.stdout).unwrap().trim_end(),
         "CADE-Copilot-Run: run-42\nCADE-Model: gpt-5\nCADE-Tokens: 0"
     );
+}
 }

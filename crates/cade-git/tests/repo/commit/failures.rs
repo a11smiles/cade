@@ -2,6 +2,7 @@
 
 use super::*;
 
+isolated_tests! {
 fn locked_then_retried(relative_lock: &str, resource: &str) {
     let dir = committed_repo();
     let repo = ProjectRepo::open(dir.path()).unwrap();
@@ -361,4 +362,5 @@ fn commit_configured_external_programs_preserves_selection_without_executing_the
             .any(|(name, _)| name == "gpgsig"),
         "local commit must not invoke signing"
     );
+}
 }

@@ -19,7 +19,7 @@ use std::{
 };
 use url::Url;
 
-use crate::support::{assert_git_error, committed_repo, git, snapshot};
+use crate::support::{assert_git_error, committed_repo, git, run_isolated, snapshot};
 
 mod clone;
 mod fetch;

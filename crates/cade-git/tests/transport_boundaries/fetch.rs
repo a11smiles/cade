@@ -1,5 +1,6 @@
 use super::*;
 
+isolated_tests! {
 #[test]
 fn fetch_with_transport_new_remote_commit_preserves_local_selection() {
     let source = committed_repo();
@@ -179,4 +180,5 @@ fn fetch_with_transport_supplied_progress_receives_sdk_messages() {
         "SDK stage progress must reach the supplied sink instead of Discard"
     );
     assert_received(local.path(), source.path(), "refs/remotes/origin/main");
+}
 }

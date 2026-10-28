@@ -7,9 +7,10 @@ use octocrab::secrecy::SecretString;
 use std::{fs, path::Path, sync::atomic::AtomicBool};
 use url::Url;
 
+#[macro_use]
 #[path = "repo/support.rs"]
 mod support;
-use support::{assert_git_error, committed_repo, snapshot};
+use support::{assert_git_error, committed_repo, run_isolated, snapshot};
 
 fn clone(destination: &Path, policy: Option<&Policy>, token: &str) -> Result<ProjectRepo, GitError> {
     ProjectRepo::clone(
@@ -23,6 +24,7 @@ fn clone(destination: &Path, policy: Option<&Policy>, token: &str) -> Result<Pro
     )
 }
 
+isolated_tests! {
 #[test]
 fn clone_missing_policy_preserves_absent_destination() {
     let dir = tempfile::tempdir().unwrap();
@@ -143,4 +145,5 @@ fn fetch_empty_token_preserves_repository() {
         &AtomicBool::new(false),
     ));
     assert_eq!(snapshot(dir.path()), before);
+}
 }

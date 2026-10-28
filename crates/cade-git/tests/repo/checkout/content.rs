@@ -2,6 +2,7 @@
 
 use super::*;
 
+isolated_tests! {
 #[test]
 fn checkout_clean_branch_publishes_target_tree_index_and_head_only() {
     let dir = fixture();
@@ -253,4 +254,5 @@ fn checkout_symlink_target_preserves_link_not_dereferenced_contents() {
     assert_eq!(fs::read_link(dir.path().join("selected-link")).unwrap(), Path::new("tracked.txt"));
     assert!(git(dir.path(), &["ls-files", "--stage", "--", "selected-link"]).starts_with(b"120000 "));
     assert_eq!(git(dir.path(), &["show", ":selected-link"]), b"tracked.txt");
+}
 }

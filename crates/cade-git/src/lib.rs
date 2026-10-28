@@ -14,14 +14,14 @@
 
 use std::path::{Path, PathBuf};
 
+#[cfg(test)]
+use checkout::boundaries::support;
+
 mod branches;
+#[cfg_attr(test, macro_use)]
 mod checkout;
 mod commit;
 mod transport;
-
-#[cfg(test)]
-#[path = "../tests/repo/support.rs"]
-mod support;
 
 #[derive(Debug, thiserror::Error)]
 pub enum GitError {

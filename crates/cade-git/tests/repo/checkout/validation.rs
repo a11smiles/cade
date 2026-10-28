@@ -3,6 +3,7 @@
 use super::*;
 use crate::commit::validation::absent_object;
 
+isolated_tests! {
 fn invalid_reference(reference: &str) {
     let dir = fixture();
     let repo = ProjectRepo::open(dir.path()).unwrap();
@@ -305,4 +306,5 @@ fn checkout_normalized_actor_email_denies_instead_of_trimming_metadata() {
             &["email", "represent", "normaliz"],
         );
     }
+}
 }

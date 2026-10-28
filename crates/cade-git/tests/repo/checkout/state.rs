@@ -2,6 +2,7 @@
 
 use super::*;
 
+isolated_tests! {
 #[test]
 fn checkout_packed_target_switches_without_creating_loose_branch_shadow() {
     let dir = fixture();
@@ -310,4 +311,5 @@ fn checkout_known_reflog_obstruction_denies_before_any_content_write() {
     let repo = ProjectRepo::open(dir.path()).unwrap();
 
     deny_default(&repo, dir.path(), &["reflog", "logs", "head"]);
+}
 }

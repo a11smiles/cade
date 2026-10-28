@@ -3,6 +3,7 @@
 use super::*;
 use std::sync::{Arc, Barrier};
 
+isolated_tests! {
 #[test]
 fn checkout_observer_panics_releases_scope_and_guards_before_explicit_retry() {
     let dir = fixture();
@@ -63,4 +64,5 @@ fn checkout_parallel_observers_record_only_their_own_thread() {
     for thread in threads {
         thread.join().unwrap();
     }
+}
 }

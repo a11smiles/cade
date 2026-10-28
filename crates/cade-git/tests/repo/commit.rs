@@ -2,7 +2,7 @@
 //! inspect results; every operation under test calls `ProjectRepo::commit`.
 //! Run with global/system Git configuration disabled, as in the lane handoff.
 
-use super::{ProjectRepo, assert_git_error, committed_repo, git, run_commit_message, snapshot};
+use super::{ProjectRepo, assert_git_error, committed_repo, git, run_commit_message, run_isolated, snapshot};
 use gix::objs::WriteTo;
 use std::collections::BTreeMap;
 use std::fs;
@@ -13,6 +13,7 @@ mod failures;
 #[path = "commit/validation.rs"]
 pub(super) mod validation;
 
+isolated_tests! {
 const REFERENCE: &str = "refs/heads/main";
 
 pub(super) fn resolve(dir: &Path, revision: &str) -> gix::ObjectId {
@@ -26,6 +27,11 @@ pub(super) fn sdk(dir: &Path) -> gix::Repository {
 
 // This immutable tree deliberately differs from both the index and worktree.
 pub(super) fn request(dir: &Path, parents: &[gix::ObjectId]) -> gix::objs::Commit {
+    assert_eq!(
+        std::env::var("CADE_GIT_TEST_CHILD").ok().as_deref(),
+        std::thread::current().name(),
+        "commit fixtures must execute in their selected isolated child"
+    );
     let repo = sdk(dir);
     let selected = repo.write_blob(b"selected document bytes\n").unwrap().detach();
     let original = repo.write_blob(b"original\n").unwrap().detach();
@@ -339,4 +345,5 @@ fn commit_merge_parents_preserves_supplied_order() {
         git(dir.path(), &["show", "-s", "--format=%P", &id.to_string()]),
         format!("{parent} {second_id}\n").into_bytes()
     );
+}
 }

@@ -49,12 +49,24 @@ bounded approval and pending verification; none establishes release readiness.
 **Status:** local open/init/status foundation (#596 / GH-024), explicit-tree
 commits (#597 / GH-025), branch creation/merge-base (#598 / GH-026 Stage A)
 and existing-worktree checkout (Stage B) are implemented. Stage A and checkout
-have bounded independent macOS QA acceptance at
-`ad522fe718182db90861a6c39197b9dab7ca79dc`. Explicit clone/fetch (#599 / GH-027)
-is implemented in the subsequent uncommitted candidate. Two independent QA
-findings have scoped regression greens; independent original-scenario recheck
-and all nine required app/UI/core gates remain outstanding. Neither disposition
-completes #598, #599 or #50 / GH-005 under
+at repair commit `ed093023794b791057bbe308d2c86fd0f173af66`, tree
+`e9bb58276ce84dce751cad214a3e7b9f6a8eddbf`, have independent local acceptance
+and all required native CI successes. PR #614 is READY with actual head/base/
+body readback complete; CodeQL was NOT_TRIGGERED, not PASS.
+Explicit clone/fetch (#599 / GH-027)
+is implemented in the 21 product paths committed at
+`ed53dba4f90f6e6cd24355738ff19047fde99bd5`. Independent original-scenario
+recheck passed 10/10 probes and 6/6 configuration regressions; source verification
+and the bounded macOS implementation/docs QA recommendation passed.
+Guarded workspace Clippy, app build and 12 app tests passed at that source.
+Earlier loopback/cache-copy denials are resolved by existing explicit approval;
+the #599 pause is released following #598's required native CI success.
+Acceptance of each propagated #599 tree requires separately bound full local
+gates, independent QA and applicable exact-head native checks; earlier-tree
+results do not transfer. Four earlier fmt/UI successes were not guarded and
+do not supply guarded evidence.
+These bounded dispositions do not establish all original #598/#599/#50
+criteria or authorize issue closure under
 [ADR 0004](adr/0004-git-is-history.md), the unchanged Git-history authority.
 
 The approved local contract is implemented in
@@ -94,8 +106,9 @@ private index.
 
 HEAD inspection and Copilot commit-message formatting also remain available;
 the commit operation below stores supplied messages rather than generating
-attribution. Remaining work includes full #598 acceptance, #599
-hosted/authentication/platform acceptance, #600 push, #601 configured LFS, and #602 typed
+attribution. Remaining work includes full original #598 acceptance and #599
+hosted/authentication/platform acceptance, #600 push (approved contract but
+unimplemented and waiting for #599 exact gates), #601 configured LFS, and #602 typed
 cancellable job/IPC integration. Commit-per-save/run and full Git/app integration
 remain undelivered. These local mechanics preserve the parent obligation; they
 do not complete the separately scoped push, LFS or IPC layers.
@@ -603,14 +616,31 @@ accepted bounded macOS implementation and README/ARCHITECTURE/NOTICE at
 `ad522fe718182db90861a6c39197b9dab7ca79dc`, using saved shared execution of all
 three applicable core gates and independent public-API probes. This is
 independent QA acceptance of shared evidence, not a claim that QA reran the
-gates. Windows/Linux and two Linux-only fixtures remain unexecuted; late
-object/index-publication evidence does not certify OS worktree-write faults.
+gates. At that disposition, Windows/Linux and two Linux-only fixtures were
+unexecuted; late object/index-publication evidence does not certify OS
+worktree-write faults.
+
+**Current #598 disposition — October 27, 2026:** the 12-file test-only repair
+is committed at `ed093023794b791057bbe308d2c86fd0f173af66`, tree
+`e9bb58276ce84dce751cad214a3e7b9f6a8eddbf`. Developer and independent QA
+execution passed 742 workspace, 12 app, 134 UI and 104 E2E tests, with
+20 library and 239 repository hostile-environment tests. Counts are separate
+selectors, not a summed unique-test total. B1/B2 proof gaps are closed and all
+seven LOCAL criteria are accepted; those proof/setup gaps were not production
+defects. The parent receipt at 18:12:22 −07:00 records run `40611212652`
+Crates and Apps on Linux/macOS/Windows, UI, GHAS, GitGuardian and instructions
+SUCCESS. CodeQL was NOT_TRIGGERED on the unprotected nondefault base, not PASS.
+PR #614 is READY; actual head/base/body readback was completed after
+18:19:12 −07:00, as supplied in the current handoff. These results do not
+certify the final propagated #599 tree or unexecuted native extras, or establish
+all original #598/#50 criteria.
+
 External SDK capability experiments,
 developer red/green results and focused checks do not substitute for production
 QA and exact-candidate workspace gates. Linux-only raw-byte fixtures require
 actual Linux execution, not a pass inferred from macOS exclusion.
 Local repository evidence does not establish actual save/run integration,
-hosted GitHub/GHES authentication, full checkout acceptance, hosted transport/LFS/jobs,
+hosted GitHub/GHES authentication, native extras, hosted transport/LFS/jobs,
 all-platform behavior or release readiness. In particular, nonroot macOS
 permission fixtures do not certify Linux permissions or Windows ACL behavior.
 Independent QA and exact-commit full-workspace gate evidence must be assessed
@@ -652,15 +682,48 @@ over `ad522fe` records:
 | Focused Clippy | Failed, exit 101; compilation/checking output truncated |
 
 Selector counts overlap; they are not a unique-test total or workspace gates.
-The Clippy result is not a pass or a diagnosed behavior failure; its complete
-diagnostic is unavailable. No dependent broad gates ran. Independent recheck
-of the unchanged original QA scenarios remains outstanding, including
-rewind/no-pack and initial-clone index/local-reference failure boundaries.
-Existing-checkout state greens do not prove initial-clone write-fault behavior.
-Mutations, independent acceptance and all nine app/UI/core gates remain
-outstanding, including affected GitHub/feedback regression verification.
+The truncated Clippy output and absence of dependent broad gates describe that
+historical run, not current lint availability. The later repair receipt at
+06:08:26 −07:00 records focused Clippy exit 0. The earlier SDK-download DNS
+failure is also recovered history: the existing offline SDK cache was verified
+and used for the guarded committed-source checks below, without an SDK download.
+
+**Original #599 bounded disposition — October 27, 2026:** independent review of saved
+execution accepted all 10 unchanged original probes and 6 configuration
+regressions, including rewind/no-pack and affected GitHub/feedback checks.
+Source verification and the bounded macOS implementation/behavioral-docs
+recommendation passed (`qa-git599/reports/recheck1-final-disposition.md`).
+Both original product findings are resolved; the 21 product paths are committed
+at `ed53dba`. This is not a reviewer rerun or full issue acceptance.
+
+The guarded committed-source receipt (`git599-guarded-gates-receipt.md`)
+records workspace Clippy PASS (25.43 s), app build PASS (51.26 s), and app tests
+PASS (12 tests). Four earlier formatting/UI build/typecheck/test successes
+omitted the required guard, and Corepack reported an unexpected pnpm download
+(`git599-commit-gate-handoff.md`); they are not guarded results. That receipt
+did not establish full nine-gate acceptance. Earlier loopback/cache-copy denials are
+resolved by existing explicit approval; they are not current permission blockers.
+The user released the #599 pause on #598's required native CI success.
+Test-owned localhost `127.0.0.1`/`::1` is approved; external network and real
+credentials remain restricted.
+
+**Propagated-tree evidence.** The October 27, 2026 final-integration developer
+handoff records twelve passing local gates on tree
+`69efec6c880e98991d78b5ae6ded520ef01526bb`, including 794 workspace, 12 app,
+134 UI, 104 E2E and 3+3 generator passes. The 13 localhost API fixtures passed;
+focused counts overlap workspace results. Only its `final2-` gate receipts
+support that tree; the earlier `225c353c6c089f81cf5262f82a34ee95ba241901`
+round is historical. These developer results are distinct from independent QA
+and exact-head native acceptance, and do not certify any successor tree,
+including a documentation-only change. Each candidate requires its own bound
+evidence; the original 10+6 QA record is retained, not a fresh external-fixture rerun.
 Thirteen earlier Wiremock API regressions failed socket setup under blanket
-network denial and remain unretried. Actual native OS trust, selected-host/
+network denial, not assertions; that historical runner does not establish a
+current failure or a pass on the final tree.
+
+Initial-clone index/local-reference write-fault proof and prior mutation
+evidence remain unexecuted; existing-checkout state greens do not prove
+initial-clone write-fault behavior. Actual native OS trust, selected-host/
 keychain integration, approved hosted GitHub.com/GHES repositories and
 credentials, and Windows/Linux execution remain unverified or unexecuted.
 No #599–#602 closure or publication is implied.
@@ -709,4 +772,8 @@ product-owner choices. Subsequent changes identify their own received times.
 | Git checkout occupancy — handoff received 2026-10-26 at 22:33:42.869 −07:00 | Earlier handoff left other-worktree denial unimplemented → implemented SDK occupancy checks including main/sibling worktrees, excluding own identity and bare main, with an under-target-guard rescan before mutation. Own-current no-op is unchanged. This supersedes the earlier omission, not the existing noncooperating-writer limit. | Product-owner handoff: “Finalactualdecisions:SDKworktreeoccupancyguardincludesmain/siblings,excludesownandbaremain, rescansunderheldtargetguard beforemutating; owncurrentnoopunchanged.” | Historical implementation handoff; pending-QA status superseded below, broader acceptance still incomplete |
 | Git checkout acceptance — disposition reconciled 2026-10-27 at 00:55:19.116 −07:00 | Earlier pending/nonindependent wording → bounded independent macOS QA acceptance of implementation and docs at `ad522fe`, based on saved shared core-gate execution and independent probes. Not full #598/#50, Windows/Linux or OS write-fault certification. | `remediation/git598-checkout-commit-disposition.md`; current user instruction: “old598checkout boundedQAaccepted atad522fe”. | Bounded QA accepted at the named commit; not acceptance of subsequent #599 changes |
 | Git clone/fetch — handoff received 2026-10-27 at 00:55:19.116 −07:00 | Undelivered transport inventory → implemented explicit clone/fetch and shared zero-I/O Host preflight before clone init/connection construction. Lower-level gix composition avoids destructive cleanup; isolated tracking-only fetch and explicit retained-state recovery preserve local selection. Initial checkout remains gix, not an expanded git2 fallback. | Architect-approved `remediation/git599-contract-brief.md`; user-authorized scope, not direct product-owner approval of implementation details: “Userauthorizedscope, architectownsbrief.” | Historical implementation handoff; initial-clone order, progress and QA disposition superseded below; #600–#602 scope unchanged |
-| Git clone/fetch correction — received 2026-10-27 at 02:45:17.203 −07:00 | Earlier clone local branch/HEAD-before-checkout order and forwarded SDK progress → initial checkout/index before local branch/born HEAD, with fixed client progress and actual counters; retain numeric-only SDK checkout progress. Preserve partial state and explicit recovery without weakening #598's HEAD-before-final-index order or missing-index guard. Independent findings supersede the earlier blanket pending-QA description. | Architect-approved `remediation/git599-qa-fix-brief.md`: “initial worktree checkout and its index publication precede publishing the clone's local branch/born HEAD.” Current user: “Existing598checkoutHEAD-beforefinalindexcontract andbornHEADmissingindexguard unchanged.” Scoped execution: `remediation/git599-qa-green/receipt.md`. | Implemented; two persistent reds → two greens, supplied progress and six focused selectors pass. Original independent recheck outstanding; Clippy exit 101, not full-gate or issue acceptance |
+| Git clone/fetch correction — received 2026-10-27 at 02:45:17.203 −07:00 | Earlier clone local branch/HEAD-before-checkout order and forwarded SDK progress → initial checkout/index before local branch/born HEAD, with fixed client progress and actual counters; retain numeric-only SDK checkout progress. Preserve partial state and explicit recovery without weakening #598's HEAD-before-final-index order or missing-index guard. Independent findings supersede the earlier blanket pending-QA description. | Architect-approved `remediation/git599-qa-fix-brief.md`: “initial worktree checkout and its index publication precede publishing the clone's local branch/born HEAD.” Current user: “Existing598checkoutHEAD-beforefinalindexcontract andbornHEADmissingindexguard unchanged.” Scoped execution: `remediation/git599-qa-green/receipt.md`. | Historical: two persistent reds → two greens, supplied progress and six focused selectors passed; original recheck was outstanding and Clippy exited 101. Recheck/lint status superseded below, not full-gate or issue acceptance |
+| Git clone/fetch evidence currency — received 2026-10-27 at 07:49:09.067 −07:00 | Pending original recheck/uncommitted candidate → 10/10 original probes and 6/6 configuration regressions PASS, source verifier and bounded macOS implementation/docs recommendation PASS; 21 product paths committed at `ed53dba`. Later focused lint and guarded workspace Clippy/app build/12 app tests passed using the verified offline SDK cache. Earlier failures remain historical; four unguarded fmt/UI successes are not guarded passes. | `remediation/qa-git599/reports/recheck1-final-disposition.md`, `git599-approved-repair-receipt.md`, `git599-commit-gate-handoff.md`, `git599-guarded-gates-receipt.md`; current user: “Correct CURRENT status with minimal factual edits.” | Historical bounded QA acceptance; full workspace tests/UI E2E awaited loopback approval then, superseded below. No full nine-gate, #599/#50, hosted/OS/keychain acceptance or #599 publication; #600 remains unimplemented |
+| Git evidence reconciliation — received 2026-10-27 at 16:32:45.141 −07:00 | Preserved the accepted #599 correction; then recorded #598 independent QA/docs/local-gate acceptance at `63753092452443473234ad129945812f97032e34`, tree `0390135031163070d1663a73df29ff062615be70`, and draft PR #614 awaiting native CI. That source had local 734-test evidence, but all three native Crates jobs subsequently FAILED. Earlier loopback/cache-copy permission blockers were resolved. | Earlier user handoff: “publishedPR614DRAFT awaitingnativeCI”; “#599implementationed53acceptedbounded10+6 but finalpropagatedlocalfullgates/newnativeCI NOTyetexecuted”; “Previouslocalhost/cachecopydenialsresolvedbyexplicitexistingapproval”. Later native-failure status supplied in the current handoff. | Historical local acceptance and failed native source; superseded by the repair below, not current pending CI |
+| Git repair readiness and clone/fetch continuation — received 2026-10-27 at 18:22:23.801 −07:00 | #598's earlier failed native source → test-only repair `ed093023794b791057bbe308d2c86fd0f173af66`, tree `e9bb58276ce84dce751cad214a3e7b9f6a8eddbf`, all seven LOCAL criteria accepted and required native CI SUCCESS at the parent 18:12:22 receipt; PR #614 READY with actual head/base/body readback complete after 18:19:12. CodeQL NOT_TRIGGERED, not PASS. The user released #599's pause; its original `ed53dba4f90f6e6cd24355738ff19047fde99bd5` 10+6 acceptance remains bounded and final propagated full gates/new CI have not run. | Current user handoff: “PR614READY actualhead/base/bodyreadbackcomplete after18:19:12”; “Userexplicitlyreleased599pauseonfullPASS.”; “freshpropagatedfullgates/newCI NOT YETRUN”. | Historical input-stage reconciliation: its not-run statement records the 18:22 handoff, superseded by the developer evidence below; no new architecture/product decision, transfer of gate results, issue closure or final #599 acceptance |
+| Git propagated-tree evidence — handoff received 2026-10-27 at 18:57:53.750 −07:00 | The 18:22 input-stage not-run status is historical. The final-integration developer handoff records twelve passing local gates on tree `69efec6c880e98991d78b5ae6ded520ef01526bb`; keep those results separate from independent QA, exact-head native checks and every successor tree. Restore explicit full-original-criteria caveats without changing the contract. | Current user handoff: “NOWdeveloperall12finaltreegatesPASS794workspace12app134UI104E2E3+3generator and13localhostAPIfixtures”; `remediation/git599-final-integration/developer-handoff.md` and `evidence-summary.json`. | Developer local evidence recorded; no transfer to a changed tree, independent QA signoff, full #598/#599/#50 acceptance, new decision or issue closure implied |

@@ -2,6 +2,7 @@
 
 use super::*;
 
+isolated_tests! {
 #[test]
 fn clone_with_connection_late_file_collision_retains_bytes_for_explicit_recovery() {
     let source = committed_repo();
@@ -176,4 +177,5 @@ fn fetch_with_transport_server_sideband_never_reaches_progress_diagnostics() {
         !leaked.load(Ordering::SeqCst) && !progress_contains_canary(&root),
         "server-controlled text escaped into caller-visible progress diagnostics"
     );
+}
 }

@@ -2,6 +2,7 @@
 
 use super::*;
 
+isolated_tests! {
 fn occupied_target(caller: &Path, other: &Path, reference: &str) {
     let repo = ProjectRepo::open(caller).unwrap();
     fs::write(other.join("keep-stage"), b"other worktree staged selection\n").unwrap();
@@ -130,4 +131,5 @@ fn checkout_bare_primary_head_does_not_reserve_branch_for_linked_worktree() {
         after, before,
         "bare primary HEAD is not a checkout and shared metadata must remain intact"
     );
+}
 }

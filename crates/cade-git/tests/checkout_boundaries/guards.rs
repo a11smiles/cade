@@ -2,6 +2,7 @@
 
 use super::*;
 
+isolated_tests! {
 fn changed_observation(name: &'static str) {
     let dir = fixture();
     dirty_selection(dir.path());
@@ -202,4 +203,5 @@ fn checkout_occupancy_changed_after_observation_denies_then_owner_detach_allows_
 #[test]
 fn checkout_occupancy_changed_under_target_guard_denies_then_owner_detach_allows_retry() {
     changed_occupancy(Phase::Guarded);
+}
 }

@@ -3,10 +3,11 @@
 use super::commit::validation::absent_object;
 use super::commit::{dirty_selection, initial_repo, resolve, sdk};
 use super::objects::{loose_object, malformed_commit, write_commit};
-use super::{ProjectRepo, assert_git_error, committed_repo, git, snapshot};
+use super::{ProjectRepo, assert_git_error, committed_repo, git, run_isolated, snapshot};
 use std::fs;
 use std::path::Path;
 
+isolated_tests! {
 fn merge_base_success(repo: &ProjectRepo, dir: &Path, one: gix::ObjectId, two: gix::ObjectId, expected: Option<gix::ObjectId>) {
     let before = snapshot(dir);
 
@@ -292,4 +293,5 @@ fn merge_base_non_utf8_repository_path_preserves_actual_native_bytes() {
     let repo = ProjectRepo::open(&path).unwrap();
 
     merge_base_success(&repo, &path, ancestor, descendant, Some(ancestor));
+}
 }

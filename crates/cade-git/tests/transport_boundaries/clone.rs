@@ -1,5 +1,6 @@
 use super::*;
 
+isolated_tests! {
 #[test]
 fn clone_with_transport_advertised_head_checks_out_content() {
     let source = committed_repo();
@@ -245,4 +246,5 @@ fn clone_with_transport_corrupt_server_retains_state_for_corrected_fetch() {
         "the corrected source must recover the same retained repository"
     );
     assert_received(&destination, source.path(), "refs/remotes/origin/main");
+}
 }

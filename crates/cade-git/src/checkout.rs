@@ -10,8 +10,9 @@ mod worktree;
 // These filesystem integration probes need private access, not an exported
 // hook or a second checkout implementation. Normal integration tests use the API.
 #[cfg(test)]
+#[macro_use]
 #[path = "../tests/checkout_boundaries/mod.rs"]
-mod boundaries;
+pub(crate) mod boundaries;
 #[cfg(test)]
 mod observer;
 

@@ -3,6 +3,7 @@
 
 use super::*;
 
+isolated_tests! {
 #[test]
 fn checkout_native_veto_with_false_ok_denies_publication_then_corrected_retry_succeeds() {
     let dir = fixture();
@@ -248,4 +249,5 @@ fn checkout_late_index_obstruction_reports_published_head_then_explicit_index_co
     assert_target(dir.path());
     assert_selection(dir.path());
     assert_unlocked(dir.path());
+}
 }

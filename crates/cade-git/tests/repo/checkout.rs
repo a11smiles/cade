@@ -3,7 +3,7 @@
 
 use super::commit::{resolve, sdk};
 use super::objects::{loose_object, malformed_commit};
-use super::{ProjectRepo, assert_git_error, committed_repo, git, snapshot};
+use super::{ProjectRepo, assert_git_error, committed_repo, git, run_isolated, snapshot};
 use gix::bstr::ByteSlice;
 use std::fs;
 use std::path::Path;
@@ -50,7 +50,7 @@ fn assert_category(message: &str, alternatives: &[&str]) {
     let lower = message.to_ascii_lowercase();
     assert!(
         alternatives.iter().any(|category| lower.contains(category)),
-        "denial must identify one of {alternatives:?}, not merely return a generic error"
+        "denial must identify one of {alternatives:?}, not merely return a generic error; got: {message}"
     );
 }
 
