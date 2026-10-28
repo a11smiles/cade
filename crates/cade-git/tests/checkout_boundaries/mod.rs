@@ -7,11 +7,12 @@ use std::{cell::RefCell, fs, path::Path, rc::Rc};
 
 #[path = "../repo/checkout/fixtures.rs"]
 mod fixtures;
+#[macro_use]
 #[path = "../repo/support.rs"]
 mod support;
 
 use fixtures::{REFERENCE, actor, fixture};
-use support::{assert_git_error, committed_repo, git, snapshot};
+use support::{assert_git_error, committed_repo, git, run_isolated, snapshot};
 
 mod failures;
 mod guards;

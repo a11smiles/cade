@@ -1,6 +1,6 @@
 //! Strict initialization and opening boundaries; basic controls remain in repo.rs.
 
-use super::{GitError, ProjectRepo, assert_git_error, committed_repo, git, snapshot};
+use super::{GitError, ProjectRepo, assert_git_error, committed_repo, git, run_isolated, snapshot};
 use std::fs;
 
 isolated_tests! {

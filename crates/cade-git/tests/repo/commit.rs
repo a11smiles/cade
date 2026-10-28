@@ -2,7 +2,7 @@
 //! inspect results; every operation under test calls `ProjectRepo::commit`.
 //! Run with global/system Git configuration disabled, as in the lane handoff.
 
-use super::{ProjectRepo, assert_git_error, committed_repo, git, run_commit_message, snapshot};
+use super::{ProjectRepo, assert_git_error, committed_repo, git, run_commit_message, run_isolated, snapshot};
 use gix::objs::WriteTo;
 use std::collections::BTreeMap;
 use std::fs;

@@ -5,24 +5,9 @@
 use cade_git::{GitError, ProjectRepo, run_commit_message};
 use std::process::Command;
 
-// Keep the ordinary libtest names, attributes and bodies. Each body runs in a
-// fresh process, since changing process-wide Git environment in parallel tests
-// would race and isolating only the fixture's Git CLI does not isolate gix.
-macro_rules! isolated_tests {
-    () => {};
-    ($(#[cfg($cfg:meta)])? #[test] fn $name:ident() $body:block $($rest:tt)*) => {
-        $(#[cfg($cfg)])?
-        #[test]
-        fn $name() {
-            crate::run_isolated(|| $body);
-        }
-        isolated_tests! { $($rest)* }
-    };
-    ($item:item $($rest:tt)*) => {
-        $item
-        isolated_tests! { $($rest)* }
-    };
-}
+#[macro_use]
+#[path = "repo/support.rs"]
+mod support;
 
 #[path = "repo/branches.rs"]
 mod branches;
@@ -38,58 +23,7 @@ mod merge_base;
 mod objects;
 #[path = "repo/status.rs"]
 mod status;
-#[path = "repo/support.rs"]
-mod support;
-
-use support::{assert_git_error, committed_repo, git, snapshot};
-
-fn run_isolated(test: impl FnOnce()) {
-    let thread = std::thread::current();
-    let name = thread.name().expect("libtest names each test thread");
-    if std::env::var("CADE_GIT_TEST_CHILD").as_deref() == Ok(name) {
-        test();
-        return;
-    }
-
-    let home = tempfile::tempdir().unwrap();
-    let config = home.path().join("empty-config");
-    std::fs::write(&config, b"").unwrap();
-    let out = Command::new(std::env::current_exe().unwrap())
-        .env_clear()
-        .envs(
-            // Named lookup honors Windows' case-insensitive environment while
-            // emitting canonical keys for the isolated fixture's Git helper.
-            ["PATH", "SystemRoot", "SYSTEMROOT", "COPILOT_CLI_EXTRACT_DIR"]
-                .into_iter()
-                .filter_map(|key| std::env::var_os(key).map(|value| (key, value))),
-        )
-        .args(["--exact", name, "--nocapture"])
-        .env("CADE_GIT_TEST_CHILD", name)
-        .env("HOME", home.path())
-        .env("USERPROFILE", home.path())
-        .env("XDG_CONFIG_HOME", home.path())
-        .env("TMPDIR", home.path())
-        .env("TEMP", home.path())
-        .env("TMP", home.path())
-        .env("GIT_CONFIG_GLOBAL", &config)
-        .env("GIT_CONFIG_SYSTEM", &config)
-        .env("GIT_CONFIG_NOSYSTEM", "1")
-        .env("GIT_ATTR_NOSYSTEM", "1")
-        .env("GIT_TERMINAL_PROMPT", "0")
-        .output()
-        .unwrap();
-    assert!(
-        out.status.success(),
-        "isolated test {name} failed:\n{}\n{}",
-        String::from_utf8_lossy(&out.stdout),
-        String::from_utf8_lossy(&out.stderr)
-    );
-    assert!(
-        String::from_utf8_lossy(&out.stdout).contains("1 passed; 0 failed"),
-        "the isolated child must execute exactly the selected test: {}",
-        String::from_utf8_lossy(&out.stdout)
-    );
-}
+use support::{assert_git_error, committed_repo, git, run_isolated, snapshot};
 
 #[test]
 fn run_isolated_failed_child_is_reported() {

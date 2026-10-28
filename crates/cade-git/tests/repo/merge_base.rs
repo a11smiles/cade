@@ -3,7 +3,7 @@
 use super::commit::validation::absent_object;
 use super::commit::{dirty_selection, initial_repo, resolve, sdk};
 use super::objects::{loose_object, malformed_commit, write_commit};
-use super::{ProjectRepo, assert_git_error, committed_repo, git, snapshot};
+use super::{ProjectRepo, assert_git_error, committed_repo, git, run_isolated, snapshot};
 use std::fs;
 use std::path::Path;
 

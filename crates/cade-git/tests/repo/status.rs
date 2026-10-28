@@ -1,7 +1,7 @@
 //! Real index/HEAD/worktree status fixtures using the approved SDK event types.
 //! The shared test harness isolates the test process as well as CLI children.
 
-use super::{ProjectRepo, assert_git_error, committed_repo, git, snapshot};
+use super::{ProjectRepo, assert_git_error, committed_repo, git, run_isolated, snapshot};
 use gix::bstr::ByteSlice;
 use gix::diff::index::Change;
 use gix::status::{Item, index_worktree::iter::Summary};
