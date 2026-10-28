@@ -26,6 +26,150 @@ fn clone(destination: &Path, policy: Option<&Policy>, token: &str) -> Result<Pro
 
 isolated_tests! {
 #[test]
+fn push_network_denied_preserves_repository() {
+    let dir = committed_repo();
+    let repo = ProjectRepo::open(dir.path()).unwrap();
+    let selected = support::git(dir.path(), &["rev-parse", "HEAD"]);
+    let expected = gix::ObjectId::from_hex(selected.trim_ascii()).unwrap();
+    let mut policy = Policy::default();
+    policy.tools.network = Switch::Off;
+    let before = snapshot(dir.path());
+    let result = repo.push(
+        "refs/heads/main", expected, "refs/heads/topic",
+        &Url::parse("https://forge.example.invalid/synthetic/project.git").unwrap(),
+        &Host::Server(Url::parse("https://forge.example.invalid/").unwrap()),
+        &SecretString::from("synthetic-token".to_owned()),
+        Some(&policy), gix::progress::Discard, &AtomicBool::new(false),
+    );
+    assert!(
+        matches!(result, Err(GitError::Git(ref message)) if message == "Git network access requires an explicitly allowing policy"),
+        "supplied network denial must remain authoritative: {result:?}"
+    );
+    assert_eq!(snapshot(dir.path()), before);
+}
+
+#[test]
+fn push_empty_token_preserves_repository() {
+    let dir = committed_repo();
+    let repo = ProjectRepo::open(dir.path()).unwrap();
+    let selected = support::git(dir.path(), &["rev-parse", "HEAD"]);
+    let expected = gix::ObjectId::from_hex(selected.trim_ascii()).unwrap();
+    let before = snapshot(dir.path());
+    let result = repo.push(
+        "refs/heads/main", expected, "refs/heads/topic",
+        &Url::parse("https://forge.example.invalid/synthetic/project.git").unwrap(),
+        &Host::Server(Url::parse("https://forge.example.invalid/").unwrap()),
+        &SecretString::from(String::new()),
+        Some(&Policy::default()), gix::progress::Discard, &AtomicBool::new(false),
+    );
+    assert!(
+        matches!(result, Err(GitError::Git(ref message)) if message == "not signed in; supply a token associated with the selected GitHub host"),
+        "empty token must fail without a fallback identity: {result:?}"
+    );
+    assert_eq!(snapshot(dir.path()), before);
+}
+
+#[test]
+fn push_unselected_host_preserves_repository() {
+    let dir = committed_repo();
+    let repo = ProjectRepo::open(dir.path()).unwrap();
+    let selected = support::git(dir.path(), &["rev-parse", "HEAD"]);
+    let expected = gix::ObjectId::from_hex(selected.trim_ascii()).unwrap();
+    let before = snapshot(dir.path());
+    let result = repo.push(
+        "refs/heads/main", expected, "refs/heads/topic",
+        &Url::parse("https://other.example.invalid/synthetic/project.git").unwrap(),
+        &Host::Server(Url::parse("https://forge.example.invalid/").unwrap()),
+        &SecretString::from("synthetic-token".to_owned()),
+        Some(&Policy::default()), gix::progress::Discard, &AtomicBool::new(false),
+    );
+    assert!(
+        matches!(result, Err(GitError::Git(ref message)) if message == "select a credential-free HTTPS repository on the chosen GitHub host; redirects and other origins are not allowed"),
+        "unselected host must fail canonical preflight: {result:?}"
+    );
+    assert_eq!(snapshot(dir.path()), before);
+}
+
+#[test]
+fn push_invalid_destination_returns_error() {
+    let dir = committed_repo();
+    let repo = ProjectRepo::open(dir.path()).unwrap();
+    let selected = support::git(dir.path(), &["rev-parse", "HEAD"]);
+    let expected = gix::ObjectId::from_hex(selected.trim_ascii()).unwrap();
+    let before = snapshot(dir.path());
+    for destination in [
+        "", "topic", "HEAD", "refs/tags/topic", "refs/heads/*", ":refs/heads/topic",
+        "+refs/heads/topic", "refs/heads/main:refs/heads/topic", "refs/heads/topic~1",
+        "refs/heads/a\nb", "refs/heads/a\0b",
+    ] {
+        let result = repo.push(
+            "refs/heads/main", expected, destination,
+            &Url::parse("https://forge.example.invalid/synthetic/project.git").unwrap(),
+            &Host::Server(Url::parse("https://forge.example.invalid/").unwrap()),
+            &SecretString::from("synthetic-token".to_owned()),
+            Some(&Policy::default()), gix::progress::Discard, &AtomicBool::new(false),
+        );
+        assert!(
+            matches!(result, Err(GitError::Git(ref message)) if message == "Git push requires a valid full destination branch under refs/heads/"),
+            "invalid destination must be rejected by branch validation: {result:?}"
+        );
+        assert_eq!(snapshot(dir.path()), before);
+    }
+}
+
+#[test]
+fn push_invalid_reference_returns_error() {
+    let dir = committed_repo();
+    let repo = ProjectRepo::open(dir.path()).unwrap();
+    let selected = support::git(dir.path(), &["rev-parse", "HEAD"]);
+    let expected = gix::ObjectId::from_hex(selected.trim_ascii()).unwrap();
+    let before = snapshot(dir.path());
+    for reference in [
+        "", "main", "HEAD", "refs/tags/topic", "refs/heads/*", ":refs/heads/topic",
+        "+refs/heads/main", "refs/heads/main:refs/heads/topic", "refs/heads/main~1",
+        "refs/heads/a\nb", "refs/heads/a\0b",
+    ] {
+        let result = repo.push(
+            reference, expected, "refs/heads/topic",
+            &Url::parse("https://forge.example.invalid/synthetic/project.git").unwrap(),
+            &Host::Server(Url::parse("https://forge.example.invalid/").unwrap()),
+            &SecretString::from("synthetic-token".to_owned()),
+            Some(&Policy::default()), gix::progress::Discard, &AtomicBool::new(false),
+        );
+        assert!(
+            matches!(result, Err(GitError::Git(ref message)) if message == "Git push requires a valid full source branch under refs/heads/"),
+            "invalid source must be rejected by branch validation: {result:?}"
+        );
+        assert_eq!(snapshot(dir.path()), before);
+    }
+}
+
+#[test]
+fn push_missing_policy_preserves_repository() {
+    let dir = committed_repo();
+    let repo = ProjectRepo::open(dir.path()).unwrap();
+    let selected = support::git(dir.path(), &["rev-parse", "HEAD"]);
+    let expected = gix::ObjectId::from_hex(selected.trim_ascii()).unwrap();
+    let before = snapshot(dir.path());
+    let result = repo.push(
+        "refs/heads/main",
+        expected,
+        "refs/heads/topic",
+        &Url::parse("https://forge.example.invalid/synthetic/project.git").unwrap(),
+        &Host::Server(Url::parse("https://forge.example.invalid/").unwrap()),
+        &SecretString::from("synthetic-token".to_owned()),
+        None,
+        gix::progress::Discard,
+        &AtomicBool::new(false),
+    );
+    assert!(
+        matches!(result, Err(GitError::Git(ref message)) if message == "Git network access requires an explicitly allowing policy"),
+        "missing policy must fail closed with the fixed preflight error: {result:?}"
+    );
+    assert_eq!(snapshot(dir.path()), before);
+}
+
+#[test]
 fn clone_missing_policy_preserves_absent_destination() {
     let dir = tempfile::tempdir().unwrap();
     let destination = dir.path().join("not-created");

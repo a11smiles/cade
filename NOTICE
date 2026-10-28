@@ -17,14 +17,17 @@ at commit 64cc4a9ee27111df7a6a68eb64451690234a12ba,
 source path src/schemas/json/github-issue-forms.json.
 It is third-party SchemaStore material, not an official GitHub schema.
 
-Checkout SDK and native dependencies
-------------------------------------
+Checkout/push SDK and native dependencies
+-----------------------------------------
 
-cade-git uses git2 only for existing-worktree checkout; its other delivered
-Git operations use gitoxide (gix). The checkout dependency is pinned to
-git2 0.21.0 with default features disabled, without HTTPS or SSH features.
+cade-git uses git2 for existing-worktree checkout and feature-specific push
+upload. Gitoxide (gix) retains local operations, clone/fetch, push validation
+and fresh remote observation. git2 is pinned to 0.21.0 with default features
+disabled and https plus vendored-libgit2 enabled; cade-github also uses this
+workspace dependency for Host-owned push transport construction. SSH is not
+enabled. The fallback does not replace gix.
 
-The added Cargo.lock packages and their installed source notices are:
+The checkout-added Cargo.lock packages and their installed source notices are:
 
 - git2 0.21.0 and libgit2-sys 0.18.8+1.9.7, from rust-lang/git2-rs:
   Cargo.toml declares MIT OR Apache-2.0. See each package's LICENSE-MIT
@@ -37,8 +40,11 @@ The added Cargo.lock packages and their installed source notices are:
   Copyright (c) 2020 Josh Triplett
 
 The Rust binding licenses do not replace the native library licenses.
-The captured macOS checkout build compiled vendored libgit2 1.9.7 and
-linked it statically. Its source is included in libgit2-sys under libgit2/:
+The historical macOS checkout build compiled vendored libgit2 1.9.7 and
+linked it statically. The #600 manifest now explicitly selects the bundled
+library, and the October 27, 2026 batch16 Darwin build receipt also records
+static libgit2 with HTTPS/vendor features. This is native build evidence,
+not native HTTPS acceptance. Its source is included in libgit2-sys under libgit2/:
 
   libgit2 is Copyright (C) the libgit2 contributors,
   unless otherwise stated. See the AUTHORS file for details.
@@ -46,8 +52,12 @@ linked it statically. Its source is included in libgit2-sys under libgit2/:
 libgit2/COPYING supplies GNU GPL version 2 with a linking exception and
 separate notices for bundled components. The installed build.rs selects
 bundled llhttp (MIT), xdiff (LGPL-2.1-or-later, per deps/xdiff/xdiff.h),
-PCRE2 (PCRE2 Licence, including its BSD terms), SHA1 collision detection
-(MIT), and built-in RFC 6234 SHA256 code (the IETF Trust notice in COPYING).
+PCRE2 (PCRE2 Licence, including its BSD terms) and SHA1 collision detection
+(MIT). Without HTTPS, the earlier checkout build selected built-in RFC 6234
+SHA256 code (the IETF Trust notice in COPYING). With HTTPS, build.rs instead
+selects CommonCrypto SHA256 on Apple targets, OpenSSL SHA256 on non-Apple
+Unix targets, and Win32 SHA256 on Windows. Retained source notices are not
+a claim that every bundled source component is linked into every build.
 For their full terms and other component-specific notices, retain the
 upstream COPYING and source notices; do not treat every bundled file as
 covered only by the Rust bindings' MIT OR Apache-2.0 declaration.
@@ -74,7 +84,8 @@ Clone/fetch feature dependencies
 cade-git clone/fetch and cade-github's Git connection use the existing
 gix 0.90.0 SDK with blocking-http-transport-reqwest-native-tls and
 worktree-mutation enabled. This feature change preserves existing resolved
-package versions; it does not add git2 HTTP/SSH transport.
+package versions; clone/fetch do not use git2 transport. The separate #600
+push HTTPS feature addition is described below; SSH remains disabled.
 
 The ten added Cargo.lock packages are listed below. License declarations
 and notice filenames were read from their installed registry sources:
@@ -110,6 +121,54 @@ an OpenSSL library-version or vendoring claim, or proof of OS trust handling.
 Rust package license declarations do not replace native component terms.
 The local pipe fixtures do not exercise TLS, and no shipped installer or
 cross-platform native-component inventory is certified by this addition.
+
+Push HTTPS feature and native attribution delta
+-----------------------------------------------
+
+#600 retains git2 0.21.0, libgit2-sys 0.18.8+1.9.7 and gix 0.90.0. The
+https feature activates git2's credential/URL support and platform-specific
+OpenSSL dependencies; vendored-libgit2 selects the existing bundled native
+version. Feature unification also affects checkout and the app's cade-github
+dependency graph. It does not enable vendored-openssl or authorize an SDK,
+installer, signing or release change.
+
+Cargo.lock adds openssl-probe 0.1.6 alongside retained openssl-probe 0.2.1;
+this is an additional feature dependency resolution, not an upgrade of the
+existing version. The 0.1.6 registry checksum is
+d05e27ee213611ffe7d6348b942e8f942b37114c00cc03cec254295a4a17852e.
+Its complete installed source/license notice was unavailable in the two
+local registry locations checked during the October 27 documentation review.
+That package's source-notice verification remains a distribution-review
+requirement; no notice or copyright is inferred from another version.
+
+The existing openssl-sys 0.9.117 is additionally referenced by git2 and
+libgit2-sys. Its installed Cargo.toml declares MIT; LICENSE-MIT states:
+Copyright (c) 2014 Alex Crichton
+This binding's license is not the license of the linked native OpenSSL
+library. Native OpenSSL version, linkage and its applicable license/notices
+require the actual target build/distribution inventory; no OpenSSL vendoring
+or library version is certified here.
+
+The inspected libgit2-sys build.rs selects Secure Transport for Apple HTTPS,
+OpenSSL for other non-Windows HTTPS targets, and WinHTTP for Windows. These
+are libgit2 source-level selections, distinct from gix/native-tls's SChannel
+path noted above. CADE's push factory fails closed on Windows and other
+unsupported platforms before network I/O; compilation of a native backend
+does not mean secure push is enabled or accepted there.
+
+Batch16's Darwin compiler/native receipt binds HTTPS/vendor features and
+static libgit2 archives to source tree
+19a6cef843bf67479c3674f9fa3728c9a7ea31d9. Its recorded libgit2 link output
+names iconv, Security and CoreFoundation; the system-zlib observation above
+belongs to the earlier checkout build, not a new per-target zlib inventory.
+Neither package feature names nor that
+local link receipt establishes native TLS/trust/proxy/redirect behavior,
+Windows/Linux acceptance or the components of a shipped installer.
+An owner-controlled LIBGIT2_NO_VENDOR override can defeat the requested
+bundle; delivery must verify provenance rather than silently accept it.
+Existing upstream COPYING/AUTHORS and bundled-component notices remain
+applicable. This bounded source/receipt review is not exhaustive distribution
+clearance, and missing package notices must be resolved before claiming it.
 
 Geist and Geist Mono fonts
 Copyright 2024 The Geist Project Authors (https://github.com/vercel/geist-font.git)

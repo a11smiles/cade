@@ -17,6 +17,51 @@ use crate::{GitHubError, Host};
 mod boundaries;
 
 impl Host {
+    /// Construct an operation-private push remote and Host-owned security options.
+    ///
+    /// The repository must be a private handle. Its in-memory configuration is
+    /// replaced, never persisted. Callers must use the returned options unchanged.
+    pub fn git_push_remote<'repo, 'auth>(
+        &'auth self,
+        repository: &'repo git2::Repository,
+        remote: &'auth url::Url,
+        token: &'auth SecretString,
+        policy: Option<&'auth Policy>,
+        mut callbacks: git2::RemoteCallbacks<'auth>,
+        interrupt: &'auth std::sync::atomic::AtomicBool,
+    ) -> Result<(git2::Remote<'repo>, git2::PushOptions<'auth>), GitHubError> {
+        self.validate_git_remote(remote, token, policy)?;
+        if interrupt.load(std::sync::atomic::Ordering::Relaxed) {
+            return Err(GitHubError::GitTransport("Git push interrupted before transport"));
+        }
+        if !cfg!(any(target_os = "macos", target_os = "linux")) {
+            return Err(GitHubError::GitTransport("secure Git push is unsupported on this platform"));
+        }
+        let config = git2::Config::new().map_err(|_| GitHubError::GitTransport("cannot isolate Git push configuration"))?;
+        repository
+            .set_config(&config)
+            .map_err(|_| GitHubError::GitTransport("cannot isolate Git push configuration"))?;
+        let selected = repository
+            .remote_anonymous(remote.as_str())
+            .map_err(|_| GitHubError::GitTransport("cannot construct selected Git push remote"))?;
+        if selected.url_bytes() != remote.as_str().as_bytes()
+            || selected.pushurl_bytes().is_some_and(|url| url != remote.as_str().as_bytes())
+        {
+            return Err(GitHubError::GitTransport("Git push destination must equal the selected repository"));
+        }
+        callbacks.credentials(Self::push_credentials(self, remote, token, policy, interrupt));
+        callbacks.certificate_check(|_, _| Ok(git2::CertificateCheckStatus::CertificatePassthrough));
+        callbacks.sideband_progress(|_| !interrupt.load(std::sync::atomic::Ordering::Relaxed));
+        let mut options = git2::PushOptions::new();
+        options
+            .remote_callbacks(callbacks)
+            .proxy_options(git2::ProxyOptions::new())
+            .follow_redirects(git2::RemoteRedirect::None)
+            .custom_headers(&[])
+            .remote_push_options(&[]);
+        Ok((selected, options))
+    }
+
     /// Validate the selected Git destination, token, and policy without I/O.
     ///
     /// Shared preflight lets clone reject requests before creating its destination
@@ -65,6 +110,28 @@ impl Host {
         Ok(())
     }
 
+    fn push_credentials<'auth>(
+        host: &'auth Host,
+        selected: &'auth Url,
+        token: &'auth SecretString,
+        policy: Option<&'auth Policy>,
+        interrupt: &'auth std::sync::atomic::AtomicBool,
+    ) -> impl FnMut(&str, Option<&str>, git2::CredentialType) -> Result<git2::Cred, git2::Error> + 'auth {
+        let mut offered = false;
+        move |address, username, allowed| {
+            if offered
+                || interrupt.load(std::sync::atomic::Ordering::Relaxed)
+                || host.validate_git_remote(selected, token, policy).is_err()
+                || !push_challenge(selected, address, username, allowed)
+            {
+                return Err(git2::Error::from_str("Git push authentication denied"));
+            }
+            offered = true;
+            git2::Cred::userpass_plaintext("x-access-token", token.expose_secret())
+                .map_err(|_| git2::Error::from_str("Git push authentication denied"))
+        }
+    }
+
     /// Construct a credential-bound Git connection only for this selected host.
     ///
     /// A supplied allowing policy and nonempty, host-associated token are required.
@@ -87,6 +154,12 @@ impl Host {
         let transport = http::connect::<http::reqwest::Remote>(address.clone(), Protocol::V2, false);
         configure_connection(remote, Box::new(transport), token)
     }
+}
+
+fn push_challenge(selected: &Url, address: &str, username: Option<&str>, allowed: git2::CredentialType) -> bool {
+    Url::parse(address).is_ok_and(|address| address == *selected)
+        && username.is_none_or(|username| username == "x-access-token")
+        && allowed.contains(git2::CredentialType::USER_PASS_PLAINTEXT)
 }
 
 // The existing SDK transport is injectable privately to observe connection-time
@@ -190,6 +263,91 @@ mod tests {
         assert!(
             Host::Dotcom.validate_git_remote(&remote, &token, Some(&policy)).is_ok(),
             "a valid selected-host repository must pass zero-I/O preflight"
+        );
+    }
+
+    #[test]
+    fn push_credentials_selected_challenge_offers_once() {
+        let selected = Url::parse("https://github.com/synthetic/project.git").unwrap();
+        let token = SecretString::from("synthetic-token".to_owned());
+        let policy = Policy::default();
+        let interrupt = std::sync::atomic::AtomicBool::new(false);
+        let mut credentials = Host::push_credentials(&Host::Dotcom, &selected, &token, Some(&policy), &interrupt);
+        assert!(credentials(selected.as_str(), None, git2::CredentialType::USER_PASS_PLAINTEXT).is_ok());
+    }
+
+    #[test]
+    fn git_push_remote_credentials_rejects_repeated_challenge() {
+        let selected = Url::parse("https://github.com/synthetic/project.git").unwrap();
+        let token = SecretString::from("synthetic-token".to_owned());
+        let policy = Policy::default();
+        let interrupt = std::sync::atomic::AtomicBool::new(false);
+        let mut credentials = Host::push_credentials(&Host::Dotcom, &selected, &token, Some(&policy), &interrupt);
+        assert!(credentials(selected.as_str(), None, git2::CredentialType::USER_PASS_PLAINTEXT).is_ok());
+        assert!(
+            credentials(selected.as_str(), None, git2::CredentialType::USER_PASS_PLAINTEXT).is_err(),
+            "second token offer must be denied"
+        );
+    }
+
+    fn rejected_challenge(address: &str, username: Option<&str>, kind: git2::CredentialType) {
+        let selected = Url::parse("https://github.com/synthetic/project.git").unwrap();
+        let token = SecretString::from("synthetic-token".to_owned());
+        let policy = Policy::default();
+        let interrupt = std::sync::atomic::AtomicBool::new(false);
+        let mut credentials = Host::push_credentials(&Host::Dotcom, &selected, &token, Some(&policy), &interrupt);
+        assert!(
+            credentials(address, username, kind).is_err(),
+            "unsupported challenge must not receive a token"
+        );
+    }
+
+    #[test]
+    fn git_push_remote_credentials_changed_url_returns_error() {
+        rejected_challenge(
+            "https://github.com/synthetic/other.git",
+            None,
+            git2::CredentialType::USER_PASS_PLAINTEXT,
+        );
+    }
+
+    #[test]
+    fn git_push_remote_credentials_other_username_returns_error() {
+        rejected_challenge(
+            "https://github.com/synthetic/project.git",
+            Some("other"),
+            git2::CredentialType::USER_PASS_PLAINTEXT,
+        );
+    }
+
+    #[test]
+    fn git_push_remote_credentials_other_type_returns_error() {
+        rejected_challenge("https://github.com/synthetic/project.git", None, git2::CredentialType::SSH_KEY);
+    }
+
+    #[test]
+    fn git_push_remote_credentials_missing_policy_returns_error() {
+        let selected = Url::parse("https://github.com/synthetic/project.git").unwrap();
+        let token = SecretString::from("synthetic-token".to_owned());
+        let interrupt = std::sync::atomic::AtomicBool::new(false);
+        let mut credentials = Host::push_credentials(&Host::Dotcom, &selected, &token, None, &interrupt);
+        assert!(
+            credentials(selected.as_str(), None, git2::CredentialType::USER_PASS_PLAINTEXT).is_err(),
+            "callback must recheck supplied policy"
+        );
+    }
+
+    #[test]
+    fn git_push_remote_credentials_interrupted_challenge_returns_error() {
+        let selected = Url::parse("https://github.com/synthetic/project.git").unwrap();
+        let token = SecretString::from("synthetic-token".to_owned());
+        let policy = Policy::default();
+        let interrupt = std::sync::atomic::AtomicBool::new(false);
+        let mut credentials = Host::push_credentials(&Host::Dotcom, &selected, &token, Some(&policy), &interrupt);
+        interrupt.store(true, std::sync::atomic::Ordering::Relaxed);
+        assert!(
+            credentials(selected.as_str(), None, git2::CredentialType::USER_PASS_PLAINTEXT).is_err(),
+            "callback must observe original interruption flag"
         );
     }
 }

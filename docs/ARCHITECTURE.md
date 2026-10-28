@@ -17,8 +17,8 @@ desktop app invokes all of its capabilities.
 │     │     ├─ cade-text   Parley                                         │
 │     │     └─ cade-layout Taffy                                          │
 │     ├─ cade-crdt    Loro document (.cade) ── cade-core types            │
-│     ├─ cade-git     gix; existing-checkout-only git2/libgit2 fallback   │
-│     │     └─ cade-github → cade-policy  clone/fetch network boundary   │
+│     ├─ cade-git     gix; checkout/push-upload git2/libgit2 fallback    │
+│     │     └─ cade-github → cade-policy  Git network boundary           │
 │     ├─ cade-copilot GitHub Copilot SDK (Copilot or BYOK providers)      │
 │     │     └─ cade-policy  every tool call checked against policy.yml    │
 │     ├─ cade-github  device flow, PRs, Pages review, issues (feedback)   │
@@ -31,7 +31,7 @@ desktop app invokes all of its capabilities.
 ```
 
 - **Local first.** Projects are folders and git repos on the user's machine. Nothing is uploaded except model calls (to Copilot or the user's own provider) and what the user ships (PRs, review pages, issues).
-- **One identity.** GitHub device-flow sign-in is the intended identity source for Copilot, shipping, review pages and feedback issues. Git clone/fetch require an explicitly supplied token already associated with the selected Host; the existing global keychain entry alone does not establish that association.
+- **One identity.** GitHub device-flow sign-in is the intended identity source for Copilot, shipping, review pages and feedback issues. Git clone/fetch/push require an explicitly supplied token already associated with the selected Host; the existing global keychain entry alone does not establish that association.
 - **Policy everywhere.** `cade-policy` decides before Copilot runs a tool, before BYOK is used, and before anything ships.
 - **Copilot proposes, the user applies.** Agent output is a staged change set. Applying it is one commit with run trailers.
 
@@ -46,9 +46,12 @@ bounded approval and pending verification; none establishes release readiness.
 
 ### Git implementation boundary
 
-**Status:** local open/init/status foundation (#596 / GH-024), explicit-tree
+**Implementation inventory:** local open/init/status foundation (#596 / GH-024), explicit-tree
 commits (#597 / GH-025), branch creation/merge-base (#598 / GH-026 Stage A)
-and existing-worktree checkout (Stage B) are implemented. Stage A and checkout
+and existing-worktree checkout (Stage B) are implemented.
+The following acceptance chronology is historical, reconciled at the
+October 27, 2026, 22:38:54 −07:00 documentation input checkpoint.
+Stage A and checkout
 at repair commit `ed093023794b791057bbe308d2c86fd0f173af66`, tree
 `e9bb58276ce84dce751cad214a3e7b9f6a8eddbf`, have independent local acceptance
 and all required native CI successes. PR #614 is READY with actual head/base/
@@ -61,11 +64,20 @@ and the bounded macOS implementation/docs QA recommendation passed.
 Guarded workspace Clippy, app build and 12 app tests passed at that source.
 Earlier loopback/cache-copy denials are resolved by existing explicit approval;
 the #599 pause is released following #598's required native CI success.
-Acceptance of each propagated #599 tree requires separately bound full local
-gates, independent QA and applicable exact-head native checks; earlier-tree
-results do not transfer. Four earlier fmt/UI successes were not guarded and
-do not supply guarded evidence.
-These bounded dispositions do not establish all original #598/#599/#50
+The later #599 parent `0fb8fcc4968f8553bcc6fcf29a9ab8f834745f16`,
+tree `45124332f3f8a8625b48906c0a987a6a55e7f6e6`, has independently accepted
+12/12 publication cases and twelve local gates. PM's October 27,
+20:14:24 −07:00 receipt records PR #615 READY, with native successes at the
+20:03:59 architect receipt; its earlier draft/native-wait wording is historical.
+The 22:38:54 relay retains PRs #611–#615 READY and #608 fully accepted.
+These are named-parent results, not #600 or full-original acceptance.
+Each successor requires separately bound full local gates, independent QA and
+applicable exact-head native checks; earlier-tree results do not transfer.
+Four earlier unguarded fmt/UI successes remain historical, not substitutes
+for the later named-parent evidence.
+The bounded #600 push implementation is described below; it is no longer
+an unimplemented contract waiting for #599 gates or user merge.
+These bounded dispositions do not establish all original #598/#599/#600/#50
 criteria or authorize issue closure under
 [ADR 0004](adr/0004-git-is-history.md), the unchanged Git-history authority.
 
@@ -77,9 +89,10 @@ Consumers are crate callers/tests, not app IPC; `cade-app` does not depend on
 this crate. There is no new shared status wrapper, serialized format, `.cade`
 or policy schema. Open/init/status, HEAD inspection, commits, branch creation
 and ancestry remain on gix, as do clone/fetch and clone's initial checkout.
-Only existing-worktree checkout adopts the git2/libgit2 fallback
-described below, with the existing workspace `tempfile` dependency for its
-private index.
+Existing-worktree checkout and push upload use the feature-specific
+git2/libgit2 fallback described below. Checkout retains the existing workspace
+`tempfile` dependency for its private index; push validation and fresh
+remote observations remain on gix.
 
 - **Open/init:** opening preserves existing metadata and worktree contents,
   including support for opening bare repositories. Strict init rejects existing
@@ -107,8 +120,8 @@ private index.
 HEAD inspection and Copilot commit-message formatting also remain available;
 the commit operation below stores supplied messages rather than generating
 attribution. Remaining work includes full original #598 acceptance and #599
-hosted/authentication/platform acceptance, #600 push (approved contract but
-unimplemented and waiting for #599 exact gates), #601 configured LFS, and #602 typed
+hosted/authentication/platform acceptance, full original #600 push acceptance
+beyond the bounded implementation below, #601 configured LFS, and #602 typed
 cancellable job/IPC integration. Commit-per-save/run and full Git/app integration
 remain undelivered. These local mechanics preserve the parent obligation; they
 do not complete the separately scoped push, LFS or IPC layers.
@@ -217,7 +230,7 @@ pub fn merge_base(
   worktree files or config. Both methods support bare repositories and detached
   or unborn HEAD when their explicit commit inputs meet the requirements.
 
-Stage A uses gix 0.90.0; the checkout-only dependency added in Stage B does not
+Stage A uses gix 0.90.0; the feature-specific git2 dependency does not
 replace these implementations or add a wrapper, error variant or app IPC.
 
 #### Existing-worktree checkout — Stage B
@@ -227,8 +240,10 @@ allowance, checkout uses exact `git2 =0.21.0` with default features disabled.
 The inspected gix 0.90.0 `Worktree::checkout` performs initial linked-worktree
 checkout, rejecting main worktrees and existing indexes; it does not supply
 this existing-worktree branch switch. This is a narrow SDK capability gap,
-not a replacement for gitoxide or a change to accepted ADR 0004. No git2 HTTP/SSH
-features or transport operations are adopted. Checkout uses SDK APIs, not
+not a replacement for gitoxide or a change to accepted ADR 0004. The later
+#600 upload fallback enables workspace git2 HTTPS and vendored-libgit2;
+checkout itself performs no transport operation, and SSH is not enabled.
+Checkout uses SDK APIs, not
 subprocess Git, shell commands or a custom lock protocol.
 
 The public method in [`checkout.rs`](../crates/cade-git/src/checkout.rs) reuses
@@ -302,17 +317,20 @@ pub fn checkout(
 **Native dependency boundary.** The lockfile resolves `git2 0.21.0`,
 `libgit2-sys 0.18.8+1.9.7` and `libz-sys 1.1.30`. The captured macOS build uses
 vendored, statically linked native libgit2 1.9.7 and system zlib, not a pure-Rust
-checkout implementation. Vendoring is the observed build result, not a
-manifest guarantee for every platform. [NOTICE](../NOTICE) distinguishes Rust
+checkout implementation. For #600, the manifest explicitly enables
+`vendored-libgit2` and `https`, retaining default features false and the exact
+git2 version. Delivery must verify the bundled selection: an owner-controlled
+`LIBGIT2_NO_VENDOR` override can defeat it and must fail the provenance gate,
+not silently substitute a system library. [NOTICE](../NOTICE) distinguishes Rust
 binding licenses from native and bundled-component notices; it is an inventory,
 not blanket license or release clearance.
 
 This synchronous crate method adds no app consumer, IPC, serialized type,
 `.cade` format or policy schema. Progress, cancellation and #602's original
 500-ms/write-safety criteria are not delivered by this implementation.
-Save/run integration, push, configured LFS and host/platform acceptance retain
-their separate obligations. The following clone/fetch implementation does not
-extend this existing-worktree fallback.
+Save/run integration, full push acceptance, configured LFS and host/platform
+acceptance retain their separate obligations. Clone/fetch remain on gix;
+the later push upload fallback does not alter checkout's publication order.
 
 #### Explicit clone and fetch — #599
 
@@ -489,14 +507,189 @@ impl ProjectRepo {
   caller interrupt flag reaches receive and initial checkout stages, but
   the pinned handshake/ls-refs has no interrupt argument; the flag is checked
   when it returns. Neither 500-ms cancellation, all-or-nothing writes nor
-  universal filesystem rollback is proven. #600 push, #601 configured LFS and
-  #602 typed cancellable jobs retain their entire original scope and criteria.
+  universal filesystem rollback is proven. The bounded #600 push implementation
+  below does not discharge those obligations; #600, #601 configured LFS and
+  #602 typed cancellable jobs retain their original scope and criteria.
 
 Root gix features now include `blocking-http-transport-reqwest-native-tls` and
 `worktree-mutation`. Existing resolved SDK versions, including gix 0.90.0,
 remain unchanged; the ten added feature-related packages and native-source
 boundary are listed in [NOTICE](../NOTICE). This is not a new ADR, SDK upgrade,
-git2 transport expansion, installer change or release approval.
+git2 clone/fetch path, installer change or release approval.
+
+#### Explicit single-branch push — #600
+
+**Implemented contract, not full acceptance.** Under the approved #600 contract
+and #50's feature-specific fallback allowance, gix 0.90.0 performs validation
+and fresh remote observation, while pinned `git2 =0.21.0` performs upload.
+The inspected gix SDK lacks the needed upload operation; no handwritten Git
+protocol replaces it. ADRs 0003/0004/0005 remain unchanged, including Copilot
+SDK `=1.0.26`, branch-plus-PR shipping and sole `cade-policy` authority.
+Only two public methods are added, using existing SDK/error/progress types:
+
+```rust
+impl ProjectRepo {
+    pub fn push<P>(
+        &self,
+        reference: &str,
+        expected: gix::ObjectId,
+        destination: &str,
+        remote: &url::Url,
+        host: &cade_github::Host,
+        token: &octocrab::secrecy::SecretString,
+        policy: Option<&cade_policy::Policy>,
+        progress: P,
+        interrupt: &std::sync::atomic::AtomicBool,
+    ) -> Result<gix::ObjectId, GitError>
+    where
+        P: gix::NestedProgress;
+}
+
+impl Host {
+    pub fn git_push_remote<'repo, 'auth>(
+        &'auth self,
+        repository: &'repo git2::Repository,
+        remote: &'auth url::Url,
+        token: &'auth octocrab::secrecy::SecretString,
+        policy: Option<&'auth cade_policy::Policy>,
+        callbacks: git2::RemoteCallbacks<'auth>,
+        interrupt: &'auth std::sync::atomic::AtomicBool,
+    ) -> Result<(git2::Remote<'repo>, git2::PushOptions<'auth>), GitHubError>;
+}
+```
+
+The methods live in the existing private `transport.rs` modules of
+`cade-git` and `cade-github`. No new public wrapper, framework, error code,
+policy action/schema, serialized format, IPC, capability or generated binding
+is introduced.
+
+- **Preflight and explicit local selection:** shared zero-I/O Host validation
+  precedes project preparation. Both names must be full `refs/heads/...`;
+  neither HEAD, revision syntax nor a user-supplied refspec selects content.
+  Fresh isolated gix metadata must expose a direct local branch equal to
+  `expected`, a decodable commit, supported object format and default namespace.
+  Shared executable-filter rejection remains enforced. Object preflight checks
+  reachable commit/tree/blob kinds, checksums and decoding through SDK traversal,
+  respecting shallow boundaries; it never substitutes index/worktree content,
+  follows gitlinks or supplies LFS payloads. Object-graph edge-case proof remains
+  qualified below; this is not a universal object-integrity certification.
+- **Guard and immutable wire source:** a no-edit SDK transaction locks only the
+  selected source branch. Fresh under-lock validation rejects changed, missing
+  or symbolic tips. The guard stays held through observation/upload/return and
+  drops without committing or setting a target; it neither locks HEAD/index
+  nor deletes a foreign marker. One parsed/serialized
+  `<full expected OID>:<full destination>` refspec, without `+`, binds the upload.
+  Exactly one negotiated update must match that source, destination and nonzero
+  new OID. This is non-force, not force-with-lease or a distributed transaction.
+- **Local preservation:** no staging, commit, checkout, tracking-ref/reflog
+  publication, persistent config write, hook, executable filter, submodule
+  traversal, LFS execution or automatic retry/rollback is part of push.
+  Dirty/conflicted index and worktree do not select content. Bare, detached
+  and unborn HEAD work when the explicit branch/commit and metadata are valid.
+  `.cade` blobs are opaque, including old or malformed document contents;
+  no document migration/openability or LFS completeness is implied.
+- **Host-owned construction:** on an operation-private git2 handle, Host
+  installs an empty in-memory config and an anonymous remote with exact
+  selected URL/push URL checks. It preserves mechanics callbacks while replacing
+  credentials, certificate and sideband callbacks. Credentials permit one
+  selected-URL `x-access-token` user/password offer, rechecking policy and
+  interruption; helpers, prompts, fallback identity and persistence are absent.
+  Native `CertificatePassthrough`, never accept-all, replaces any supplied
+  certificate override. Sideband text is discarded. Returned options specify
+  no proxy, no redirects, no custom headers and no remote push options.
+  These mutable SDK options must be used unchanged; they are not an opaque
+  security capability. Selected-host token provenance is still the caller's
+  responsibility, not proven by a nonempty token or the global keychain entry.
+- **Platform boundary:** Windows and other unsupported platforms return a
+  fixed unsupported-secure-push error before networking, including before the
+  gix pre-query. This is a missing capability, not Windows acceptance.
+  macOS/Linux construction paths and configured options do not prove native
+  trust, process-global TLS/proxy/trace isolation, redirects or on-wire auth.
+  No owner OS settings are changed to make those proofs pass.
+- **Fresh outcomes:** each pre/post-query uses a new isolated gix connection
+  through Host, without URL rewriting, writable refspecs, fetch or cached
+  git2 ref lists. Exactly one direct destination advertisement is usable;
+  duplicates or symbolic/ambiguous advertisements fail. Already-at-expected
+  pre-query returns the OID without upload. Otherwise one upload is attempted,
+  then a fresh observation unless interrupted. Normal success requires one valid
+  negotiation, exactly one accepted destination report, top-level SDK success
+  and fresh equality. Rejection, missing/duplicate/unexpected reports and
+  negotiation failure remain errors even if a later observation equals expected.
+  A top-level upload error stays an error even if the intended tip is observed.
+  Failed verification or interruption after entering push can mean remote
+  effects exist; error never guarantees that nothing changed remotely.
+- **Explicit recovery:** inspect remote state, correct credentials/policy or
+  connectivity, then make a newly authorized request. Its fresh pre-query may
+  observe completion without retransmission. A changed local branch requires
+  explicit reselection, never silent substitution. Remote hooks/object transfer
+  may have effects, and refs may change immediately after observation. There is
+  no automatic upload retry, remote undo, attribution of who moved a ref or
+  universal filesystem-preservation claim against noncooperating writers.
+- **Policy and progress:** explicit effective policy must Allow
+  `Action::AgentNetwork`; `network: On` does not authorize direct `ShipByPush`.
+  #140/#141 still own user intent, preflight and branch-plus-PR shipping; push
+  neither opens a PR nor completes Ship. Progress exposes fixed client stages
+  and numeric pack/object/byte/verified-ref counts, not raw server diagnostics.
+  Original interruption checks and returning callbacks are retained, but
+  `pack_progress` and `push_transfer_progress` return `()` and cannot cancel I/O.
+  Blocked sockets/handshake can outlast the flag. Strict 500-ms stop/no-partial-
+  writes remains an original #46/#602 obligation, not a primitive guarantee.
+  Future job consumers must keep this synchronous operation off the UI thread.
+
+**Dependency and consumer impact.** Root git2 keeps default features false and
+adds only `https` and `vendored-libgit2`; `cade-github` adds `git2.workspace`.
+The existing checkout linkage therefore changes through feature unification,
+as does the app's cade-github dependency graph. No SSH, SDK upgrade, new
+installer or vendored-OpenSSL requirement is introduced. [NOTICE](../NOTICE)
+records the extra openssl-probe resolution, native backend distinctions and
+distribution-review limits.
+
+Regression consumers include cade-git's existing local/checkout and clone/fetch
+tests, cade-github's validator/gix factory/auth/API/PR tests, unchanged
+cade-policy decisions, cade-app's existing feedback/auth consumer, and indirect
+cade-feedback/UI/generated-binding behavior. The app is not a push caller.
+Future #139 selection, #140/#141 Ship/PR, #465 offline queue, #601 LFS with
+#466 configuration, and #602/#36/#46/#54 jobs/IPC must integrate their own
+approved contracts. #50's combined workflows retain content, ancestry and
+run-trailer obligations. No consumer integration is inferred from crate tests.
+
+**Historical developer checkpoint — October 27, 2026, 22:36:49 −07:00.**
+`git600-implementation/batch16/handoff.json` and `plan-ledger.json` identify
+297 paths at tree `19a6cef843bf67479c3674f9fa3728c9a7ea31d9`, parent
+`0fb8fcc4968f8553bcc6fcf29a9ab8f834745f16`, not a #600 commit.
+Four Rust checkpoints passed on Darwin: fmt, workspace Clippy, 853 workspace
+tests and app build. Canonical row categories are mutually exclusive:
+10 red/green + 27 initial-pass regressions + 4 partial + 3 untouched = 44;
+zero rows had independent acceptance. Initial passes and retrospective mutants
+are not red-first credit. Rows 43/44 exercise a local clone/commit/branch/push
+workflow and network-versus-direct-Ship distinction, not hosted workflow/PR
+completion. Row 40's new Windows-cfg test was neither compiled nor executed on
+Darwin; test presence is not PASS. The receipt did not include full twelve-gate,
+native #600 CI or docs-QA acceptance.
+
+**Delivery and original-scope obligations.** Full twelve-gate execution,
+independent behavioral/regression/docs QA, exact successor source/binary/native
+bindings and applicable exact-head hosted checks are mandatory for delivery.
+The dated checkpoint above must not be used as a live gate dashboard or
+transferred to a documentation successor. Remaining developer qualifications
+include row 10 malformed/shallow/object-graph cases and guard/default-argument/
+cancellation mutation matrices; the batch7 zero-OID survivor remains a QA
+qualification. The earlier type-delete survivor was caught by batch15, not
+erased or credited as a new behavior red. Partial rows 35/36/39 retain
+process-isolation, authentication-composition and native logging limits;
+rows 38/41/42 retain certificate/TLS/proxy/redirect proof requirements.
+True dropped acknowledgment, full malformed-wire and native offline/failure
+matrices remain separate from local injected failures.
+
+Full original #600/#50 acceptance still requires GitHub.com/GHES intended
+ref/content and combined workflow proof, hosted branch-protection/permission
+rejections, actual selected-host OS-keychain/missing-entry/revoked-credential
+behavior, native TLS/trust/proxy/redirect security and required Windows/Linux
+execution. Full original #598/#599/#50 caveats also remain: initial-clone fault
+cases, native extras, real host/authentication, save/run/app integration,
+configured LFS (#601) and cancellable IPC/jobs (#602) are not discharged by
+bounded repairs or this push implementation. S1 Low #106 remains unfixed.
+No closing reference or issue completion follows; use Refs #600 and #50.
 
 ### Policy failure boundaries
 
@@ -620,7 +813,7 @@ gates. At that disposition, Windows/Linux and two Linux-only fixtures were
 unexecuted; late object/index-publication evidence does not certify OS
 worktree-write faults.
 
-**Current #598 disposition — October 27, 2026:** the 12-file test-only repair
+**Historical #598 disposition — October 27, 2026; readback after 18:19:12 −07:00:** the 12-file test-only repair
 is committed at `ed093023794b791057bbe308d2c86fd0f173af66`, tree
 `e9bb58276ce84dce751cad214a3e7b9f6a8eddbf`. Developer and independent QA
 execution passed 742 workspace, 12 app, 134 UI and 104 E2E tests, with
@@ -725,8 +918,10 @@ Initial-clone index/local-reference write-fault proof and prior mutation
 evidence remain unexecuted; existing-checkout state greens do not prove
 initial-clone write-fault behavior. Actual native OS trust, selected-host/
 keychain integration, approved hosted GitHub.com/GHES repositories and
-credentials, and Windows/Linux execution remain unverified or unexecuted.
-No #599–#602 closure or publication is implied.
+credentials, and original-scope Windows/Linux execution retain their separate
+acceptance requirements. The later named #599 publication/local-QA/native
+READY receipt is recorded above; it does not erase these original-scope limits.
+No #599–#602 closure or #600 publication is implied.
 
 Independent QA approved **13 bounded fixes**, not 13 issue closures. Evidence is
 attached to the reviewed commits: policy `1ceb0837b6a2d9ae28f9156770e7b2cf2fb41f3c`
@@ -777,3 +972,4 @@ product-owner choices. Subsequent changes identify their own received times.
 | Git evidence reconciliation — received 2026-10-27 at 16:32:45.141 −07:00 | Preserved the accepted #599 correction; then recorded #598 independent QA/docs/local-gate acceptance at `63753092452443473234ad129945812f97032e34`, tree `0390135031163070d1663a73df29ff062615be70`, and draft PR #614 awaiting native CI. That source had local 734-test evidence, but all three native Crates jobs subsequently FAILED. Earlier loopback/cache-copy permission blockers were resolved. | Earlier user handoff: “publishedPR614DRAFT awaitingnativeCI”; “#599implementationed53acceptedbounded10+6 but finalpropagatedlocalfullgates/newnativeCI NOTyetexecuted”; “Previouslocalhost/cachecopydenialsresolvedbyexplicitexistingapproval”. Later native-failure status supplied in the current handoff. | Historical local acceptance and failed native source; superseded by the repair below, not current pending CI |
 | Git repair readiness and clone/fetch continuation — received 2026-10-27 at 18:22:23.801 −07:00 | #598's earlier failed native source → test-only repair `ed093023794b791057bbe308d2c86fd0f173af66`, tree `e9bb58276ce84dce751cad214a3e7b9f6a8eddbf`, all seven LOCAL criteria accepted and required native CI SUCCESS at the parent 18:12:22 receipt; PR #614 READY with actual head/base/body readback complete after 18:19:12. CodeQL NOT_TRIGGERED, not PASS. The user released #599's pause; its original `ed53dba4f90f6e6cd24355738ff19047fde99bd5` 10+6 acceptance remains bounded and final propagated full gates/new CI have not run. | Current user handoff: “PR614READY actualhead/base/bodyreadbackcomplete after18:19:12”; “Userexplicitlyreleased599pauseonfullPASS.”; “freshpropagatedfullgates/newCI NOT YETRUN”. | Historical input-stage reconciliation: its not-run statement records the 18:22 handoff, superseded by the developer evidence below; no new architecture/product decision, transfer of gate results, issue closure or final #599 acceptance |
 | Git propagated-tree evidence — handoff received 2026-10-27 at 18:57:53.750 −07:00 | The 18:22 input-stage not-run status is historical. The final-integration developer handoff records twelve passing local gates on tree `69efec6c880e98991d78b5ae6ded520ef01526bb`; keep those results separate from independent QA, exact-head native checks and every successor tree. Restore explicit full-original-criteria caveats without changing the contract. | Current user handoff: “NOWdeveloperall12finaltreegatesPASS794workspace12app134UI104E2E3+3generator and13localhostAPIfixtures”; `remediation/git599-final-integration/developer-handoff.md` and `evidence-summary.json`. | Developer local evidence recorded; no transfer to a changed tree, independent QA signoff, full #598/#599/#50 acceptance, new decision or issue closure implied |
+| Git push inventory and fallback — relay received 2026-10-27 at 22:38:54.099 −07:00 | Earlier checkout-only/no-transport and unimplemented-#600/wait-for-#599 inventory → bounded two-method push implementation: gix validation/fresh observation plus git2 upload, HTTPS/vendor features, Host-owned security options and conservative outcomes. Earlier #615 draft/native-wait status is superseded by the named-parent READY receipt. No new ADR, product default or full-original acceptance; prior evidence remains historical. | Architect `git600-contract-brief.md`: “Use existing git2=0.21.0 only for upload, retaining gix=0.90.0 for validation/observation.” Execution release `git600-implementation-brief.md`, October 27 at 19:54:29 PDT; user relay: “Document existingapproveddecisions only, no newADR/default/productdecision”. | Approved contract; implemented bounded code with dated developer proof. Exact successor gates, independent QA/docs and original #598/#599/#600/#50 acceptance remain separate obligations |
