@@ -41,6 +41,13 @@ session so it can launch them.
   is resumable), then return the fixes and evidence to QA for rechecking and
   affected regression tests. Keep the issue incomplete until QA recommends
   completion and all required checks and documentation are complete.
+- Publish PRs as drafts. Mark them ready only after independent QA and all
+  applicable required checks pass on the exact current head, including relevant
+  Windows, macOS and Linux CI for cross-platform behavior. Local green checks
+  cannot substitute for those results. Recheck affected PRs after every push
+  or stack propagation; failed, pending, missing or skipped relevant checks
+  keep them in draft. Require persistent tests for reported regressions without
+  weakening artifact checks or changing protected workflows.
 - Pass every decision to `document-writer`, requirement changes to
   `business-analyst`, and status or dependency changes to `project-manager`.
 - Every three hours, dispatch `performance-coach` and relay its coaching, as

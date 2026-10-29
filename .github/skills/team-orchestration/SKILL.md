@@ -39,6 +39,22 @@ Owner: application architect.
   with an `interval`. Confirm the review job fires every 3 hours around the
   clock: its hour field lists 8 hours, or uses a step such as `1-23/3`. Give
   the user a next-review time only from a schedule listing made in that turn.
+- Maintain a separate ten-minute blocker reminder throughout delivery and
+  verify it after every resume. Report a genuine current blocker immediately,
+  then every ten minutes until resolved, including while awaiting approval.
+  Lead with **ACTION REQUIRED - WORK BLOCKED** when the user must act, or
+  **WORK BLOCKED - FIX IN PROGRESS** when no user action is needed. State the
+  affected task, owner, plain-language cause, exact action or approval reply
+  needed, what work can continue and the next reminder time. Do not bury a
+  request in an hourly table or rely solely on an approval dialog the user
+  cannot access. Do not repeatedly invoke an unavailable dialog.
+  Record blocker and resolution evidence; reconcile fresh receipts and user
+  approvals before repeating an alert. Never infer consent from silence.
+  Stop the resolved alert immediately; do not repeat stale blockers or present
+  ordinary running checks and queued dependencies as blocked work.
+  This reminder supplements, rather than replaces, hourly progress and CI
+  monitoring. Stop its schedule only when all scoped delivery is complete or
+  the user explicitly pauses the reminders.
 - While a plan waits for approval (`exit_plan_mode`), scheduled prompts
   don't fire. Say so when you ask for approval. After approval, list the
   schedules again, and start the next review's window where the last one
@@ -135,28 +151,62 @@ Owner: application architect.
    references, the design export when there is one, inputs, allowed files,
    contracts, acceptance criteria and when to stop.
    - Branching (`AGENTS.md`): trunk-based development on `main` with stacked
-     PRs. The issue plan lists tasks in dependency order; each task gets one
-     branch `issue-NN-<task>` (for example `issue-12-crdt-ops-api`, then
-     `issue-12-ipc-command`, then `issue-12-ui-panel`), created from the
-     branch it depends on, the first from `main`. The user merges the stack
-     bottom-up so `main` stays clean and working.
-   - Never create sibling task branches from the same base: they conflict on
-     shared files (`Cargo.toml`, `Cargo.lock`, IPC bindings, tokens) and push
-     all of that onto the merge. If a lower branch changes, restack the
-     branches above it before continuing.
-   - Parallel writers share a branch only with disjoint file scopes; shared
-     files are edited by one role at a time and committed before the next
-     role touches them. Opening PRs requires pushing, which needs the user's
-     approval.
+     PRs. Going forward, every issue and subissue gets its own
+     `issue-NN-<scope>` branch. Create the parent's own branch before any
+     child; every child must descend from it. List issues in dependency order,
+     preferring sequential descendants over conflicting siblings. The user
+     merges the stack bottom-up so `main` stays clean and working.
+   - Complete already-scoped work; preserve previously approved legacy grouped
+     branches and commits. Do not rewrite them to retrofit this prospective
+     rule. Maintain a branch map: issue/subissue, parent issue, branch,
+     predecessor/base and exact SHAs. Record actual ancestry and merge-conflict
+     checks, their tested tree identities and results; names or registration
+     alone do not prove a valid, conflict-free stack.
+   - Use the `gh stack` command/extension to register one local stack per parent
+     and its children. The installed official `github/gh-stack` 0.3.0 `init`
+     operation adopts existing branches bottom-to-top with an explicit
+     `--base`. Local registration is not publication authorization: no
+     `sync`/`submit`, push-capable `link`, push or PR publication is authorized
+     by this instruction. Rebase rewrites history and requires approved scope;
+     do not invent a dry run. If a lower branch changes, restack descendants
+     only within approved scope before continuing.
+   - An empty parent anchor at the pre-child base establishes ancestry but
+     has no publishable root diff. Report that limitation; do not manufacture
+     a diff or claim publication readiness. Registration, ancestry, conflict
+     checks and publication readiness are separate evidence obligations.
+   - Parallel writers share an issue's branch only with disjoint file scopes;
+     distinct issues/subissues do not share a new branch. Shared files are
+     edited by one role at a time and committed before the next role touches
+     them. Opening PRs requires pushing, which needs the user's approval.
    - A tree under QA or design review has no active writer in the files under
      review. Sequence the work, or have QA review from a scratch copy taken at
      a named commit, rather than creating another branch.
    - Name the tree path and the commit SHA in every prompt that cites
      repository state, including project-manager and business-analyst prompts.
-   - Create only the task branches in the issue plan you've shown the user. If
-     a new task appears, add it to the plan and name it in your next status
-     update before you create the branch. Never create a branch, worktree or
-     merge target as a fix for a process problem without asking.
+   - Create only the issue/subissue branches in the issue plan you've shown
+     the user. If a new issue/subissue appears, add it to the plan and name it
+     in your next status update before you create the branch. Never create a
+     branch, worktree or merge target as a fix for a process problem without
+     asking.
+   - Before every commit, run the applicable build commands against the exact
+     candidate tree and require success. Confirm the staged content matches
+     the validated tree; rerun affected checks after further edits. Missing,
+     blocked, skipped or stale evidence is not a successful build. Do not
+     commit a known-broken tree or defer its repair to a later layer.
+     If a local build or hosted build check fails, stop unrelated feature
+     work and publication; repair and verify the failure before resuming.
+     Post-push exact-head platform checks below remain mandatory.
+   - Maintain automatic CI monitoring for every commit across all delivery
+     work, not just selected PRs. Verify the monitor is active at startup
+     and after resuming. Register each new commit's SHA, branch, PR when
+     available, applicable checks and build evidence in the delivery registry.
+     Check published commits every five minutes until results are resolved;
+     retain their evidence after branch heads move. A passing descendant
+     does not prove an earlier commit passed. For unpublished commits, retain
+     local build evidence and explicitly mark hosted CI awaiting publication.
+     Immediately route failures to the architect for priority repair. Keep
+     monitoring new commits until all scoped delivery is complete or the
+     user pauses it, rather than stopping when an individual PR passes.
    - When building or restacking a level, run the full gate on that level's
      exact SHA before the next level starts:
      - `cargo fmt --all --check`;
@@ -171,6 +221,21 @@ Owner: application architect.
      Save each result as a log named `<level>-<sha>` that lists the test
      names. Put each fix at the lowest level whose code it changes. Explain
      any change beyond the original pick in that commit's message.
+   - Publish PRs as drafts until independent QA, documentation and all
+     applicable required checks pass on the exact current PR head. For
+     cross-platform behavior, verify the relevant Windows, macOS and Linux
+     CI results; local green checks do not establish cross-platform readiness.
+     A failed, pending, missing or skipped relevant check is not a pass.
+     Keep affected PRs in draft while any required evidence is unavailable.
+     After a push or stack propagation, recheck each affected PR's current
+     head rather than citing results from an older SHA. Do not weaken tests,
+     edit protected workflows or bypass checks to make a PR ready.
+   - For a reported regression, trace the introduction and any prior fix,
+     reproduce the failure before changing production, and retain a focused
+     regression test. Exercise the failing platform boundary locally when
+     practical and rerun the originally failing platform check. Generated
+     artifact checks must preserve the specified canonical output; do not
+     normalize away a discrepancy merely to silence a drift failure.
    - Batch replays. Before replaying, collect every pending fix for lower
      levels, including fixes for known flaky required tests, so that one
      replay covers them all. Before moving branch heads with `git branch -f`,
@@ -234,11 +299,23 @@ Owner: application architect.
     milestones, commands and outcomes, blockers and next handoffs. Require
     specialists to report the same information to the architect at the same
     cadence, at meaningful boundaries and in every report.
+    - Every hourly update lists each outstanding task in the current scope,
+      including active, queued and blocked work, with its owner, status and
+      estimated remaining-duration range. Include the estimate's evidence,
+      assumptions and uncertainty; do not substitute one overall ETA for
+      per-task estimates.
+    - Separate implementation, independent QA and publication time from waits
+      for dependencies, approvals or external validation. If an estimate is
+      not supportable, report "unknown" with the specific blocker or missing
+      evidence and the next estimation checkpoint. Never invent a duration.
     - Build a hand-off estimate from the list of remaining steps, each with its
       duration measured in this session, and show that list. Re-derive it
-      after every milestone instead of carrying the previous figure forward.
+      after every milestone and hourly update instead of carrying the previous
+      figure forward; explain material changes. Distinguish remaining work time
+      from a completion ETA, accounting for dependency waits and parallel work.
     - Each time you tell the user you've dispatched work, give its expected
-      hand-back time from durations measured in this session.
+      hand-back time when supported by durations measured in this session;
+      otherwise use the explicit unknown-estimate treatment above.
     - In each hourly report, run `gh issue list -R a11smiles/cade --state open
       --limit 10 --json number,title,author,createdAt` and name every issue
       created since the previous report (including feedback filed from the
@@ -256,6 +333,23 @@ Owner: application architect.
       stopped in the registry and launch a fresh instance of the role with
       its saved diff or notes.
 
-If subagents aren't available, do the same steps in order yourself and tell the
-user you couldn't delegate. Do not label self-verification as independent QA or
-declare the independent-QA completion gate satisfied.
+If subagents aren't available, don't do specialist work yourself; return an ordered
+dispatch plan (roles, assignments and write scopes) to the main session/host for dispatch.
+Do not label self-verification as independent QA or declare the independent-QA completion gate satisfied.
+
+## Branch-rule change history
+
+- October 26, 2026 — The product owner's prospective delivery instruction
+  supersedes the earlier one-branch-per-planned-task rule (including multiple
+  task branches for one issue) and its blanket sibling prohibition:
+  “complete the work you have scoped. however, going forward, all issues and
+  subissues receive their own branch. ... use the gh stack command/extension
+  to commit all subissues with their parent issue as a single stack ...
+  subissues, at a minimum, will need to be a branch of the parent issue.”
+  The current rule is one branch per issue/subissue, parent before children,
+  preferably sequential descendants, and one local parent/children stack.
+  Previously approved grouped branches/commits remain valid legacy history;
+  no retrospective rewrite is authorized. This is delivery guidance for the
+  #50/#598 handoff, not new product scope or independent backlog completion.
+  Existing future `Fixes`/`Closes` eligibility, independent QA and permission
+  gates remain unchanged.
