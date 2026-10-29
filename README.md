@@ -105,8 +105,8 @@ application is finished. Most are still part of a broader, unfinished product.
 | `cade-crdt` | Loro project document, movable layer tree, snapshot save/open, merge and JSON mirror |
 | `cade-policy` | `policy.yml` schema and decisions for models, BYOK, shell, network, MCP, design systems, shipping, telemetry and token budgets |
 | `cade-copilot` | Copilot and BYOK through the Copilot SDK, permission handler, change sets and token meter |
-| `cade-github` | Device-flow sign-in, keychain storage, github.com / GHE.com / GHES, issues, duplicate search and PRs |
-| `cade-git` | Repository open/init, HEAD inspection and Copilot commit-message formatting; status and full Git/app integration remain unimplemented under #50 and children #596–602 |
+| `cade-github` | Device-flow sign-in, keychain storage, github.com / GHE.com / GHES, issues, duplicate search and PRs; shared zero-I/O Git preflight, gix connection factory and `Host::git_push_remote` for an explicit selected-host token. The push factory owns private config, credentials, native certificate passthrough and SDK security options; callers must preserve those options. Runtime token/host association and hosted TLS acceptance require separate proof |
+| `cade-git` | gix-backed local open/strict init, read-only status, HEAD inspection, explicit immutable-tree commits, strict branch creation and merge-base; Copilot message/trailer helper; guarded existing-worktree checkout through git2/libgit2; explicit clone and tracking-only fetch through gix/cade-github. `ProjectRepo::push` implements a bounded explicit-branch/immutable-OID, single non-force upload through git2, with gix validation and fresh remote observations. Implementation and bounded developer proof are not full #600 acceptance. Full original #598/#599/#50 acceptance, save/run integration, configured LFS (#601), cancellable app jobs (#602) and Ship/PR workflow (#140/#141) retain their separate obligations |
 | `cade-feedback` | Canonical form-ID answers with legacy-input migration, YAML-derived forms, Rust-derived TypeScript bindings and labeled, redacted issue drafts |
 | `cade-ddl` | PostgreSQL, SQL Server, MySQL and Oracle DDL; reversible migrations; PII check |
 | `cade-iac` | Bicep and Terraform (azurerm) for App Service, SQL, Key Vault and Storage; missing-setting check |
@@ -116,6 +116,70 @@ application is finished. Most are still part of a broader, unfinished product.
 | `cade-io-export` | Output-format declarations and exporter interface, not completed end-to-end exporters |
 | `cade-render`, `cade-text`, `cade-layout` | Vello scene from nodes, Parley text layout and Taffy auto layout |
 | `cade-codegen-react` | Design-system TSX emitter |
+
+The feature-specific checkout and push-upload fallback pins `git2 =0.21.0`
+with default features disabled and `https` plus `vendored-libgit2` enabled.
+It retains gix 0.90.0 for local operations, clone/fetch, push validation and
+fresh pre/post-upload observation; it does not replace gitoxide. Native
+libgit2 is not subprocess Git or a pure-Rust checkout/upload path. See the
+[checkout safety and partial-failure boundary](docs/ARCHITECTURE.md#existing-worktree-checkout--stage-b)
+and [dependency attribution](NOTICE), including the push HTTPS/native delta.
+These bounded capabilities do not establish all original #598/#599/#600/#50
+criteria or imply issue closure.
+
+**Historical input checkpoint — October 27, 2026, 22:36:49 −07:00.**
+Batch16's handoff and canonical ledger bind the #600 export to tree
+`19a6cef843bf67479c3674f9fa3728c9a7ea31d9`, over parent
+`0fb8fcc4968f8553bcc6fcf29a9ab8f834745f16`; this is not a #600 commit.
+Four developer Rust checkpoints passed on Darwin (fmt, workspace Clippy,
+853 workspace tests and app build). The 44 planned rows were classified as
+10 red/green, 27 initial-pass regressions, 4 partial and 3 untouched, with
+zero independently accepted rows. That receipt did not include full twelve-gate,
+native #600 CI or documentation-QA acceptance. Those are mandatory delivery
+requirements on the exact successor, not a timeless statement of gate status.
+The October 27, 22:38:54 −07:00 relay retains PRs #611–#615 READY and #608
+fully accepted; #615's named-parent local QA and native readiness are separate
+from #600 evidence. No user merge or renewed #599 gate wait is a local-start
+prerequisite. Neither READY nor earlier native success establishes full original
+#598/#599/#50 acceptance. See the [Git evidence boundary](docs/ARCHITECTURE.md#git-implementation-boundary).
+
+Push selects only an existing direct full local branch at the supplied commit
+OID, holds a no-edit source lock and sends one immutable-OID refspec without
+force. It does not select index/worktree content. Success requires fresh gix
+observation of the intended direct destination; rejection, incomplete reports
+and uncertain outcomes stay errors, even when remote effects may exist.
+Recovery is an explicit newly authorized observation/retry, not automatic
+retransmission or rollback. Fixed stages and numeric progress do not promise
+500-ms cancellation or no partial writes; void upload-progress callbacks
+cannot cancel blocked I/O. `AgentNetwork` Allow is necessary, not authorization
+for direct `ShipByPush`; ADR 0004 still requires branch plus PR.
+Windows/other unsupported secure push fails closed and remains a missing
+capability. Native TLS/trust/proxy/redirect, hosted GitHub.com/GHES, selected-host
+keychain and revoked-credential proof remain separate requirements. See the
+[push contract and acceptance limits](docs/ARCHITECTURE.md#explicit-single-branch-push--600).
+
+Clone/fetch use the existing gix 0.90.0 SDK with newly enabled blocking
+reqwest/native-TLS and initial-worktree features, not a version upgrade or an
+git2 clone/fetch path. Clone claims only an absent destination, retains failed
+partial state without recursive cleanup, and uses the actual advertised HEAD.
+Initial clone writes its worktree and index before publishing its local branch
+and born HEAD; #598's existing-worktree checkout order and missing-index guard
+are unchanged. Earlier collision/index failures do not publish clone's local
+branch/HEAD; later reference failures can retain an already-written worktree
+and index. No automatic rollback or repair is promised.
+Fetch updates only origin tracking refs and objects, preserving local branches,
+HEAD, index and worktree. Recovery is explicit: inspect and reopen retained
+state, correct the cause, fetch, then create/select and check out a branch.
+Caller progress uses fixed client stages and actual advertisement, indexed-pack
+and verified-mapping counts; raw server/SDK advertisement and receive task
+names/messages are discarded. Initial SDK checkout retains numeric-only file
+and byte progress. These counters do not promise cancellation timing or
+all-or-nothing writes.
+The [clone/fetch contract](docs/ARCHITECTURE.md#explicit-clone-and-fetch--599)
+details policy, credentials, unsupported behavior and failure limits. Passing
+private SDK pipe fixtures do not establish a successful public hosted clone,
+native OS trust, selected-host/keychain integration, actual credentials or
+three-platform acceptance.
 
 ## Feedback
 

@@ -44,7 +44,10 @@ taffy = "0.15"
 github-copilot-sdk = { version = "=1.0.26", default-features = false, features = ["runtime"] }
 async-trait = "0.1"
 octocrab = "0.54"
-gix = { version = "0.90", default-features = false, features = ["status", "index", "revision", "sha1", "parallel"] }
+gix = { version = "0.90", default-features = false, features = ["status", "index", "revision", "sha1", "parallel", "blocking-http-transport-reqwest-native-tls", "worktree-mutation"] }
+# Checkout and HTTPS upload fallback authorized by #50/#600; gix retains validation and observation.
+git2 = { version = "=0.21.0", default-features = false, features = ["https", "vendored-libgit2"] }
+tempfile = "3.27"
 keyring = "4.2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
@@ -62,7 +65,6 @@ url = "2"
 
 # test-only
 jsonschema = { version = "=0.56.0", default-features = false }
-tempfile = "3.27"
 wiremock = "0.6.5"
 
 [profile.release]

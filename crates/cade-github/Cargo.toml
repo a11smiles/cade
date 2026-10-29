@@ -9,6 +9,9 @@ authors.workspace = true
 repository.workspace = true
 
 [dependencies]
+cade-policy.workspace = true
+gix.workspace = true
+git2.workspace = true
 octocrab.workspace = true
 keyring.workspace = true
 tokio.workspace = true
@@ -17,6 +20,7 @@ thiserror.workspace = true
 url.workspace = true
 
 [dev-dependencies]
+tempfile.workspace = true
 wiremock.workspace = true
 serde_json.workspace = true
 octocrab.workspace = true

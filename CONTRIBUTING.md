@@ -36,11 +36,39 @@ native environment passes. Source builds do not create an available installer.
 - One backlog item per pull request where possible. Put the id in the PR title.
 - Every future code commit must reference an actual backlog issue number in its commit message. Keep code commits and PRs scoped to identified backlog work; do not bundle unrelated work.
 - Link existing code history through issue evidence comments with commit SHA links; never rewrite history merely to add attribution. A commit alone does not establish issue completion.
+- Under the product owner's delivery authorization, add a standalone `Fixes #N` or `Closes #N` line to a relevant future local commit message or PR body only when the issue is fully done, tested, and independently accepted against all original criteria. Use `Refs #N` or `Related #N` for partial work. PM owns the issue-to-commit/PR closure map; QA supplies full-criteria evidence. Bounded fixes do not automatically qualify, and each child and parent must independently meet its obligations. Never amend or rewrite existing history just to add closure keywords; a future PR body may link those commits. Inspect and preserve the existing PR template before drafting. This authorization permits neither direct issue closure or premature metadata changes nor pushing or PR publication.
 - Keep formatting, lint, crate, UI and applicable desktop checks green. The recorded workspace checks are `cargo fmt --all --check`, `cargo clippy --workspace --exclude cade-app --all-targets -- -D warnings`, and the test commands above.
 - UI values come from design tokens only. Edit `design/system/tokens.json`, never `tokens.css`.
 - Check dark and light themes.
 - Don't commit Microsoft's Azure icon files (see `assets/icons/azure/README.md`).
 - No telemetry, no network calls outside the ones a backlog item names.
+
+## Branch delivery
+
+Going forward, every issue and subissue has its own `issue-NN-<scope>` branch.
+Create the parent's own branch before its children; every child must descend
+from that parent. Prefer a sequential dependency chain over conflicting sibling
+branches. Complete already-scoped work and preserve previously approved grouped
+branches and commits; this prospective change does not authorize rewriting them.
+
+Use the `gh stack` command/extension for one local stack containing the parent
+and its children. The installed official `github/gh-stack` 0.3.0 supports local
+adoption of existing branches through `init`, ordered bottom-to-top with an
+explicit `--base`. Registration alone proves neither ancestry nor absence of
+merge conflicts. Keep an issue-to-branch map with parent, predecessor/base and
+exact SHAs; retain actual ancestry and merge-conflict-check evidence. An empty
+parent anchor at the pre-child base establishes ancestry, but provides no
+publishable root diff: report that limitation instead of claiming publication
+readiness.
+
+This delivery instruction authorizes local registration only, not stack
+`sync`/`submit`, push-capable `link`, pushing or PR publication. Rebasing rewrites
+history and needs approved scope; do not assume a dry-run mode exists. All
+existing QA, commit, closure and permission gates still apply. The branch map
+and stack are delivery evidence, not independent backlog completion.
+
+See [team-orchestration](.github/skills/team-orchestration/SKILL.md#branch-rule-change-history)
+for the superseded per-task rule and approval history.
 
 ## Requirements and acceptance evidence
 

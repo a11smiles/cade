@@ -135,28 +135,43 @@ Owner: application architect.
    references, the design export when there is one, inputs, allowed files,
    contracts, acceptance criteria and when to stop.
    - Branching (`AGENTS.md`): trunk-based development on `main` with stacked
-     PRs. The issue plan lists tasks in dependency order; each task gets one
-     branch `issue-NN-<task>` (for example `issue-12-crdt-ops-api`, then
-     `issue-12-ipc-command`, then `issue-12-ui-panel`), created from the
-     branch it depends on, the first from `main`. The user merges the stack
-     bottom-up so `main` stays clean and working.
-   - Never create sibling task branches from the same base: they conflict on
-     shared files (`Cargo.toml`, `Cargo.lock`, IPC bindings, tokens) and push
-     all of that onto the merge. If a lower branch changes, restack the
-     branches above it before continuing.
-   - Parallel writers share a branch only with disjoint file scopes; shared
-     files are edited by one role at a time and committed before the next
-     role touches them. Opening PRs requires pushing, which needs the user's
-     approval.
+     PRs. Going forward, every issue and subissue gets its own
+     `issue-NN-<scope>` branch. Create the parent's own branch before any
+     child; every child must descend from it. List issues in dependency order,
+     preferring sequential descendants over conflicting siblings. The user
+     merges the stack bottom-up so `main` stays clean and working.
+   - Complete already-scoped work; preserve previously approved legacy grouped
+     branches and commits. Do not rewrite them to retrofit this prospective
+     rule. Maintain a branch map: issue/subissue, parent issue, branch,
+     predecessor/base and exact SHAs. Record actual ancestry and merge-conflict
+     checks, their tested tree identities and results; names or registration
+     alone do not prove a valid, conflict-free stack.
+   - Use the `gh stack` command/extension to register one local stack per parent
+     and its children. The installed official `github/gh-stack` 0.3.0 `init`
+     operation adopts existing branches bottom-to-top with an explicit
+     `--base`. Local registration is not publication authorization: no
+     `sync`/`submit`, push-capable `link`, push or PR publication is authorized
+     by this instruction. Rebase rewrites history and requires approved scope;
+     do not invent a dry run. If a lower branch changes, restack descendants
+     only within approved scope before continuing.
+   - An empty parent anchor at the pre-child base establishes ancestry but
+     has no publishable root diff. Report that limitation; do not manufacture
+     a diff or claim publication readiness. Registration, ancestry, conflict
+     checks and publication readiness are separate evidence obligations.
+   - Parallel writers share an issue's branch only with disjoint file scopes;
+     distinct issues/subissues do not share a new branch. Shared files are
+     edited by one role at a time and committed before the next role touches
+     them. Opening PRs requires pushing, which needs the user's approval.
    - A tree under QA or design review has no active writer in the files under
      review. Sequence the work, or have QA review from a scratch copy taken at
      a named commit, rather than creating another branch.
    - Name the tree path and the commit SHA in every prompt that cites
      repository state, including project-manager and business-analyst prompts.
-   - Create only the task branches in the issue plan you've shown the user. If
-     a new task appears, add it to the plan and name it in your next status
-     update before you create the branch. Never create a branch, worktree or
-     merge target as a fix for a process problem without asking.
+   - Create only the issue/subissue branches in the issue plan you've shown
+     the user. If a new issue/subissue appears, add it to the plan and name it
+     in your next status update before you create the branch. Never create a
+     branch, worktree or merge target as a fix for a process problem without
+     asking.
    - When building or restacking a level, run the full gate on that level's
      exact SHA before the next level starts:
      - `cargo fmt --all --check`;
@@ -259,3 +274,20 @@ Owner: application architect.
 If subagents aren't available, do the same steps in order yourself and tell the
 user you couldn't delegate. Do not label self-verification as independent QA or
 declare the independent-QA completion gate satisfied.
+
+## Branch-rule change history
+
+- October 26, 2026 — The product owner's prospective delivery instruction
+  supersedes the earlier one-branch-per-planned-task rule (including multiple
+  task branches for one issue) and its blanket sibling prohibition:
+  “complete the work you have scoped. however, going forward, all issues and
+  subissues receive their own branch. ... use the gh stack command/extension
+  to commit all subissues with their parent issue as a single stack ...
+  subissues, at a minimum, will need to be a branch of the parent issue.”
+  The current rule is one branch per issue/subissue, parent before children,
+  preferably sequential descendants, and one local parent/children stack.
+  Previously approved grouped branches/commits remain valid legacy history;
+  no retrospective rewrite is authorized. This is delivery guidance for the
+  #50/#598 handoff, not new product scope or independent backlog completion.
+  Existing future `Fixes`/`Closes` eligibility, independent QA and permission
+  gates remain unchanged.

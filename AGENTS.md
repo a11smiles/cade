@@ -69,7 +69,8 @@ Keep this file under 500 words; put role details in
   `pnpm --dir app/ui test:e2e` (Playwright). Use pnpm, never npm/yarn.
 - `cargo test -p cade-app` (IPC); `cargo run -p cade-app`.
 
-Trunk-based `main` with stacked PRs: one branch per planned task,
-`issue-NN-<task>`, created from the task it depends on (first from `main`);
-no sibling task branches. No agent attribution. PR titles: imperative,
-`[EPIC-NNN]`-prefixed except bug fixes. Check UI in both themes.
+Trunk-based `main`, stacked PRs: one branch per issue/subissue.
+Parent first; children descend, preferably sequentially. One local `gh stack`
+per parent/children (team-orchestration). Preserve approved grouped history.
+No agent attribution. PR titles: imperative, `[EPIC-NNN]`-prefixed except bug fixes.
+Check UI in both themes.
