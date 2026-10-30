@@ -4,8 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 // Compile against the real adapter and generated bindings, without executing IPC
 // or writing fixtures/artifacts. No parallel command schema lives in this test.
-function diagnostics(body: string) {
-  const file = resolve('src/ipc.contract-fixture.ts');
+function diagnostics(body: string, file = resolve('src/ipc.contract-fixture.ts')) {
   const options: ts.CompilerOptions = {
     strict: true, noEmit: true, skipLibCheck: true,
     target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext,
@@ -13,8 +12,9 @@ function diagnostics(body: string) {
   };
   const host = ts.createCompilerHost(options);
   const original = host.getSourceFile.bind(host);
+  // TypeScript requests forward-slash paths even when the root uses backslashes.
   host.getSourceFile = (name, languageVersion, onError, shouldCreateNewSourceFile) =>
-    name === file
+    name === file.replace(/\\/g, '/')
       ? ts.createSourceFile(name, `import { call } from './ipc';\n${body}`, languageVersion)
       : original(name, languageVersion, onError, shouldCreateNewSourceFile);
   const program = ts.createProgram([file], options, host);
@@ -23,6 +23,25 @@ function diagnostics(body: string) {
     message: ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n'),
   }));
 }
+
+describe.each([
+  ['forward slashes', resolve('src/ipc.contract-fixture.ts').replace(/\\/g, '/')],
+  ['backslashes', resolve('src/ipc.contract-fixture.ts').replace(/\//g, '\\')],
+])('compiler fixture with %s', (_name, file) => {
+  it('resolves the real adapter and infers its result', () => {
+    expect(diagnostics(`
+      const result: Promise<string> = call('check_shell', { command: 'git status' });
+    `, file)).toEqual([]);
+  });
+
+  it('rejects an incompatible real command result', () => {
+    expect(diagnostics(`
+      const result: Promise<number> = call('check_shell', { command: 'git status' });
+    `, file)).toEqual([
+      { code: 2322, message: expect.any(String) },
+    ]);
+  });
+});
 
 describe('generated IPC compile contract', () => {
   it.each([
