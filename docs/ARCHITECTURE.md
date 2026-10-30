@@ -754,8 +754,9 @@ constructors.
 
 YAML issue forms own metadata; Rust types generate TypeScript declarations with
 ts-rs, and generated form metadata supplies the existing UI facade. Do not
-hand-copy either contract. This bounded use of #36 does not complete all IPC
-binding work. Output is multi-select, encoded with comma-space in YAML option
+hand-copy either contract. The [four-command Rust projection](#native-command-generation)
+extends these declarations; it does not complete all #36 IPC work.
+Output is multi-select, encoded with comma-space in YAML option
 order; Rust validates and canonicalizes selections. Empty means unanswered.
 Beneficiaries retain `individual`, `team`, `admin/security` choices from YAML;
 contribution/reply use optional Yes/No selects. Area/severity remain free text.
@@ -783,6 +784,63 @@ metadata, the dialog, e2e IPC mocks, hosted forms/labels and `cade-github` submi
 The [contributor guidance](../CONTRIBUTING.md#maintaining-feedback-contracts)
 records their maintenance obligations. Local parity does not prove hosted
 rendering/publication; browser focus does not prove native accessibility.
+
+### Native command generation
+
+**Implemented bounded integration — Refs #36:** the October 29, 2026,
+03:58:45 −07:00 QA receipt records independent acceptance of the TypeScript
+union-correlation repair and passing UI build, typecheck, unit and E2E gates
+on calculated uncommitted content tree
+`e39b52a0d8db91b59c86ce9c6c90606f9bb890b2`, over base
+`5498d85acf2d0361a6ceecf068771ba0b9f99fa8`. This is the tested candidate before
+this documentation update, not HEAD, a published commit or a post-documentation
+tree binding. Earlier independent Rust/generator acceptance covers its frozen
+13 paths, native command tests and generated-artifact tests in both modes,
+not independent execution of the full workspace suite. These bounded
+dispositions do not establish whole-issue acceptance.
+
+[`commands.rs`](../app/src-tauri/src/commands.rs) is the single app-owned
+declaration of the four existing command signatures and bodies.
+[`lib.rs`](../app/src-tauri/src/lib.rs) consumes it to emit native handlers and
+`with_commands` registration for both real and mock runtimes. The existing
+[`generator support`](../crates/cade-feedback/examples/support/mod.rs) consumes
+the same declaration tokens, not signature regexes or a second command map.
+Runtime-injected `State` is excluded from caller arguments.
+
+The generated [`Commands`](../app/ui/src/ipc/bindings.ts) projects
+`current_policy` (no caller input, JSON result), `check_shell` (command string,
+string result), `preview_feedback` (`Feedback` to `IssueDraft`) and async
+`submit_feedback` (`Feedback` to string). Existing ts-rs 12.0.1 with
+`serde-json-impl` projects `serde_json::Value` as `JsonValue`, not a duplicate
+`Policy` schema. Existing feedback declarations remain.
+[`CommandError`](../app/src-tauri/src/command_error.rs), reexported at its
+existing Rust path, retains the `{"Message": string}` wire shape.
+Its generated error member does not statically type Promise rejection or
+normalize raw framework failures.
+
+The existing [`call`](../app/ui/src/ipc.ts) adapter derives arguments and
+inferred Promise results from `Commands`; callers no longer choose an arbitrary
+result type. It requires a literal or narrowed command. Unresolved command
+unions must be narrowed before calling, even for correlated requests or commands
+with matching payload shapes. The existing feedback consumers use literal
+commands. No new public wrapper, runtime validation or error behavior is added:
+the plain-browser error and raw native rejection values remain unchanged.
+
+[ADR 0005](adr/0005-policy-as-code.md) remains the policy authority:
+`check_shell` delegates to `cade-policy` and retains `allow`, `ask` and
+`deny:<rule>` results. [ADR 0006](adr/0006-feedback-as-github-issues.md) still
+requires Rust redaction and preview before sending; generation changes neither
+feedback consent nor validation-before-keychain behavior.
+See [contributor guidance](../CONTRIBUTING.md#maintaining-feedback-contracts)
+for explicit generation and the retained full-artifact/line-ending checks.
+Literal `just bindings` remains unexecuted because the binary was unavailable;
+the underlying generator command passed. The separate developer-reported Rust
+mutation checks still await independent review at this checkpoint; the
+TypeScript mutation checks have independent verification. Windows/Linux,
+alternate native-origin configurations, real desktop launch and real
+keychain/provider submission remain unverified for this slice.
+Typed events and shared CadeError are not delivered here; full #33/#36/#54,
+LFS, release readiness and publication authority are not established.
 
 ## Acceptance evidence boundaries
 
@@ -956,6 +1014,8 @@ product-owner choices. Subsequent changes identify their own received times.
 
 | Topic | Earlier state → current decision and rationale | Approval evidence | Status |
 |---|---|---|---|
+| Native command integration — handoff received 2026-10-29 at 03:59:42.583 −07:00 | Earlier TS/integration-pending status → delivered literal/narrowed-command adapter and bounded independent Rust/TS acceptance. Unresolved unions require narrowing; runtime/errors and ADRs 0005/0006 remain unchanged. The dated status above identifies the tested pre-documentation candidate, not a successor or HEAD. | Current scoped handoff: “Remove stale TS/integration pendingprose”; `qa-fix-report.md` transcribes independent acceptance received at 03:58:45, separate from the earlier frozen-path `qa-rust-report.md`. Actual 02:45:02.275 human approval covers bounded #36 implementation/docs, not #54 or publication. | Bounded integration documented; Rust mutation review, literal just, platform/full-criteria and post-documentation binding obligations remain; no issue closure or publication authority |
+| Native command generation — handoff received 2026-10-29 at 03:16:58.895 −07:00 | Feedback-only declaration inventory → implemented four-command Rust registration/projection and explicit bindings output path. Existing ts-rs, CommandError, policy and feedback authorities remain; no ADR supersession. Earlier stdout-only fixture guidance is historical for bindings; forms remains stdout-only. | Earlier scoped handoff: “Execute minimal documentation for ACTUAL delivered canonical four-command registration/generation”; it reports human approval at 02:45:02.275 PDT for bounded #36 implementation/docs, not additional publication. Source and Rust execution receipts supported implementation, not integrated acceptance at that time. | Historical Rust delivery checkpoint; its TS/integration-pending status is superseded above; literal just remains unexecuted |
 | Policy | Overflow saturation and unavailable-policy approval fallback → deny overflow and reject unreadable policy, preserving trusted policy authority. No new recovery mechanism. | “policyMAXoverflowdenyconfigured,no-budgetsame; poisonrejectnoapprovalnoclear newrecoveryoutofscope ADR0003/5.” | Accepted; bounded QA approved |
 | DDL | Truncation-only overlong names → deterministic full-identity suffix for new generation, preserving ordinary output and existing deployments. | “Generatoroverlongdeterministicsuffix newgeneratedcreate/up/downconsistent; noautochangeexistingdeployedconstraints,noDDLserializedchange.” | Accepted; bounded QA approved |
 | Feedback | Heading arrays and handwritten mirrors → keyed map with legacy adapter and generated declarations/metadata. Earlier briefs left labels/copy/version unresolved; the approved contract resolves them, including the named environment-ID correction. | “Feedbackcanonicalkeymap legacyshapeadapter/knownvalidation,Rust-derivedts-rs declarations,YAMLauthority,labelslegacy+requiredtype,version->app_versionmigration; actualsuccessfulcurrentpreview snapshot&focussuccess.” | Accepted; bounded QA approved |

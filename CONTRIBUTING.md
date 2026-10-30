@@ -117,6 +117,42 @@ The three `.github/ISSUE_TEMPLATE/*.yml` files own form metadata; Rust in
 `types.ts` is a display facade. Keep generation/staleness checks read-only during
 ordinary gates.
 
+Native command signatures and registration share the app-owned
+[`commands.rs`](app/src-tauri/src/commands.rs); the existing generator consumes
+that same declaration to produce `Commands`, alongside existing feedback types
+and `CommandError`. Do not hand-edit bindings or maintain a second TypeScript
+command map. See [native command generation](docs/ARCHITECTURE.md#native-command-generation)
+for the delivered bounded integration, literal/narrowed-command caller contract
+and remaining acceptance limits.
+
+From the repository root, explicit bindings regeneration uses the existing
+generator's optional output path:
+
+```sh
+cargo run --quiet -p cade-feedback --example generate_feedback -- bindings app/ui/src/ipc/bindings.ts
+```
+
+Without the output path, `bindings` prints the complete artifact to stdout;
+`forms` retains stdout generation. File mode writes the complete bindings,
+prints no artifact to stdout and reports write failures. The root
+[`justfile`](justfile) `bindings` recipe invokes the command above without shell
+redirection. Using that recipe requires an available `just` binary: literal
+`just bindings` was **not run** in the October 29 Rust execution environment
+because no binary was available. The direct command above and both stdout
+modes were run; this is not proof of recipe execution.
+
+`cargo test -p cade-feedback --test generated` also passed in that Rust receipt.
+Keep its full-artifact comparisons and autocrlf/line-ending regression intact;
+ordinary tests must not repair tracked artifacts. Output-path parity and
+write-failure tests use temporary fixtures, not tracked output. See the existing
+[fixture documentation](crates/cade-feedback/tests/fixtures/README.md) for runner
+setup. Independent QA accepted the bounded Rust/generator slice, including
+generated-artifact tests in default and `serde_json/preserve_order` modes.
+The separate TypeScript integration acceptance is bound to the tested candidate
+in the architecture overview, not inferred from these Rust checks or transferred
+to later trees. Literal recipe execution, remaining native-platform checks and
+whole-issue acceptance are still separate obligations.
+
 Changes must account for Rust callers and migration fixtures, preview/submit IPC,
 the dialog and its tests, generated artifacts, the e2e IPC mock, hosted YAML and
 label inventory, and `cade-github`'s issue-draft consumer. Preserve required fields,

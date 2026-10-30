@@ -19,6 +19,29 @@ fn bindings_checked_in_artifact_matches_rust_declarations() {
 }
 
 #[test]
+fn bindings_native_commands_projects_only_caller_arguments() {
+    assert!(
+        support::bindings().contains(
+            "export type Commands = {\n\
+             current_policy: { args: undefined; result: JsonValue; error: CommandError };\n\
+             check_shell: { args: { command: string; }; result: string; error: CommandError };\n\
+             preview_feedback: { args: { feedback: Feedback; }; result: IssueDraft; error: CommandError };\n\
+             submit_feedback: { args: { feedback: Feedback; }; result: string; error: CommandError };\n\
+             };\n"
+        ),
+        "bindings must project all four native signatures, excluding injected State"
+    );
+}
+
+#[test]
+fn bindings_command_error_preserves_message_envelope() {
+    assert!(
+        support::bindings().contains("export type CommandError = { \"Message\": string };"),
+        "bindings must declare the existing externally tagged Message error"
+    );
+}
+
+#[test]
 fn forms_checked_in_artifact_matches_hosted_yaml() {
     assert_eq!(
         tracked("app/ui/src/feedback/forms.generated.ts"),

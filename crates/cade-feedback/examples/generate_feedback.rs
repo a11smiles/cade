@@ -1,4 +1,5 @@
 //! Print one generated artifact or a private test-runner preview envelope.
+//! Bindings may also be written to an explicit output path by `just bindings`.
 //! Ordinary tests only compare artifacts and never write tracked files.
 
 mod support;
@@ -19,7 +20,10 @@ fn preview(input: Value) -> Value {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     match std::env::args().nth(1).as_deref() {
-        Some("bindings") => print!("{}", support::bindings()),
+        Some("bindings") => match std::env::args_os().nth(2) {
+            Some(path) => std::fs::write(path, support::bindings())?,
+            None => print!("{}", support::bindings()),
+        },
         Some("forms") => print!("{}", support::forms()?),
         Some("preview") => {
             let envelope = match serde_json::from_reader::<_, Value>(std::io::stdin().lock()) {
@@ -28,7 +32,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             };
             serde_json::to_writer(std::io::stdout().lock(), &envelope).map_err(|_| "could not write feedback preview")?;
         }
-        _ => return Err("usage: cargo run -p cade-feedback --example generate_feedback -- bindings|forms|preview".into()),
+        _ => return Err("usage: cargo run -p cade-feedback --example generate_feedback -- bindings [output-path]|forms|preview".into()),
     }
     Ok(())
 }
