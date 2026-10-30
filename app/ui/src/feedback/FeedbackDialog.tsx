@@ -72,7 +72,7 @@ function useFeedbackPreview(feedback: Feedback) {
     let latest = true;
     const snapshot = JSON.parse(key) as Feedback;
     setResult({ key, attempt, status: 'pending' });
-    call<IssueDraft>('preview_feedback', { feedback: snapshot })
+    call('preview_feedback', { feedback: snapshot })
       .then((draft) => {
         if (latest) setResult({ key, attempt, status: 'ready', draft, snapshot });
       })
@@ -180,7 +180,7 @@ export function FeedbackDialog({ onClose }: { onClose: () => void }) {
     const snapshot = current.snapshot;
     setStatus({ kind: 'sending' });
     try {
-      const url = await call<string>('submit_feedback', { feedback: snapshot });
+      const url = await call('submit_feedback', { feedback: snapshot });
       setStatus({ kind: 'sent', text: url });
     } catch (e) {
       setStatus({ kind: 'error', text: e instanceof Error ? e.message : typeof e === 'string' ? e : undefined });

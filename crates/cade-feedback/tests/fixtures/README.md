@@ -38,6 +38,12 @@ and closes stdin. Stdout is one JSON value: `{"ok": IssueDraft}` or
 `{"error":{"Message":"..."}}`. Validation calls `Feedback::to_issue`; no service
 is called. Malformed input receives a fixed message without deserializer details.
 The runner is test infrastructure, not an IPC command or production domain type.
-`bindings` and `forms` remain stdout-only generation operations. Ordinary tests
-never regenerate tracked artifacts. The commands above are focused checks,
-not the full workspace acceptance gate.
+`bindings` without an output path and `forms` print generated artifacts to
+stdout. Bindings also accepts an explicit output path: it writes the complete
+artifact without printing it and fails if the write fails. Transport tests
+compare file output with complete stdout bytes and exercise write failure using
+temporary fixtures. See [contributor guidance](../../../../CONTRIBUTING.md#maintaining-feedback-contracts)
+for explicit regeneration and the root recipe's tooling prerequisite.
+Ordinary tests never regenerate tracked artifacts; full-artifact drift and
+autocrlf/line-ending checks remain in `tests/generated.rs`. The commands above
+are focused checks, not the full workspace acceptance gate.

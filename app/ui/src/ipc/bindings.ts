@@ -17,3 +17,11 @@ answers: { [key in string]: string }, environment: Environment,
  */
 screenshot_url?: string | null, };
 export type IssueDraft = { title: string, body: string, labels: Array<string>, };
+export type CommandError = { "Message": string };
+export type JsonValue = number | string | boolean | Array<JsonValue> | { [key in string]: JsonValue } | null;
+export type Commands = {
+current_policy: { args: undefined; result: JsonValue; error: CommandError };
+check_shell: { args: { command: string; }; result: string; error: CommandError };
+preview_feedback: { args: { feedback: Feedback; }; result: IssueDraft; error: CommandError };
+submit_feedback: { args: { feedback: Feedback; }; result: string; error: CommandError };
+};

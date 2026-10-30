@@ -405,6 +405,9 @@ test.describe('Feedback in the desktop app (mock IPC)', () => {
     await expect(dialog.getByRole('status')).toBeVisible();
 
     const [submit] = await ipcCalls(page, 'submit_feedback');
+    const reviewed = (await ipcCalls(page, 'preview_feedback')).at(-1);
+    expect(submit?.args).toEqual(reviewed?.args);
+    expect(Object.keys(submit?.args ?? {})).toEqual(['feedback']);
     expect(submit?.args).toMatchObject({
       feedback: { kind: 'bug', title: 'Canvas freezes', environment: { os: null, app_version: '0.1.0', logs: null } },
     });

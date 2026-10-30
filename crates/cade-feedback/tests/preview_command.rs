@@ -6,7 +6,7 @@ use serde_json::{Value, json};
 use std::io::Write;
 use std::process::{Command, Stdio};
 
-fn preview(input: &str) -> Value {
+fn generator() -> Command {
     let executable = std::env::current_exe()
         .expect("integration test executable")
         .parent()
@@ -15,7 +15,11 @@ fn preview(input: &str) -> Value {
         .expect("profile directory")
         .join("examples")
         .join(format!("generate_feedback{}", std::env::consts::EXE_SUFFIX));
-    let mut child = Command::new(executable)
+    Command::new(executable)
+}
+
+fn preview(input: &str) -> Value {
+    let mut child = generator()
         .arg("preview")
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
@@ -30,6 +34,37 @@ fn preview(input: &str) -> Value {
         "preview transport must not print input or errors to stderr"
     );
     serde_json::from_slice(&output.stdout).expect("stdout is one JSON envelope")
+}
+
+#[test]
+fn bindings_explicit_output_matches_stdout_bytes() {
+    let fixture = tempfile::tempdir().expect("owned output directory");
+    let path = fixture.path().join("bindings.ts");
+    let stdout = generator().arg("bindings").output().expect("run stdout generation");
+    assert!(stdout.status.success());
+    let written = generator().arg("bindings").arg(&path).output().expect("run explicit generation");
+    assert!(written.status.success());
+    assert_eq!(
+        std::fs::read(&path).unwrap_or_default(),
+        stdout.stdout,
+        "an explicit output path must receive the complete standalone artifact"
+    );
+    assert!(written.stdout.is_empty(), "file generation must not also print the artifact");
+}
+
+#[test]
+fn bindings_unwritable_output_returns_failure() {
+    let fixture = tempfile::tempdir().expect("owned output directory");
+    let output = generator()
+        .arg("bindings")
+        .arg(fixture.path())
+        .output()
+        .expect("run generation with a directory as output");
+    assert!(!output.status.success(), "an unwritable output must not report generation success");
+    assert!(
+        output.stdout.is_empty(),
+        "failed file generation must not masquerade as stdout success"
+    );
 }
 
 #[test]

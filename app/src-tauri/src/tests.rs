@@ -211,3 +211,40 @@ fn with_commands_remote_origin_is_not_allowed() {
         Err(json!("check_shell not allowed. Plugin not found"))
     );
 }
+
+#[test]
+fn with_commands_feedback_round_trip_matches_redacted_rust_drafts() {
+    let app = app();
+    let w = window(&app);
+    for (kind, answers) in [
+        (
+            "bug",
+            json!({"what-happened": "ann@example.com", "steps": "Open /Users/ann/project"}),
+        ),
+        (
+            "feature-request",
+            json!({"problem": "A problem", "proposal": "A proposal", "beneficiaries": "team"}),
+        ),
+        ("comment", json!({"comment": "A comment", "reply": "Yes"})),
+    ] {
+        let feedback: Feedback = serde_json::from_value(json!({
+            "kind": kind,
+            "title": "Contact ann@example.com",
+            "answers": answers,
+            "environment": {"app_version": "0.1.0", "os": null},
+            "screenshot_url": "https://example.com/image.png"
+        }))
+        .expect("synthetic feedback deserializes");
+        let expected = feedback.to_issue().expect("valid synthetic feedback");
+        let draft: IssueDraft =
+            serde_json::from_value(invoke(&w, "preview_feedback", json!({"feedback": feedback})).expect("real preview handler succeeds"))
+                .expect("native draft round-trips into its Rust type");
+
+        assert_eq!(draft, expected, "{kind}");
+        assert!(!draft.title.contains("ann@example.com"), "{kind}: title redaction");
+        assert!(!draft.body.contains("ann@example.com"), "{kind}: answer redaction");
+        assert!(!draft.body.contains("/Users/ann/project"), "{kind}: path redaction");
+        assert!(draft.body.contains("https://example.com/image.png"), "{kind}: opted-in screenshot");
+        assert!(!draft.body.contains("Operating system"), "{kind}: opted-out environment");
+    }
+}
